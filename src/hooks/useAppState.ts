@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { demoData } from "../data/demoData";
 import { loadTripSnapshot, saveTripSnapshot } from "../lib/offline";
-import { hasSupabaseConfig, supabase } from "../lib/supabase";
-import type { AppData } from "../types";
+import { hasSupabaseConfig, loadFamilyTrip, supabase } from "../lib/supabase";
+import type { AppData, FamilySession } from "../types";
 
 export type AppView =
   | "dashboard"
@@ -17,9 +17,24 @@ export type AppView =
 export function useAppState() {
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [data, setData] = useState<AppData>(() => loadTripSnapshot() ?? demoData);
-  const [loading, setLoading] = useState(hasSupabaseConfig);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(!navigator.onLine);
+  const [familyRefreshKey, setFamilyRefreshKey] = useState(0);
+  const [shareIntent] = useState(() => Boolean(new URLSearchParams(window.location.search).get("share")));
+  const [familySession, setFamilySession] = useState<FamilySession | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get("share") ?? "";
+    const savedName = localStorage.getItem("family-travel-display-name") ?? "";
+    const savedToken = localStorage.getItem("family-travel-share-token") ?? "";
+    const shareToken = urlToken || savedToken;
+    if (!shareToken || !savedName) return null;
+    return {
+      displayName: savedName,
+      shareToken,
+      permissions: { comments: false, votes: false, packingChecks: false }
+    };
+  });
 
   useEffect(() => {
     const onOnline = () => setOffline(false);
@@ -38,7 +53,7 @@ export function useAppState() {
 
   useEffect(() => {
     async function loadRemote() {
-      if (!supabase) return;
+      if (!supabase || familySession) return;
 
       setLoading(true);
       const { data: sessionData } = await supabase.auth.getSession();
@@ -65,6 +80,29 @@ export function useAppState() {
     void loadRemote();
   }, []);
 
+  useEffect(() => {
+    if (!familySession?.displayName || !familySession.shareToken || !hasSupabaseConfig) return;
+    const session = familySession;
+
+    async function loadFamily() {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await loadFamilyTrip(session.displayName, session.shareToken);
+        setData(result.data);
+        setFamilySession(result.session);
+        localStorage.setItem("family-travel-display-name", result.session.displayName);
+        localStorage.setItem("family-travel-share-token", result.session.shareToken);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not load the shared trip.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadFamily();
+  }, [familySession?.displayName, familySession?.shareToken, familyRefreshKey]);
+
   const role = useMemo(() => {
     return data.members.find((member) => member.profileId === data.currentUser.id)?.role ?? "viewer";
   }, [data.currentUser.id, data.members]);
@@ -78,6 +116,10 @@ export function useAppState() {
     error,
     offline,
     role,
+    accessMode: (familySession || shareIntent ? "family" : "admin") as "family" | "admin",
+    familySession,
+    setFamilySession,
+    refreshFamilySession: () => setFamilyRefreshKey((key) => key + 1),
     configured: hasSupabaseConfig
   };
 }

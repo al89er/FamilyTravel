@@ -12,7 +12,19 @@ import { ErrorState, LoadingState } from "./components/ui";
 import { useAppState, type AppView } from "./hooks/useAppState";
 
 export default function App() {
-  const { activeView, setActiveView, data, loading, error, offline, role } = useAppState();
+  const {
+    activeView,
+    setActiveView,
+    data,
+    loading,
+    error,
+    offline,
+    role,
+    accessMode,
+    familySession,
+    setFamilySession,
+    refreshFamilySession
+  } = useAppState();
 
   function openView(view: string) {
     setActiveView(view as AppView);
@@ -26,7 +38,7 @@ export default function App() {
           <p className="text-sm font-semibold text-brand-700">{data.trip.destination}</p>
           <h1 className="text-2xl font-bold text-ink sm:text-3xl">{pageTitle(activeView)}</h1>
         </div>
-        <AuthPanel />
+        <AuthPanel accessMode={accessMode} familySession={familySession} onFamilyJoin={setFamilySession} />
       </div>
 
       {loading ? <LoadingState /> : null}
@@ -34,11 +46,11 @@ export default function App() {
       {!loading ? (
         <>
           {activeView === "dashboard" ? <Dashboard data={data} openView={openView} /> : null}
-          {activeView === "itinerary" ? <Itinerary data={data} /> : null}
+          {activeView === "itinerary" ? <Itinerary data={data} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "map" ? <MapPlaces data={data} /> : null}
           {activeView === "documents" ? <Documents data={data} /> : null}
           {activeView === "expenses" ? <Expenses data={data} /> : null}
-          {activeView === "packing" ? <Packing data={data} /> : null}
+          {activeView === "packing" ? <Packing data={data} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "emergency" ? <Emergency data={data} /> : null}
           {activeView === "settings" ? <Settings data={data} role={role} /> : null}
         </>

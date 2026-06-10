@@ -1,81 +1,140 @@
 import { useState } from "react";
-import { Mail, Chrome } from "lucide-react";
+import { Link2, LogIn } from "lucide-react";
 import { Button, Card, ErrorState, Field } from "../components/ui";
-import { hasSupabaseConfig, signInWithEmail, signInWithGoogle } from "../lib/supabase";
+import { hasSupabaseConfig, signInWithPassword } from "../lib/supabase";
+import type { FamilySession } from "../types";
 
-export function AuthPanel() {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+export function AuthPanel({
+  accessMode,
+  familySession,
+  onFamilyJoin
+}: {
+  accessMode: "admin" | "family";
+  familySession: FamilySession | null;
+  onFamilyJoin: (session: FamilySession) => void;
+}) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [familyName, setFamilyName] = useState(familySession?.displayName ?? "");
+  const [shareToken, setShareToken] = useState(familySession?.shareToken ?? new URLSearchParams(window.location.search).get("share") ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function onEmailSubmit(event: React.FormEvent) {
+  async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
-    setStatus(null);
 
-    if (!email.includes("@")) {
-      setError("Enter a valid email address.");
+    if (username.trim().length < 3) {
+      setError("Enter your username.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Enter your password.");
       return;
     }
 
     setBusy(true);
     try {
-      const { error: authError } = await signInWithEmail(email);
+      const { error: authError } = await signInWithPassword(username, password);
       if (authError) throw authError;
-      setStatus("Check your email for the sign-in link.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Email sign-in failed.");
+      setError(err instanceof Error ? err.message : "Sign-in failed. Check your username and password.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function onGoogleSignIn() {
+  function onFamilySubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError(null);
-    try {
-      const { error: authError } = await signInWithGoogle();
-      if (authError) throw authError;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed.");
+
+    if (familyName.trim().length < 2) {
+      setError("Enter your name.");
+      return;
     }
+
+    if (shareToken.trim().length < 6) {
+      setError("Enter the family share token.");
+      return;
+    }
+
+    onFamilyJoin({
+      displayName: familyName.trim(),
+      shareToken: shareToken.trim(),
+      permissions: { comments: false, votes: false, packingChecks: false }
+    });
   }
 
   return (
     <Card className="p-4">
-      <h2 className="text-lg font-semibold text-slate-950">Sign in</h2>
+      <h2 className="text-lg font-semibold text-slate-950">{accessMode === "family" ? "Family access" : "Admin access"}</h2>
       <p className="mt-1 text-sm text-slate-600">
-        Demo data is shown until Supabase keys are configured and a session is active.
+        {accessMode === "family" ? "No account needed. Use your name and share token." : "Planner account managed in Supabase Auth."}
       </p>
       {!hasSupabaseConfig ? (
         <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
           Add your Supabase anon key in `.env.local` to enable authentication.
         </div>
       ) : null}
-      <form className="mt-4 space-y-3" onSubmit={onEmailSubmit}>
-        <Field label="Email address">
+      {accessMode === "family" ? (
+        <form className="mt-4 space-y-3" onSubmit={onFamilySubmit}>
+          <Field label="Your name">
+            <input
+              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              type="text"
+              autoComplete="name"
+              value={familyName}
+              onChange={(event) => setFamilyName(event.target.value)}
+              placeholder="Auntie Lina"
+            />
+          </Field>
+          <Field label="Share token">
+            <input
+              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              type="text"
+              value={shareToken}
+              onChange={(event) => setShareToken(event.target.value)}
+              placeholder="bali-family-2026"
+            />
+          </Field>
+          {error ? <ErrorState message={error} /> : null}
+          <Button type="submit" disabled={!hasSupabaseConfig}>
+            <Link2 className="h-4 w-4" aria-hidden="true" />
+            Open trip
+          </Button>
+        </form>
+      ) : (
+      <form className="mt-4 space-y-3" onSubmit={onSubmit}>
+        <Field label="Username">
           <input
             className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="name@example.com"
+            type="text"
+            autoComplete="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            placeholder="username"
+          />
+        </Field>
+        <Field label="Password">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
           />
         </Field>
         {error ? <ErrorState message={error} /> : null}
-        {status ? <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{status}</p> : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={busy || !hasSupabaseConfig}>
-            <Mail className="h-4 w-4" aria-hidden="true" />
-            Email link
-          </Button>
-          <Button variant="ghost" disabled={!hasSupabaseConfig} onClick={onGoogleSignIn}>
-            <Chrome className="h-4 w-4" aria-hidden="true" />
-            Google
+            <LogIn className="h-4 w-4" aria-hidden="true" />
+            Sign in
           </Button>
         </div>
       </form>
+      )}
     </Card>
   );
 }

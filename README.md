@@ -12,14 +12,14 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 
 ## Features
 
-- Email magic-link auth and Google OAuth wiring through Supabase
+- Two access modes: admin username/password and no-login family share links
 - Trip dashboard with countdown, hotel info, emergency summary, budget status, and quick actions
 - Shared itinerary with timeline/day grouping, categories, booking references, votes, and comments summary
 - Map places module with provider-ready placeholder abstraction
 - Documents vault metadata with Supabase Storage bucket and RLS policies
 - Expense tracker with category totals and balance summary
 - Shared and personal packing lists with per-person checked state
-- Family voting and comments data model
+- Family voting, comments, and packing checks through share-token RPCs
 - Emergency contacts, insurance, nearby hospitals, and private-aware medical notes
 - Trip settings for currency, timezone, date format, default visibility, and member permissions
 - Demo Bali Family Trip data in app and Supabase seed SQL
@@ -90,14 +90,64 @@ Demo seed data lives in:
 supabase/seed.sql
 ```
 
-## Auth Setup
+## Access Model
 
-In Supabase Dashboard:
+### Admin
 
-1. Enable email provider for magic-link login.
-2. Enable Google provider if you want Google login.
-3. Add local redirect URL: `http://localhost:5173`.
-4. Add production redirect URL after Cloudflare Pages deploys.
+1. Enable the Email provider with password sign-in.
+2. Disable public signups so only you create admin accounts.
+3. Create your user manually in Supabase Auth.
+4. For username-style login, create your Auth user email as `<username>@familytravel.local`, or change `VITE_AUTH_USERNAME_DOMAIN`.
+5. Add a matching row in `public.profiles` using your Auth user UUID.
+
+Example admin-created account:
+
+```text
+Username shown in app: afif
+Supabase Auth email: afif@familytravel.local
+```
+
+Admins can also type a full email address in the username field.
+
+### Family
+
+Family members do not need Supabase Auth accounts. They open a shared URL, enter their display name, and use a share token.
+
+Example:
+
+```text
+http://localhost:5174/?share=bali-family-2026
+```
+
+Create a share token for a real trip:
+
+```sql
+insert into public.trip_share_links (
+  trip_id,
+  token,
+  label,
+  allow_comments,
+  allow_votes,
+  allow_packing_checks
+)
+values (
+  '<trip-id>',
+  'your-private-family-token',
+  'Family share link',
+  true,
+  true,
+  true
+);
+```
+
+Family RPCs:
+
+- `get_family_trip(share_token, display_name)`
+- `add_family_comment(share_token, display_name, target_type, target_id, body)`
+- `cast_family_vote(share_token, display_name, itinerary_item_id, value)`
+- `set_family_packing_check(share_token, display_name, packing_item_id, checked)`
+
+Family users only receive shared itinerary items, shared document metadata, places, expenses, packing lists, comments, votes, and emergency contacts. Private documents, storage paths, medical notes, and admin-only insurance details are not exposed through the family RPC.
 
 ## Storage
 
@@ -130,10 +180,10 @@ After the first deploy, copy the Cloudflare Pages URL and add it to Supabase Aut
 
 ## Data Model Highlights
 
-- `trip_members` controls roles: `owner`, `member`, `viewer`
-- Owner can manage trip, itinerary, members, emergency info, and settings
-- Member can comment, vote, check packing items, and add expenses when permitted
-- Viewer gets read-only access
+- `trip_members` controls authenticated admin access
+- `trip_share_links` controls no-login family access
+- Admin can manage trip, itinerary, members, emergency info, documents, and settings
+- Family users can view shared data and optionally comment, vote, and check packing items
 - Private document metadata is visible only to owners or uploader
 - Medical notes are visible to the person and optionally to trip owners
 

@@ -1,8 +1,18 @@
 import { Clock, MapPin, MessageSquare, ThumbsUp } from "lucide-react";
+import { useState } from "react";
 import { Badge, Card, EmptyState, SectionHeader } from "../components/ui";
-import type { AppData, ItineraryItem } from "../types";
+import { addFamilyComment, castFamilyVote } from "../lib/supabase";
+import type { AppData, FamilySession, ItineraryItem, VoteValue } from "../types";
 
-export function Itinerary({ data }: { data: AppData }) {
+export function Itinerary({
+  data,
+  familySession,
+  onRefreshFamily
+}: {
+  data: AppData;
+  familySession: FamilySession | null;
+  onRefreshFamily?: () => void;
+}) {
   const itemsByDate = data.itinerary.reduce<Record<string, ItineraryItem[]>>((groups, item) => {
     groups[item.date] = [...(groups[item.date] ?? []), item].sort((a, b) => a.sortOrder - b.sortOrder);
     return groups;
@@ -22,7 +32,7 @@ export function Itinerary({ data }: { data: AppData }) {
             </div>
             <div className="space-y-4">
               {items.map((item) => (
-                <ItineraryRow key={item.id} item={item} data={data} />
+                <ItineraryRow key={item.id} item={item} data={data} familySession={familySession} onRefreshFamily={onRefreshFamily} />
               ))}
             </div>
           </Card>
@@ -32,10 +42,55 @@ export function Itinerary({ data }: { data: AppData }) {
   );
 }
 
-function ItineraryRow({ item, data }: { item: ItineraryItem; data: AppData }) {
+function ItineraryRow({
+  item,
+  data,
+  familySession,
+  onRefreshFamily
+}: {
+  item: ItineraryItem;
+  data: AppData;
+  familySession: FamilySession | null;
+  onRefreshFamily?: () => void;
+}) {
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const votes = data.votes.filter((vote) => vote.itineraryItemId === item.id);
   const comments = data.comments.filter((comment) => comment.targetId === item.id);
   const mustDo = votes.filter((vote) => vote.value === "must_do").length;
+
+  async function submitVote(value: VoteValue) {
+    if (!familySession) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: voteError } = await castFamilyVote(familySession, item.id, value);
+      if (voteError) throw voteError;
+      onRefreshFamily?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Vote failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitComment(event: React.FormEvent) {
+    event.preventDefault();
+    if (!familySession || !comment.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: commentError } = await addFamilyComment(familySession, "itinerary_item", item.id, comment.trim());
+      if (commentError) throw commentError;
+      setComment("");
+      onRefreshFamily?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Comment failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <article className="grid gap-3 rounded-lg border border-slate-200 p-4 sm:grid-cols-[7rem_1fr]">
@@ -68,6 +123,52 @@ function ItineraryRow({ item, data }: { item: ItineraryItem; data: AppData }) {
           </span>
           {item.bookingReference ? <span>Ref {item.bookingReference}</span> : null}
         </div>
+        {familySession ? (
+          <div className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3">
+            {familySession.permissions.votes ? (
+              <div className="flex flex-wrap gap-2">
+                {(["must_do", "interested", "neutral", "skip"] as VoteValue[]).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void submitVote(value)}
+                    className="min-h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                  >
+                    {value.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {familySession.permissions.comments ? (
+              <form className="flex gap-2" onSubmit={submitComment}>
+                <input
+                  className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-300 px-3 text-sm"
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  placeholder="Add a family note"
+                />
+                <button
+                  type="submit"
+                  disabled={busy || !comment.trim()}
+                  className="min-h-10 rounded-lg bg-brand-700 px-3 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </form>
+            ) : null}
+            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+          </div>
+        ) : null}
+        {comments.length ? (
+          <div className="mt-3 space-y-2">
+            {comments.slice(0, 3).map((entry) => (
+              <p key={entry.id} className="rounded-lg bg-white text-sm text-slate-700">
+                {entry.body}
+              </p>
+            ))}
+          </div>
+        ) : null}
       </div>
     </article>
   );

@@ -180,3 +180,16 @@ export interface AppData {
   emergencyContacts: EmergencyContact[];
   insurance: TravelInsurance;
 }
+
+export interface FamilyPermissions {
+  comments: boolean;
+  votes: boolean;
+  packingChecks: boolean;
+}
+
+export interface FamilySession {
+  displayName: string;
+  shareToken: string;
+  guestId?: string;
+  permissions: FamilyPermissions;
+}
