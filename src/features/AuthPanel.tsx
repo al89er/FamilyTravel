@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link2, LogIn } from "lucide-react";
 import { Button, Card, ErrorState, Field } from "../components/ui";
-import { hasSupabaseConfig, signInWithPassword } from "../lib/supabase";
+import {
+  completeRequiredPasswordChange,
+  getPasswordChangeRequired,
+  hasSupabaseConfig,
+  signInWithPassword
+} from "../lib/supabase";
 import type { FamilySession } from "../types";
 
 export function AuthPanel({
@@ -18,7 +23,10 @@ export function AuthPanel({
   const [familyName, setFamilyName] = useState(familySession?.displayName ?? "");
   const [shareToken, setShareToken] = useState(familySession?.shareToken ?? new URLSearchParams(window.location.search).get("share") ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -36,10 +44,36 @@ export function AuthPanel({
 
     setBusy(true);
     try {
-      const { error: authError } = await signInWithPassword(username, password);
+      const { data, error: authError } = await signInWithPassword(username, password);
       if (authError) throw authError;
+      if (data.user && (await getPasswordChangeRequired(data.user.id))) {
+        setMustChangePassword(true);
+        setStatus("Set a new password before continuing.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed. Check your username and password.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onPasswordChangeSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+
+    if (newPassword.length < 8) {
+      setError("New password must be at least 8 characters.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await completeRequiredPasswordChange(newPassword);
+      setMustChangePassword(false);
+      setNewPassword("");
+      setStatus("Password updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Password update failed.");
     } finally {
       setBusy(false);
     }
@@ -77,7 +111,22 @@ export function AuthPanel({
           Add your Supabase anon key in `.env.local` to enable authentication.
         </div>
       ) : null}
-      {accessMode === "family" ? (
+      {mustChangePassword ? (
+        <form className="mt-4 space-y-3" onSubmit={onPasswordChangeSubmit}>
+          <Field label="New password">
+            <input
+              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+            />
+          </Field>
+          {error ? <ErrorState message={error} /> : null}
+          {status ? <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{status}</p> : null}
+          <Button type="submit" disabled={busy || !hasSupabaseConfig}>Update password</Button>
+        </form>
+      ) : accessMode === "family" ? (
         <form className="mt-4 space-y-3" onSubmit={onFamilySubmit}>
           <Field label="Your name">
             <input
@@ -127,6 +176,7 @@ export function AuthPanel({
           />
         </Field>
         {error ? <ErrorState message={error} /> : null}
+        {status ? <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{status}</p> : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={busy || !hasSupabaseConfig}>
             <LogIn className="h-4 w-4" aria-hidden="true" />

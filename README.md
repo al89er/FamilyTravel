@@ -8,11 +8,11 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 - Tailwind CSS
 - Supabase Auth, Postgres, Realtime-ready schema, Storage
 - PWA install support with offline shell/data cache
-- Cloudflare Pages deployment
+- GitHub Pages deployment
 
 ## Features
 
-- Two access modes: admin username/password and no-login family share links
+- Three access roles: Owner, Organizer, and no-login Family Guest
 - Trip dashboard with countdown, hotel info, emergency summary, budget status, and quick actions
 - Shared itinerary with timeline/day grouping, categories, booking references, votes, and comments summary
 - Map places module with provider-ready placeholder abstraction
@@ -94,11 +94,14 @@ supabase/seed.sql
 
 ### Admin
 
+The authenticated planning roles are Owner and Organizer.
+
 1. Enable the Email provider with password sign-in.
 2. Disable public signups so only you create admin accounts.
-3. Create your user manually in Supabase Auth.
+3. Create the first Owner user manually in Supabase Auth.
 4. For username-style login, create your Auth user email as `<username>@familytravel.local`, or change `VITE_AUTH_USERNAME_DOMAIN`.
 5. Add a matching row in `public.profiles` using your Auth user UUID.
+6. Add the Owner to `trip_members` with `role = 'owner'`.
 
 Example admin-created account:
 
@@ -108,6 +111,37 @@ Supabase Auth email: afif@familytravel.local
 ```
 
 Admins can also type a full email address in the username field.
+
+### Organizers
+
+Organizers are authenticated users assigned per trip. Owners manage them from Trip Settings -> Organizers.
+
+Owner actions:
+
+- Add Organizer
+- Remove Organizer
+- Change Organizer display name
+- Reset Organizer password
+- Transfer ownership to an Organizer
+
+The browser calls the `manage-organizer` Edge Function. The function verifies the caller is the trip Owner, then uses the Supabase service role server-side.
+
+Deploy the function:
+
+```powershell
+npx.cmd supabase functions deploy manage-organizer
+```
+
+Required Edge Function environment:
+
+```text
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+AUTH_USERNAME_DOMAIN=familytravel.local
+```
+
+Supabase provides the first three values automatically in hosted Edge Functions. `AUTH_USERNAME_DOMAIN` is optional and defaults to `familytravel.local`.
 
 ### Family
 
@@ -159,30 +193,53 @@ trip-documents
 
 Document object access is controlled by RLS policies that check trip membership and the matching row in `public.documents`.
 
-## Cloudflare Pages Deployment
+## GitHub Pages Deployment
 
-Use these settings:
-
-- Framework preset: `Vite`
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Node version: `20`
-
-Add Cloudflare Pages environment variables:
+The repo includes a GitHub Actions workflow:
 
 ```text
-VITE_SUPABASE_URL=https://izbuhrfevmmaeqgzilhw.supabase.co
-VITE_SUPABASE_ANON_KEY=your Supabase anon key
-VITE_MAP_PROVIDER_KEY=
+.github/workflows/deploy-pages.yml
 ```
 
-After the first deploy, copy the Cloudflare Pages URL and add it to Supabase Auth redirect URLs.
+In GitHub repo settings:
+
+1. Go to Settings -> Pages.
+2. Set Source to `GitHub Actions`.
+3. Keep these repository secrets available:
+
+```text
+SUPABASE_URL
+SUPABASE_ANON_KEY
+```
+
+The workflow maps them to Vite build variables:
+
+```text
+VITE_SUPABASE_URL=${SUPABASE_URL}
+VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+VITE_AUTH_USERNAME_DOMAIN=familytravel.local
+```
+
+The production Vite base path is `/FamilyTravel/`, so the deployed URL is expected to be:
+
+```text
+https://al89er.github.io/FamilyTravel/
+```
+
+Add this URL to Supabase Auth redirect URLs:
+
+```text
+https://al89er.github.io/FamilyTravel/
+```
+
+Keep `SUPABASE_SERVICE_ROLE_KEY` out of the frontend. It is only for server-side code such as Supabase Edge Functions or secure CI tasks.
 
 ## Data Model Highlights
 
-- `trip_members` controls authenticated admin access
+- `trip_members` controls authenticated Owner/Organizer access
 - `trip_share_links` controls no-login family access
-- Admin can manage trip, itinerary, members, emergency info, documents, and settings
+- Owner can manage trip, organizers, ownership transfer, share links, emergency info, documents, and settings
+- Organizer can manage planning data only for trips they are assigned to
 - Family users can view shared data and optionally comment, vote, and check packing items
 - Private document metadata is visible only to owners or uploader
 - Medical notes are visible to the person and optionally to trip owners

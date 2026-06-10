@@ -1,4 +1,4 @@
-export type Role = "owner" | "member" | "viewer";
+export type Role = "owner" | "organizer";
 export type Visibility = "shared" | "private" | "planner_only";
 export type ItineraryCategory =
   | "flight"
@@ -31,11 +31,13 @@ export type CommentTarget = "trip" | "itinerary_item" | "expense" | "document" |
 
 export interface Profile {
   id: string;
+  username?: string;
   displayName: string;
   avatarUrl?: string;
   medicalNotes?: string;
   allergies?: string;
   medications?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface Trip {
@@ -56,9 +58,12 @@ export interface Trip {
 export interface TripMember {
   id: string;
   tripId: string;
+  userId: string;
   profileId: string;
   role: Role;
   canAddExpenses: boolean;
+  invitedBy?: string;
+  createdAt?: string;
   profile: Profile;
 }
 

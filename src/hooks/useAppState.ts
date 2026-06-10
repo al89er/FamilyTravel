@@ -104,7 +104,7 @@ export function useAppState() {
   }, [familySession?.displayName, familySession?.shareToken, familyRefreshKey]);
 
   const role = useMemo(() => {
-    return data.members.find((member) => member.profileId === data.currentUser.id)?.role ?? "viewer";
+    return data.members.find((member) => member.profileId === data.currentUser.id)?.role ?? "organizer";
   }, [data.currentUser.id, data.members]);
 
   return {

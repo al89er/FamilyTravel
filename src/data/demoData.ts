@@ -26,26 +26,23 @@ export const demoData: AppData = {
     {
       id: "20000000-0000-0000-0000-000000000001",
       tripId: "10000000-0000-0000-0000-000000000001",
+      userId: "00000000-0000-0000-0000-000000000001",
       profileId: "00000000-0000-0000-0000-000000000001",
       role: "owner",
       canAddExpenses: true,
-      profile: { id: "00000000-0000-0000-0000-000000000001", displayName: "Aisha Planner" }
+      createdAt: "2026-06-10T04:00:00Z",
+      profile: { id: "00000000-0000-0000-0000-000000000001", username: "aisha", displayName: "Aisha Planner" }
     },
     {
       id: "20000000-0000-0000-0000-000000000002",
       tripId: "10000000-0000-0000-0000-000000000001",
+      userId: "00000000-0000-0000-0000-000000000002",
       profileId: "00000000-0000-0000-0000-000000000002",
-      role: "member",
+      role: "organizer",
       canAddExpenses: true,
-      profile: { id: "00000000-0000-0000-0000-000000000002", displayName: "Omar" }
-    },
-    {
-      id: "20000000-0000-0000-0000-000000000003",
-      tripId: "10000000-0000-0000-0000-000000000001",
-      profileId: "00000000-0000-0000-0000-000000000003",
-      role: "viewer",
-      canAddExpenses: false,
-      profile: { id: "00000000-0000-0000-0000-000000000003", displayName: "Grandma" }
+      invitedBy: "00000000-0000-0000-0000-000000000001",
+      createdAt: "2026-06-10T04:05:00Z",
+      profile: { id: "00000000-0000-0000-0000-000000000002", username: "omar", displayName: "Omar" }
     }
   ],
   itinerary: [

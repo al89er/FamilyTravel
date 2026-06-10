@@ -39,6 +39,32 @@ export async function signInWithPassword(username: string, password: string) {
   });
 }
 
+export async function getPasswordChangeRequired(userId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("must_change_password")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data?.must_change_password);
+}
+
+export async function completeRequiredPasswordChange(newPassword: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+  if (passwordError) throw passwordError;
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ must_change_password: false })
+    .eq("id", userData.user.id);
+  if (profileError) throw profileError;
+}
+
 export async function signOut() {
   if (!supabase) return;
   await supabase.auth.signOut();
@@ -95,6 +121,37 @@ export async function setFamilyPackingCheck(session: FamilySession, packingItemI
   });
 }
 
+export type OrganizerAction =
+  | {
+      action: "addOrganizer";
+      tripId: string;
+      username: string;
+      displayName: string;
+      temporaryPassword: string;
+    }
+  | {
+      action: "removeOrganizer" | "resetPassword" | "transferOwnership";
+      tripId: string;
+      organizerUserId: string;
+      temporaryPassword?: string;
+    }
+  | {
+      action: "updateDisplayName";
+      tripId: string;
+      organizerUserId: string;
+      displayName: string;
+    };
+
+export async function manageOrganizer(payload: OrganizerAction) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("manage-organizer", {
+    body: payload
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data as { username?: string; temporaryPassword?: string; userId?: string; ok?: boolean };
+}
+
 interface FamilyTripPayload {
   guestId: string;
   permissions: FamilyPermissions;
@@ -136,8 +193,9 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       {
         id: guestId,
         tripId: asString(payload.trip.id),
+        userId: guestId,
         profileId: guestId,
-        role: "viewer",
+        role: "organizer",
         canAddExpenses: false,
         profile: { id: guestId, displayName }
       }
