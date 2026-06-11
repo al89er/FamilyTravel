@@ -73,11 +73,8 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
   }, [filteredPlaces, itineraryById]);
 
   const routePlaces = useMemo(() => {
-    if (filters.date === "all") return [];
-    return markerPlaces
-      .filter((place) => place.itineraryItem?.date === filters.date)
-      .sort((left, right) => (left.itineraryItem?.sortOrder ?? 9999) - (right.itineraryItem?.sortOrder ?? 9999));
-  }, [filters.date, markerPlaces]);
+    return [...markerPlaces].sort(compareRoutePlaces);
+  }, [markerPlaces]);
 
   return (
     <div className="space-y-5">
@@ -127,7 +124,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
         <Badge>{filteredPlaces.length} places</Badge>
         <Badge>{markerPlaces.length} mapped</Badge>
-        {filters.date !== "all" ? <Badge>{routePlaces.length > 1 ? "Route drawn" : "Add two mapped itinerary places for a route"}</Badge> : null}
+        <Badge>{routePlaces.length > 1 ? "Route drawn" : "Add two mapped places for a route"}</Badge>
       </div>
 
       {filteredPlaces.length === 0 ? (
@@ -197,6 +194,14 @@ function RouteArrows({ places }: { places: CoordinatePlace[] }) {
         return <Marker key={`${place.id}-${next.id}`} position={midpoint} interactive={false} icon={arrowIcon(bearing(place, next))} />;
       })}
     </>
+  );
+}
+
+function compareRoutePlaces(left: CoordinatePlace, right: CoordinatePlace) {
+  return (
+    (left.itineraryItem?.date ?? "").localeCompare(right.itineraryItem?.date ?? "") ||
+    (left.routeOrder ?? 9999) - (right.routeOrder ?? 9999) ||
+    left.name.localeCompare(right.name)
   );
 }
 
