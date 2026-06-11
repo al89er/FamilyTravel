@@ -72,19 +72,37 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
 
   async function addOrganizer(event: React.FormEvent) {
     event.preventDefault();
+    const cleanUsername = username.trim().toLowerCase();
+    const cleanDisplayName = displayName.trim();
+
+    if (cleanDisplayName.length < 2 || cleanDisplayName.length > 120) {
+      setError("Display name must be 2 to 120 characters.");
+      return;
+    }
+
+    if (cleanUsername.length < 3 || cleanUsername.length > 80 || !/^[a-z0-9._@-]+$/.test(cleanUsername)) {
+      setError("Username must be 3 to 80 characters and can use letters, numbers, dots, underscores, hyphens, or a full email address.");
+      return;
+    }
+
+    if (temporaryPassword.length < 8 || temporaryPassword.length > 128) {
+      setError("Temporary password must be 8 to 128 characters.");
+      return;
+    }
+
     await run(async () => {
       const result = await manageOrganizer({
         action: "addOrganizer",
         tripId: data.trip.id,
-        displayName,
-        username,
+        displayName: cleanDisplayName,
+        username: cleanUsername,
         temporaryPassword
       });
       setDisplayName("");
       setUsername("");
       setTemporaryPassword("");
       return result;
-    }, `Organizer created. Share username "${username}" and the temporary password securely.`);
+    }, `Organizer created. Share username "${cleanUsername}" and the temporary password securely.`);
   }
 
   if (role !== "owner") {

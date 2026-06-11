@@ -393,9 +393,23 @@ export async function manageOrganizer(payload: OrganizerAction) {
   const { data, error } = await supabase.functions.invoke("manage-organizer", {
     body: payload
   });
-  if (error) throw error;
+  if (error) throw await functionErrorToError(error);
   if (data?.error) throw new Error(data.error);
   return data as { username?: string; temporaryPassword?: string; userId?: string; ok?: boolean };
+}
+
+async function functionErrorToError(error: unknown) {
+  const context = (error as { context?: Response }).context;
+  if (context) {
+    try {
+      const payload = (await context.clone().json()) as { error?: string };
+      if (payload.error) return new Error(payload.error);
+    } catch {
+      // Fall through to the SDK error message.
+    }
+  }
+
+  return error instanceof Error ? error : new Error("Edge Function returned an error.");
 }
 
 interface FamilyTripPayload {
