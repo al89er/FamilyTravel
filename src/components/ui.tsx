@@ -103,10 +103,39 @@ export function categoryStyles(cat: string): CategoryStyle {
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <section
-      className={`rounded-2xl bg-surface shadow-card ring-1 ring-border/40 ${className}`}
+      className={`rounded-3xl bg-surface shadow-soft ring-1 ring-border/50 ${className}`}
     >
       {children}
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Travel UI Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function GlassPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-3xl bg-white/15 backdrop-blur-md ring-1 ring-white/20 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function StatPill({ label, value, inverse = false }: { label: string; value: string; inverse?: boolean }) {
+  if (inverse) {
+    return (
+      <div className="text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
+        <p className="mt-0.5 text-sm font-bold text-white truncate">{value}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-muted/50 px-3 py-2 text-center ring-1 ring-border/30">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">{label}</span>
+      <span className="mt-0.5 text-sm font-bold text-primary">{value}</span>
+    </div>
   );
 }
 
@@ -316,10 +345,10 @@ export function Button({
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const formInputClass =
-  "min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-primary placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";
+  "min-h-12 w-full rounded-2xl border border-border bg-surface px-4 py-2.5 text-primary placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";
 
 export const formTextareaClass =
-  "min-h-24 w-full rounded-xl border border-border bg-surface px-3 py-2 text-primary placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";
+  "min-h-24 w-full rounded-2xl border border-border bg-surface px-4 py-3 text-primary placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";
 
 export const formSelectClass =
-  "min-h-11 w-full rounded-xl border border-border bg-surface px-3 py-2 text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";
+  "min-h-12 w-full rounded-2xl border border-border bg-surface px-4 py-2.5 text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25 disabled:cursor-not-allowed disabled:opacity-60 transition-shadow";

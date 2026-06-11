@@ -17,8 +17,8 @@ import type { AppView } from "../hooks/useAppState";
 
 const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "dashboard", label: "Home", icon: Home },
-  { id: "itinerary", label: "Itinerary", icon: CalendarDays },
-  { id: "map", label: "Map", icon: Map },
+  { id: "itinerary", label: "Plan", icon: CalendarDays },
+  { id: "map", label: "Explore", icon: Map },
   { id: "expenses", label: "Money", icon: ReceiptText },
   { id: "documents", label: "Docs", icon: FileText },
   { id: "packing", label: "Packing", icon: Luggage },

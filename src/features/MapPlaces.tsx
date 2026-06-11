@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
@@ -77,37 +77,39 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
   }, [markerPlaces]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <SectionHeader
-        title="Map Places"
-        eyebrow="OpenStreetMap route planning"
+        title="Explore"
+        eyebrow="Interactive map and destination guide"
         action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add place</Button> : null}
       />
       {canEdit && showForm ? (
-        <PlaceForm
-          data={data}
-          onCancel={() => setShowForm(false)}
-          onSaved={async () => {
-            setShowForm(false);
-            await onRefresh?.();
-          }}
-        />
+        <div className="animate-in fade-in slide-in-from-top-4 mb-8">
+          <PlaceForm
+            data={data}
+            onCancel={() => setShowForm(false)}
+            onSaved={async () => {
+              setShowForm(false);
+              await onRefresh?.();
+            }}
+          />
+        </div>
       ) : null}
 
-      <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col gap-4 mb-4">
         {/* Day filter chips */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted">Day</span>
+        <div className="flex flex-wrap gap-2 items-center bg-surface p-2 rounded-2xl border border-border/50 shadow-sm w-fit">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted px-2">Day</span>
           <FilterChip active={filters.date === "all"} onClick={() => setFilters(c => ({ ...c, date: "all" }))}>All</FilterChip>
           {itineraryDates.map((date) => (
             <FilterChip key={date} active={filters.date === date} onClick={() => setFilters(c => ({ ...c, date }))}>
-              {formatDateLabel(date, data.trip.dateFormat)}
+              {formatDateLabel(date, data.trip.dateFormat).split(',')[0]}
             </FilterChip>
           ))}
         </div>
         {/* Category filter chips */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-bold uppercase tracking-wider text-muted">Type</span>
+        <div className="flex flex-wrap gap-2 items-center bg-surface p-2 rounded-2xl border border-border/50 shadow-sm w-fit">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted px-2">Type</span>
           <FilterChip active={filters.category === "all"} onClick={() => setFilters(c => ({ ...c, category: "all" }))}>All</FilterChip>
           {placeCategories.map((category) => (
             <FilterChip key={category} active={filters.category === category} onClick={() => setFilters(c => ({ ...c, category }))}
@@ -118,37 +120,45 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="h-[360px] min-h-[320px] w-full sm:h-[440px]">
+      <Card className="overflow-hidden rounded-3xl shadow-soft border border-border/50 bg-surface">
+        <div className="h-[360px] min-h-[320px] w-full sm:h-[440px] relative">
           <LeafletTripMap places={markerPlaces} routePlaces={routePlaces} dateFormat={data.trip.dateFormat} />
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-secondary">
-        <Badge>{filteredPlaces.length} places</Badge>
-        <Badge>{markerPlaces.length} mapped</Badge>
-        <Badge>{routePlaces.length > 1 ? "Route drawn" : "Add two mapped places for a route"}</Badge>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          <MapIcon className="h-3.5 w-3.5" />
+          {markerPlaces.length} mapped
+        </div>
+        {routePlaces.length > 1 ? (
+          <div className="flex items-center gap-1.5 rounded-full bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-bold text-sky-700 dark:text-sky-400">
+            <Route className="h-3.5 w-3.5" />
+            Route drawn
+          </div>
+        ) : null}
       </div>
 
       {filteredPlaces.length === 0 ? (
         <EmptyState 
           icon={<MapPinned className="h-8 w-8" />}
-          title="No places match" 
-          body="Add hotels, restaurants, attractions, pharmacies, hospitals, and meeting points." 
+          title="Add your first place" 
+          body="Hotels, restaurants, attractions, pharmacies, and meeting points will appear here." 
         />
       ) : (
-        <div className="space-y-3">
-          {filteredPlaces.map((place, idx) => (
-            <div key={place.id} className="flex gap-3">
-              {/* Numbered place indicator */}
-              <div className="shrink-0 mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm">
-                {idx + 1}
-              </div>
-              <div className="flex-1 min-w-0">
-                <PlaceCard data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} />
-              </div>
-            </div>
-          ))}
+        <div className="space-y-4 mt-8">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2">
+              <Star className="h-4 w-4" /> 
+              {filters.date !== "all" ? "Today's Route" : "Trip Stops"}
+            </h3>
+            <div className="h-px flex-1 bg-border/50 ml-2" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+            {filteredPlaces.map((place, idx) => (
+              <PlaceCard key={place.id} data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} listIndex={idx + 1} />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -220,7 +230,7 @@ function compareRoutePlaces(left: CoordinatePlace, right: CoordinatePlace) {
   );
 }
 
-function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh }: { data: AppData; place: Place; itineraryItem?: ItineraryItem; canEdit: boolean; onRefresh?: () => Promise<void> }) {
+function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }: { data: AppData; place: Place; itineraryItem?: ItineraryItem; canEdit: boolean; onRefresh?: () => Promise<void>; listIndex: number }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -243,41 +253,44 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh }: { data: A
     return <PlaceForm data={data} place={place} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
   }
 
+  const isHospital = place.category === "hospital";
+
   return (
-    <Card className="p-4">
-      <div className="flex items-start gap-3">
-        <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-xl ${place.category === "hospital" ? "bg-red-100 dark:bg-red-950" : "bg-primary/10"}`}>
-          {place.category === "hospital" ? (
-            <Hospital className="h-5 w-5 text-red-600 dark:text-red-400" />
-          ) : (
-            <MapPinned className="h-5 w-5 text-primary" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-primary">{place.name}</h3>
-            <Badge tone="slate">{formatCategory(place.category)}</Badge>
-            {place.visibility !== "shared" && <Badge tone="zinc">{place.visibility.replace("_", " ")}</Badge>}
+    <Card className="relative overflow-hidden shadow-soft border border-border/50 rounded-3xl p-4 sm:p-5 group hover:shadow-md transition-all bg-surface">
+      <div className="flex gap-4 sm:gap-5">
+        <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl transition-colors ${isHospital ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400" : "bg-primary/10 text-primary"}`}>
+          {isHospital ? <Hospital className="h-8 w-8" /> : <MapPinned className="h-8 w-8" />}
+          
+          <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${isHospital ? "bg-red-600" : "bg-primary"} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
+            {listIndex}
           </div>
-          <p className="mt-1 text-sm text-secondary">{place.address || "No address saved"}</p>
-          {itineraryItem ? <p className="mt-1 text-xs text-muted">{formatDateLabel(itineraryItem.date, data.trip.dateFormat)} · Stop {itineraryItem.sortOrder}: {itineraryItem.title}</p> : null}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h3 className="font-bold text-lg text-primary truncate">{place.name}</h3>
+            <Badge tone="slate" className="capitalize text-[10px]">{formatCategory(place.category)}</Badge>
+            {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px]">{place.visibility.replace("_", " ")}</Badge>}
+          </div>
+          <p className="mt-1 text-sm font-medium text-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
+          {itineraryItem ? <p className="mt-1.5 text-xs font-bold text-muted uppercase tracking-wider">{formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}</p> : null}
           {place.latitude != null && place.longitude != null ? (
-            <p className="mt-1 text-xs text-muted">{place.latitude}, {place.longitude}</p>
+            null // don't show raw coords unless needed, clean UI
           ) : (
-            <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-warning/10 px-2.5 py-1.5 ring-1 ring-warning/20">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
-              <p className="text-xs font-medium text-warning">No coordinates — place appears in list only</p>
+            <div className="mt-2.5 flex items-center gap-1.5 rounded-xl bg-warning/10 px-3 py-2 ring-1 ring-warning/20">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+              <p className="text-[11px] font-bold uppercase tracking-wider text-warning">No coordinates — list only</p>
             </div>
           )}
-          {place.notes ? <p className="mt-2 text-sm text-secondary">{place.notes}</p> : null}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button variant="ghost" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
-              <ExternalLink className="h-4 w-4" aria-hidden="true" />Open in Google Maps
+          {place.notes ? <p className="mt-3 text-sm text-secondary bg-muted/40 p-3 rounded-xl border border-border/40">{place.notes}</p> : null}
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-3">
+            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
+              <ExternalLink className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Maps
             </Button>
             {canEdit ? (
               <>
-                <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
-                <Button variant="ghost" disabled={busy} onClick={() => void remove()}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
+                <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-secondary hover:bg-muted" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
+                <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger hover:bg-danger/10" disabled={busy} onClick={() => void remove()}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
               </>
             ) : null}
           </div>
@@ -397,8 +410,9 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
   }
 
   return (
-    <Card className="p-4">
-      <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
+    <Card className="p-4 sm:p-6 rounded-3xl shadow-soft border-border/50 bg-surface">
+      <h3 className="font-bold text-lg text-primary mb-4">{place ? "Edit Destination" : "Add a Place"}</h3>
+      <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
         <div className="space-y-2 md:col-span-2">
           <Field label="Search place">
             <input
@@ -408,39 +422,39 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </Field>
-          <p className="text-xs text-muted">Search is powered by OpenStreetMap Nominatim. Please verify coordinates before travel.</p>
-          {searchLoading ? <p className="text-sm text-secondary">Searching places...</p> : null}
-          {searchError ? <p className="text-sm text-danger">{searchError}</p> : null}
+          <p className="text-[11px] text-muted font-medium uppercase tracking-wider">Search powered by OpenStreetMap.</p>
+          {searchLoading ? <p className="text-sm font-semibold text-primary">Searching...</p> : null}
+          {searchError ? <p className="text-sm font-semibold text-danger">{searchError}</p> : null}
           {searchResults.length ? (
-            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm">
               {searchResults.map((result) => (
                 <button
-                  className="block w-full border-b border-border px-3 py-3 text-left last:border-b-0 hover:bg-muted focus:bg-muted"
+                  className="block w-full border-b border-border/50 px-4 py-3 text-left last:border-b-0 hover:bg-muted focus:bg-muted transition-colors"
                   key={`${result.osm_type ?? "place"}-${result.osm_id ?? result.place_id ?? result.display_name}`}
                   type="button"
                   onClick={() => selectSearchResult(result)}
                 >
-                  <span className="block text-sm font-semibold text-primary">{result.name || result.display_name.split(",")[0]}</span>
-                  <span className="mt-1 block text-xs leading-5 text-secondary">{result.display_name}</span>
+                  <span className="block text-sm font-bold text-primary">{result.name || result.display_name.split(",")[0]}</span>
+                  <span className="mt-1 block text-xs font-medium text-secondary truncate">{result.display_name}</span>
                 </button>
               ))}
             </div>
           ) : null}
         </div>
-        <Field label="Name"><input className={formInputClass} value={form.name} onChange={(event) => update("name", event.target.value)} /></Field>
+        <Field label="Name *"><input className={formInputClass} value={form.name} onChange={(event) => update("name", event.target.value)} required /></Field>
         <Field label="Category"><select className={formSelectClass} value={form.category} onChange={(event) => update("category", event.target.value as PlaceCategory)}>{placeCategories.map((category) => <option key={category} value={category}>{formatCategory(category)}</option>)}</select></Field>
         <Field label="Visibility"><select className={formSelectClass} value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility.replace("_", " ")}</option>)}</select></Field>
         <Field label="Linked itinerary item"><select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}><option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.date} - {item.title}</option>)}</select></Field>
-        <Field label="Address"><input className={formInputClass} value={form.address} onChange={(event) => update("address", event.target.value)} /></Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="md:col-span-2"><Field label="Address"><input className={formInputClass} value={form.address} onChange={(event) => update("address", event.target.value)} /></Field></div>
+        <div className="grid grid-cols-2 gap-4 md:col-span-2">
           <Field label="Latitude"><input type="number" min="-90" max="90" step="0.0000001" className={formInputClass} value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
           <Field label="Longitude"><input type="number" min="-180" max="180" step="0.0000001" className={formInputClass} value={form.longitude ?? ""} onChange={(event) => update("longitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
         </div>
-        <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
+        <div className="md:col-span-2"><Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field></div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2">
-          <Button type="submit" disabled={busy}>Save</Button>
-          <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
+        <div className="flex gap-2 md:col-span-2 pt-2 border-t border-border/50">
+          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
+          <Button type="submit" disabled={busy}>Save destination</Button>
         </div>
       </form>
     </Card>
@@ -448,10 +462,10 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
 }
 
 function numberedIcon(number: number, isHospital: boolean) {
-  const color = isHospital ? "#b91c1c" : "#0f766e";
+  const color = isHospital ? "#dc2626" : "#0f766e";
   return L.divIcon({
     className: "",
-    html: `<div class="map-numbered-marker" style="background:${color}">${number}</div>`,
+    html: `<div class="map-numbered-marker shadow-sm" style="background:${color}">${number}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 30],
     popupAnchor: [0, -30]
@@ -461,7 +475,7 @@ function numberedIcon(number: number, isHospital: boolean) {
 function arrowIcon(angle: number) {
   return L.divIcon({
     className: "",
-    html: `<div class="map-route-arrow" style="transform: rotate(${angle}deg)">&#9650;</div>`,
+    html: `<div class="map-route-arrow text-primary" style="transform: rotate(${angle}deg)">&#9650;</div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12]
   });
@@ -502,10 +516,10 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+      className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm ${
         active
-          ? "bg-primary text-primary-foreground shadow-sm"
-          : "bg-surface text-secondary ring-1 ring-border hover:bg-muted hover:text-primary"
+          ? "bg-primary text-primary-foreground ring-1 ring-primary"
+          : "bg-surface text-secondary ring-1 ring-border/50 hover:bg-muted hover:text-primary hover:shadow-md"
       }`}
     >
       {children}

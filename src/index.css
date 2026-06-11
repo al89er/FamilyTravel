@@ -4,16 +4,16 @@
 
 :root {
   /* ── Light mode ── */
-  --bg-app: #f3f6fb;
+  --bg-app: #fdfbf7;
   --bg-surface: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-muted: #eef2f7;
+  --bg-elevated: #faf9f6;
+  --bg-muted: #f1f0ea;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-primary: #172033;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
 
-  --border-default: #e2e8f0;
+  --border-default: #e5e3db;
 
   --color-primary: #0f766e;
   --color-primary-hover: #0d9488;
@@ -35,16 +35,16 @@
 
 .dark {
   /* ── Dark mode ── */
-  --bg-app: #0c1525;
+  --bg-app: #0b1120;
   --bg-surface: #111827;
-  --bg-elevated: #1e293b;
-  --bg-muted: #2d3748;
+  --bg-elevated: #1f2937;
+  --bg-muted: #1e293b;
 
-  --text-primary: #f1f5f9;
+  --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
 
-  --border-default: #2d3748;
+  --border-default: #1f2937;
 
   --color-primary: #2dd4bf;
   --color-primary-hover: #5eead4;

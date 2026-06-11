@@ -1,4 +1,4 @@
-import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
+import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
@@ -24,52 +24,58 @@ export function Itinerary({
   }, {});
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <SectionHeader
-        title="Shared Itinerary"
-        eyebrow="Timeline, day, and family view"
-        action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add item</Button> : null}
+        title="Trip Plan"
+        eyebrow="Your day-by-day travel timeline"
+        action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add plan</Button> : null}
       />
       {canEdit && showForm ? (
-        <ItineraryForm
-          trip={data.trip}
-          items={data.itinerary}
-          onCancel={() => setShowForm(false)}
-          onSaved={async () => {
-            setShowForm(false);
-            await onRefresh?.();
-          }}
-        />
+        <div className="animate-in fade-in slide-in-from-top-4 mb-8">
+          <ItineraryForm
+            trip={data.trip}
+            items={data.itinerary}
+            onCancel={() => setShowForm(false)}
+            onSaved={async () => {
+              setShowForm(false);
+              await onRefresh?.();
+            }}
+          />
+        </div>
       ) : null}
       {Object.keys(itemsByDate).length === 0 ? (
         <EmptyState 
           icon={<CalendarClock className="h-8 w-8" />}
-          title="No itinerary yet" 
+          title="Start building your trip plan" 
           body="Add flights, hotels, meals, activities, and free time to build the shared plan." 
         />
       ) : (
         <div className="space-y-8">
           {Object.entries(itemsByDate).map(([date, items]) => {
-            // Format date as "Thu, 14 Aug 2026"
             const dateObj = new Date(`${date}T00:00:00`);
             const dayLabel = isNaN(dateObj.getTime())
               ? date
               : dateObj.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+            
+            const shortDay = dayLabel.split(",")[0];
+
             return (
-            <div key={date} className="relative">
-              <div className="sticky top-14 z-10 -mx-4 mb-5 flex items-center gap-3 bg-app/95 px-4 py-2.5 backdrop-blur-sm sm:mx-0 sm:rounded-xl sm:border sm:border-border/60 sm:bg-surface/95 sm:px-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                  {items.length}
-                </span>
-                <h3 className="font-bold text-primary">{dayLabel}</h3>
-                <span className="ml-auto rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-secondary">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+              <div key={date} className="relative">
+                <div className="sticky top-14 z-20 -mx-4 mb-5 flex items-center gap-3 bg-surface/90 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:border-border sm:bg-surface/95 sm:px-5 sm:shadow-sm">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-sm">
+                    {shortDay}
+                  </span>
+                  <h3 className="font-bold text-primary text-lg">{dayLabel}</h3>
+                  <span className="ml-auto rounded-full bg-muted px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-secondary">
+                    {items.length} {items.length === 1 ? 'plan' : 'plans'}
+                  </span>
+                </div>
+                <div className="space-y-3 relative">
+                  {items.map((item, idx) => (
+                    <ItineraryRow key={item.id} item={item} data={data} canEdit={canEdit} familySession={familySession} onRefresh={onRefresh} onRefreshFamily={onRefreshFamily} isLast={idx === items.length - 1} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-0 relative">
-                {items.map((item, idx) => (
-                  <ItineraryRow key={item.id} item={item} data={data} canEdit={canEdit} familySession={familySession} onRefresh={onRefresh} onRefreshFamily={onRefreshFamily} isLast={idx === items.length - 1} />
-                ))}
-              </div>
-            </div>
             );
           })}
         </div>
@@ -111,9 +117,59 @@ function ItineraryRow({
   isLast?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+
+  if (editing) {
+    return (
+      <div className="mb-4 animate-in fade-in">
+        <ItineraryForm
+          trip={data.trip}
+          items={data.itinerary}
+          item={item}
+          onCancel={() => setEditing(false)}
+          onSaved={async () => {
+            setEditing(false);
+            await onRefresh?.();
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ItineraryCard 
+      item={item} 
+      data={data} 
+      canEdit={canEdit} 
+      familySession={familySession} 
+      onRefresh={onRefresh} 
+      onRefreshFamily={onRefreshFamily} 
+      onEdit={() => setEditing(true)} 
+    />
+  );
+}
+
+function ItineraryCard({
+  item,
+  data,
+  canEdit,
+  familySession,
+  onRefresh,
+  onRefreshFamily,
+  onEdit
+}: {
+  item: ItineraryItem;
+  data: AppData;
+  canEdit: boolean;
+  familySession: FamilySession | null;
+  onRefresh?: () => Promise<void>;
+  onRefreshFamily?: () => void;
+  onEdit: () => void;
+}) {
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInteract, setShowInteract] = useState(false);
+
   const votes = data.votes.filter((vote) => vote.itineraryItemId === item.id);
   const comments = data.comments.filter((comment) => comment.targetId === item.id);
   const mustDo = votes.filter((vote) => vote.value === "must_do").length;
@@ -164,139 +220,174 @@ function ItineraryRow({
     }
   }
 
-  if (editing) {
+  const FamilyInteractions = () => (
+    <div className="mt-4 pt-3 border-t border-border/40">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {votes.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
+              👍 {mustDo} <span className="text-primary/60 px-0.5">•</span> {votes.length}
+            </span>
+          )}
+          {comments.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 py-1 text-[11px] font-bold text-secondary">
+              💬 {comments.length}
+            </span>
+          )}
+          {item.visibility !== "shared" && <Badge tone="zinc" className="text-[10px]">{item.visibility}</Badge>}
+        </div>
+        <div className="flex gap-1 ml-auto">
+          {familySession && (familySession.permissions.votes || familySession.permissions.comments) && (
+            <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-primary hover:bg-primary/10" onClick={() => setShowInteract(!showInteract)}>
+              {showInteract ? "Close" : "React"}
+            </Button>
+          )}
+          {canEdit && (
+            <>
+              <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-secondary hover:bg-muted" onClick={onEdit}>Edit</Button>
+              <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-danger hover:bg-danger/10 hover:text-danger" onClick={() => void removeItem()}>Delete</Button>
+            </>
+          )}
+        </div>
+      </div>
+      
+      {showInteract && familySession && (
+        <div className="mt-3 space-y-3 rounded-2xl bg-surface/80 p-3 border border-border/50 shadow-sm animate-in fade-in slide-in-from-top-2">
+          {familySession.permissions.votes && (
+            <div className="flex flex-wrap gap-2">
+              {(["must_do", "interested", "neutral", "skip"] as VoteValue[]).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void submitVote(value)}
+                  className="h-8 rounded-xl border border-border bg-surface px-3 text-[10px] font-bold uppercase tracking-wider text-secondary disabled:opacity-50 hover:bg-muted"
+                >
+                  {value.replace("_", " ")}
+                </button>
+              ))}
+            </div>
+          )}
+          {familySession.permissions.comments && (
+            <form className="flex gap-2" onSubmit={submitComment}>
+              <input
+                className={`${formInputClass} min-h-9 h-9 rounded-xl text-sm`}
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="Add a note..."
+              />
+              <button
+                type="submit"
+                disabled={busy || !comment.trim()}
+                className="h-9 rounded-xl bg-primary px-3 text-[10px] font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
+              >
+                Post
+              </button>
+            </form>
+          )}
+          {error ? <p className="text-xs text-danger font-medium">{error}</p> : null}
+        </div>
+      )}
+
+      {comments.length > 0 && showInteract && (
+        <div className="mt-3 space-y-2 animate-in fade-in">
+          {comments.map((entry) => (
+            <p key={entry.id} className="rounded-xl bg-surface/80 px-3 py-2 text-sm text-secondary border border-border/30">
+              {entry.body}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  if (item.category === "flight") {
     return (
-      <ItineraryForm
-        trip={data.trip}
-        items={data.itinerary}
-        item={item}
-        onCancel={() => setEditing(false)}
-        onSaved={async () => {
-          setEditing(false);
-          await onRefresh?.();
-        }}
-      />
+      <Card className="flex flex-col sm:flex-row overflow-hidden shadow-soft border-0 ring-1 ring-sky-200 dark:ring-sky-900 rounded-3xl bg-sky-50 dark:bg-sky-950/20 group-hover:shadow-md transition-all">
+        <div className="bg-sky-600 dark:bg-sky-800 text-white p-3 sm:p-4 flex sm:flex-col justify-between items-center sm:w-16 shrink-0 relative">
+          <Plane className="h-5 w-5 rotate-45 sm:rotate-0" />
+          <span className="text-[10px] uppercase tracking-widest font-bold rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-8">Flight</span>
+          <Ticket className="h-4 w-4 opacity-60 hidden sm:block" />
+        </div>
+        <div className="hidden sm:block w-px border-l-2 border-dashed border-sky-200 dark:border-sky-800 my-4" />
+        <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-bold text-lg text-primary">{item.title}</h3>
+            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase">Ref: {item.bookingReference}</Badge>}
+          </div>
+          <div className="flex items-center gap-4 text-secondary mb-3">
+            <div className="font-mono text-2xl font-bold text-sky-700 dark:text-sky-400">{item.startTime}</div>
+            <div className="h-px flex-1 bg-sky-200 dark:bg-sky-800/50" />
+            <div className="font-mono text-2xl font-bold text-sky-700 dark:text-sky-400">{item.endTime || "—"}</div>
+          </div>
+          {item.locationName && <p className="text-sm font-medium text-sky-800 dark:text-sky-300 flex items-center gap-1.5"><MapPin className="h-4 w-4 opacity-70" /> {item.locationName}</p>}
+          {item.notes && <p className="mt-3 rounded-xl bg-white/60 dark:bg-slate-900/40 p-3 text-sm text-secondary border border-sky-100 dark:border-sky-800/50">{item.notes}</p>}
+          <FamilyInteractions />
+        </div>
+      </Card>
     );
   }
 
-  const cs = categoryStyles(item.category);
-  return (
-    <article className="relative pl-12 sm:pl-16 py-2.5 group">
-      {!isLast && <div className="absolute left-[23px] sm:left-[31px] top-12 bottom-[-10px] w-0.5 rounded-full bg-border/60" aria-hidden="true" />}
-
-      {/* Category-coloured timeline node */}
-      <div className={`absolute left-0.5 sm:left-2.5 top-3.5 h-10 w-10 rounded-xl border-2 border-surface shadow-sm flex items-center justify-center z-10 ${cs.iconBg} ${cs.iconText}`}>
-        {getCategoryIcon(item.category)}
-      </div>
-
-      <Card className="p-4 sm:p-5 w-full transition-all hover:ring-primary/20">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Time column */}
-          <div className="shrink-0 sm:w-20 sm:mt-0.5">
-            <span className="inline-flex items-center rounded-lg bg-muted px-2.5 py-1 text-sm font-bold text-primary tabular-nums">
-              {item.startTime}
-            </span>
-            {item.endTime ? (
-              <p className="mt-1 pl-0.5 text-[11px] font-medium text-muted">→ {item.endTime}</p>
-            ) : null}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-primary">{item.title}</h3>
-              <CategoryBadge category={item.category} />
-              {item.visibility !== "shared" ? <Badge tone="zinc">{item.visibility}</Badge> : null}
-            </div>
-            
-            {canEdit ? (
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
-                <Button variant="ghost" disabled={busy} onClick={() => void removeItem()}><Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />Delete</Button>
+  if (item.category === "hotel") {
+    return (
+      <Card className="flex flex-col overflow-hidden shadow-soft border-0 ring-1 ring-indigo-200 dark:ring-indigo-900/60 rounded-3xl bg-surface group-hover:shadow-md transition-all">
+        <div className="h-2 w-full bg-indigo-500 dark:bg-indigo-600" />
+        <div className="p-4 sm:p-5 flex-1 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100 dark:ring-indigo-800/50">
+                <Bed className="h-5 w-5" />
               </div>
-            ) : null}
-            
-            {item.locationName ? (
-              <p className="mt-3 flex gap-1.5 text-sm text-secondary font-medium">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-                <span>{item.locationName}</span>
-              </p>
-            ) : null}
-            
-            {item.notes ? (
-              <p className="mt-3 rounded-xl bg-muted/60 px-3 py-2.5 text-sm leading-relaxed text-secondary border-l-2 border-border">
-                {item.notes}
-              </p>
-            ) : null}
-
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-border/60 pt-3 text-xs text-secondary">
-              {(votes.length > 0) ? (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2.5 py-1 font-medium">
-                  <ThumbsUp className="h-3 w-3" aria-hidden="true" />
-                  {mustDo} must-do · {votes.length} votes
-                </span>
-              ) : null}
-              {(comments.length > 0) ? (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-muted px-2.5 py-1 font-medium">
-                  <MessageSquare className="h-3 w-3" aria-hidden="true" />
-                  {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-                </span>
-              ) : null}
-              {item.bookingReference ? (
-                <span className="inline-flex items-center gap-1 rounded-lg bg-primary/8 px-2.5 py-1 font-mono font-semibold text-primary">
-                  Ref {item.bookingReference}
-                </span>
-              ) : null}
+              <h3 className="font-bold text-lg text-primary">{item.title}</h3>
             </div>
-        {familySession && (familySession.permissions.votes || familySession.permissions.comments || error) ? (
-          <div className="mt-4 space-y-3 rounded-lg bg-muted p-3">
-            {familySession.permissions.votes ? (
-              <div className="flex flex-wrap gap-2">
-                {(["must_do", "interested", "neutral", "skip"] as VoteValue[]).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void submitVote(value)}
-                    className="min-h-10 rounded-lg border border-border bg-surface px-3 text-xs font-semibold text-secondary disabled:opacity-50"
-                  >
-                    {value.replace("_", " ")}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            {familySession.permissions.comments ? (
-              <form className="flex gap-2" onSubmit={submitComment}>
-                <input
-                  className={`${formInputClass} min-h-10 text-sm`}
-                  value={comment}
-                  onChange={(event) => setComment(event.target.value)}
-                  placeholder="Add a family note"
-                />
-                <button
-                  type="submit"
-                  disabled={busy || !comment.trim()}
-                  className="min-h-10 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-                >
-                  Send
-                </button>
-              </form>
-            ) : null}
-            {error ? <p className="text-sm text-danger">{error}</p> : null}
+            {item.bookingReference && <Badge tone="indigo" className="font-mono uppercase">Ref: {item.bookingReference}</Badge>}
           </div>
-        ) : null}
-        {comments.length ? (
-          <div className="mt-3 space-y-2">
-            {comments.slice(0, 3).map((entry) => (
-              <p key={entry.id} className="rounded-lg bg-surface text-sm text-secondary">
-                {entry.body}
-              </p>
-            ))}
+          <div className="inline-flex items-center gap-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-2 text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-3 border border-indigo-100 dark:border-indigo-900/50">
+            <span>Check in: <span className="font-bold">{item.startTime}</span></span>
+            {item.endTime && <><span>•</span><span>Check out: <span className="font-bold">{item.endTime}</span></span></>}
           </div>
-        ) : null}
-      </div>
+          {item.locationName && <p className="text-sm font-medium text-secondary flex items-center gap-1.5 mb-1"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
+          {item.notes && <p className="mt-3 rounded-xl bg-muted/50 p-3 text-sm text-secondary border-l-2 border-indigo-300 dark:border-indigo-700">{item.notes}</p>}
+          <FamilyInteractions />
         </div>
       </Card>
-    </article>
+    );
+  }
+
+  // Default / Food / Activity / Transport
+  const isFood = item.category === "food";
+  const isActivity = item.category === "activity";
+  const isTransport = item.category === "transport";
+  
+  let ringClass = "ring-border/50";
+  let bgClass = "bg-surface";
+  let accentClass = "text-primary";
+  let badgeTone = "slate";
+
+  if (isFood) { ringClass = "ring-amber-200 dark:ring-amber-900/60"; bgClass = "bg-amber-50/30 dark:bg-amber-950/10"; accentClass = "text-amber-600 dark:text-amber-500"; badgeTone = "amber"; }
+  else if (isActivity) { ringClass = "ring-emerald-200 dark:ring-emerald-900/60"; bgClass = "bg-emerald-50/30 dark:bg-emerald-950/10"; accentClass = "text-emerald-600 dark:text-emerald-500"; badgeTone = "emerald"; }
+  else if (isTransport) { ringClass = "ring-cyan-200 dark:ring-cyan-900/60"; bgClass = "bg-cyan-50/30 dark:bg-cyan-950/10"; accentClass = "text-cyan-600 dark:text-cyan-500"; badgeTone = "sky"; }
+
+  return (
+    <Card className={`flex flex-col sm:flex-row overflow-hidden shadow-soft border-0 ring-1 ${ringClass} rounded-3xl ${bgClass} group-hover:shadow-md transition-all`}>
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4">
+        <div className="shrink-0 sm:w-20 mt-1">
+          <span className="inline-flex items-center rounded-xl bg-surface px-2.5 py-1.5 text-sm font-bold text-primary tabular-nums border border-border/50 shadow-sm">
+            {item.startTime}
+          </span>
+          {item.endTime && <p className="mt-1.5 pl-1 text-[10px] font-bold text-muted uppercase tracking-wider">→ {item.endTime}</p>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <h3 className={`font-bold text-lg ${accentClass}`}>{item.title}</h3>
+            <Badge tone={badgeTone as any} className="capitalize">{item.category}</Badge>
+          </div>
+          {item.locationName && <p className="text-sm font-medium text-secondary flex items-center gap-1.5 mb-2"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
+          {item.notes && <p className="mt-3 rounded-xl bg-surface/50 p-3 text-sm text-secondary border border-border/50">{item.notes}</p>}
+          <FamilyInteractions />
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -500,7 +591,6 @@ function ItineraryForm({
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  // Smart suggestions on category change
   function handleCategoryChange(cat: ItineraryCategory) {
     update("category", cat);
   }
@@ -633,15 +723,15 @@ function ItineraryForm({
   };
 
   return (
-    <Card className="p-4 sm:p-6 shadow-sm border-primary/20">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-primary">{item ? "Editing itinerary item" : "Add to itinerary"}</h3>
-        <div className="mt-2 flex gap-2 text-sm text-muted">
-          <span className={step >= 1 ? "font-semibold text-primary" : ""}>1. Day</span>
+    <Card className="p-4 sm:p-6 shadow-soft border-border/50 rounded-3xl">
+      <div className="mb-5">
+        <h3 className="text-lg font-bold text-primary">{item ? "Editing itinerary item" : "Add to itinerary"}</h3>
+        <div className="mt-2 flex gap-2 text-sm text-muted font-medium">
+          <span className={step >= 1 ? "font-bold text-primary" : ""}>1. Day</span>
           <span>→</span>
-          <span className={step >= 2 ? "font-semibold text-primary" : ""}>2. Type</span>
+          <span className={step >= 2 ? "font-bold text-primary" : ""}>2. Type</span>
           <span>→</span>
-          <span className={step >= 3 ? "font-semibold text-primary" : ""}>3. Details</span>
+          <span className={step >= 3 ? "font-bold text-primary" : ""}>3. Details</span>
         </div>
       </div>
 
@@ -649,8 +739,8 @@ function ItineraryForm({
 
       <form onSubmit={save} className="space-y-6">
         {step === 1 && (
-          <div className="space-y-4">
-            <h4 className="font-medium text-primary">Choose a day</h4>
+          <div className="space-y-4 animate-in fade-in">
+            <h4 className="font-semibold text-primary">Choose a day</h4>
             {days.length > 0 ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {days.map(d => (
@@ -658,34 +748,34 @@ function ItineraryForm({
                     key={d.date}
                     type="button"
                     onClick={() => { update("date", d.date); setStep(2); }}
-                    className={`rounded-xl border p-3 text-left transition-colors ${form.date === d.date ? "border-primary bg-primary/10" : "border-border bg-surface hover:border-primary/50"}`}
+                    className={`rounded-2xl border-2 p-3 text-left transition-colors ${form.date === d.date ? "border-primary bg-primary/10" : "border-border/50 bg-surface hover:border-primary/50"}`}
                   >
-                    <div className="text-sm font-semibold text-primary">{d.label.split(" - ")[0]}</div>
-                    <div className="text-xs text-muted">{d.label.split(" - ")[1]}</div>
+                    <div className="text-sm font-bold text-primary">{d.label.split(" - ")[0]}</div>
+                    <div className="text-xs text-secondary mt-0.5">{d.label.split(" - ")[1]}</div>
                   </button>
                 ))}
               </div>
             ) : null}
             <div className="pt-2">
-              <label className="mb-1 block text-sm font-medium text-secondary">Or pick a specific date</label>
+              <label className="mb-1 block text-sm font-semibold text-secondary">Or pick a specific date</label>
               <div className="flex items-center gap-2">
                 <input type="date" className={`${formInputClass} flex-1 max-w-xs`} value={form.date} onChange={(e) => update("date", e.target.value)} />
                 <Button type="button" onClick={() => setStep(2)}>Next</Button>
               </div>
             </div>
-            <div className="flex justify-end border-t pt-4 border-border">
+            <div className="flex justify-end border-t pt-4 border-border/50">
               <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
             </div>
           </div>
         )}
 
         {step === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-primary">What kind of plan?</h4>
-              <button type="button" onClick={() => setStep(1)} className="text-sm text-primary hover:underline">← Back to Day</button>
+              <h4 className="font-semibold text-primary">What kind of plan?</h4>
+              <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-primary hover:underline">← Back</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {itineraryCategories.map((cat) => {
                 const cs = categoryStyles(cat);
                 const isActive = form.category === cat;
@@ -694,18 +784,18 @@ function ItineraryForm({
                     key={cat}
                     type="button"
                     onClick={() => { handleCategoryChange(cat); setStep(3); }}
-                    className={`flex flex-col items-center gap-2.5 rounded-xl border-2 p-4 transition-all ${
+                    className={`flex flex-col items-center gap-2.5 rounded-2xl border-2 p-4 transition-all ${
                       isActive
-                        ? `border-primary bg-primary/10`
-                        : `border-border bg-surface hover:border-primary/30 hover:bg-muted`
+                        ? `border-primary bg-primary/10 shadow-sm`
+                        : `border-border/50 bg-surface hover:border-primary/30 hover:bg-muted`
                     }`}
                   >
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${
                       isActive ? `bg-primary/15 ${cs.iconText}` : `${cs.iconBg} ${cs.iconText}`
                     }`}>
                       {CategoryIcon(cat)}
                     </div>
-                    <span className={`text-sm font-semibold capitalize ${isActive ? 'text-primary' : 'text-secondary'}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-primary' : 'text-secondary'}`}>
                       {cat.replace("_", " ")}
                     </span>
                   </button>
@@ -718,16 +808,12 @@ function ItineraryForm({
         {step === 3 && (
           <div className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between">
-              <h4 className="font-medium text-primary">The details</h4>
-              <button type="button" onClick={() => setStep(2)} className="text-sm text-primary hover:underline">← Back to Type</button>
+              <h4 className="font-semibold text-primary">The details</h4>
+              <button type="button" onClick={() => setStep(2)} className="text-sm font-medium text-primary hover:underline">← Back</button>
             </div>
             
             {form.category === "flight" ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-xl bg-muted border border-border p-4 text-secondary">
-                  <Plane className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                  <p className="text-sm">Add departure and arrival airport so family members can easily follow the travel plan.</p>
-                </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="From airport *"><input autoFocus className={formInputClass} value={catData.fromAirport} onChange={(e) => updateCatData("fromAirport", e.target.value)} placeholder="e.g. Kuala Lumpur" required /></Field>
                   <Field label="From airport code (optional)"><input className={formInputClass} value={catData.fromCode} onChange={(e) => updateCatData("fromCode", e.target.value)} placeholder="e.g. KUL" maxLength={3} /></Field>
@@ -756,21 +842,10 @@ function ItineraryForm({
 
               return (
                 <div className="space-y-4">
-                  <div className="flex items-start gap-3 rounded-xl bg-muted border border-border p-4 text-secondary">
-                    <Bed className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                    <p className="text-sm">Add hotel details so family members know where to stay and when to check in.</p>
-                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2"><Field label="Hotel name *"><input autoFocus className={formInputClass} value={catData.hotelName} onChange={(e) => updateCatData("hotelName", e.target.value)} placeholder="e.g. Grand Hyatt" required /></Field></div>
-                    
-                    <div className="sm:col-span-2 rounded-lg bg-muted p-3 border border-border">
-                      <p className="text-sm font-medium text-secondary">Check-in day: <span className="font-semibold text-primary">{checkInDayLabel}</span></p>
-                      <p className="text-xs text-muted mt-0.5">Selected in Step 1</p>
-                    </div>
-
                     <Field label="Check-in time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
                     <div className="hidden sm:block"></div>
-
                     <Field label="Check-out day *">
                       <select className={formSelectClass} value={currentCheckoutDate} onChange={(e) => updateCatData("hotelCheckOutDate", e.target.value)} required>
                         {days.map(d => (
@@ -781,9 +856,7 @@ function ItineraryForm({
                         )}
                       </select>
                     </Field>
-
                     <Field label="Check-out time *"><input type="time" className={formInputClass} value={catData.hotelCheckOutTime} onChange={(e) => updateCatData("hotelCheckOutTime", e.target.value)} required /></Field>
-                    
                     <div className="sm:col-span-2"><Field label="Booking reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} placeholder="e.g. CONF123" /></Field></div>
                     <div className="sm:col-span-2"><Field label="Address (optional)"><input className={formInputClass} value={form.address ?? ""} onChange={(e) => update("address", e.target.value || undefined)} /></Field></div>
                     <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Room preferences, breakfast included..." /></Field></div>
@@ -798,66 +871,61 @@ function ItineraryForm({
                       <select className={formSelectClass} value={catData.transportType} onChange={(e) => updateCatData("transportType", e.target.value)}>
                         <option value="Grab">Grab</option>
                         <option value="Taxi">Taxi</option>
-                        <option value="Bus">Bus</option>
                         <option value="Train">Train</option>
+                        <option value="Bus">Bus</option>
+                        <option value="Car Rental">Car Rental</option>
                         <option value="Ferry">Ferry</option>
-                        <option value="Private van">Private van</option>
-                        <option value="Car rental">Car rental</option>
+                        <option value="Private Transfer">Private Transfer</option>
                         <option value="Other">Other</option>
                       </select>
                     </Field>
                   </div>
-                  <Field label="From location *"><input className={formInputClass} value={catData.transportFrom} onChange={(e) => updateCatData("transportFrom", e.target.value)} required /></Field>
-                  <Field label="To location *"><input className={formInputClass} value={catData.transportTo} onChange={(e) => updateCatData("transportTo", e.target.value)} required /></Field>
-                  <Field label="Pickup/departure time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
+                  <Field label="From *"><input className={formInputClass} value={catData.transportFrom} onChange={(e) => updateCatData("transportFrom", e.target.value)} placeholder="e.g. Airport" required /></Field>
+                  <Field label="To *"><input className={formInputClass} value={catData.transportTo} onChange={(e) => updateCatData("transportTo", e.target.value)} placeholder="e.g. Hotel" required /></Field>
+                  <Field label="Departure time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
                   <Field label="Arrival time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
-                  <Field label="Driver/contact (optional)"><input className={formInputClass} value={catData.driverContact} onChange={(e) => updateCatData("driverContact", e.target.value)} placeholder="Name / Phone / Plate No" /></Field>
-                  <Field label="Booking/reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} /></Field>
-                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Meeting point details..." /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Driver/Contact (optional)"><input className={formInputClass} value={catData.driverContact} onChange={(e) => updateCatData("driverContact", e.target.value)} placeholder="e.g. John +123456789" /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Meeting point..." /></Field></div>
                 </div>
               </div>
             ) : form.category === "food" ? (
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <Field label="Meal type *">
-                      <select className={formSelectClass} value={catData.mealType} onChange={(e) => updateCatData("mealType", e.target.value)}>
-                        <option value="Breakfast">Breakfast</option>
-                        <option value="Lunch">Lunch</option>
-                        <option value="Dinner">Dinner</option>
-                        <option value="Snack">Snack</option>
-                        <option value="Cafe">Cafe</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </Field>
-                  </div>
-                  <div className="sm:col-span-2"><Field label="Restaurant/place name *"><input autoFocus className={formInputClass} value={catData.restaurantName} onChange={(e) => updateCatData("restaurantName", e.target.value)} required /></Field></div>
+                  <Field label="Meal *">
+                    <select className={formSelectClass} value={catData.mealType} onChange={(e) => updateCatData("mealType", e.target.value)}>
+                      <option value="Breakfast">Breakfast</option>
+                      <option value="Brunch">Brunch</option>
+                      <option value="Lunch">Lunch</option>
+                      <option value="Dinner">Dinner</option>
+                      <option value="Snack">Snack</option>
+                      <option value="Drinks">Drinks</option>
+                    </select>
+                  </Field>
+                  <Field label="Restaurant / Place *"><input className={formInputClass} value={catData.restaurantName} onChange={(e) => updateCatData("restaurantName", e.target.value)} placeholder="e.g. Nasi Lemak Antarabangsa" required /></Field>
                   <Field label="Time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
-                  <Field label="Reservation/reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} /></Field>
-                  <div className="sm:col-span-2"><Field label="Address (optional)"><input className={formInputClass} value={form.address ?? ""} onChange={(e) => update("address", e.target.value || undefined)} /></Field></div>
-                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Must try dishes..." /></Field></div>
+                  <Field label="End time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
+                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Reservation details, must try dishes..." /></Field></div>
                 </div>
               </div>
             ) : form.category === "activity" ? (
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2"><Field label="Activity name *"><input autoFocus className={formInputClass} value={catData.activityName} onChange={(e) => updateCatData("activityName", e.target.value)} required /></Field></div>
-                  <div className="sm:col-span-2"><Field label="Place/location *"><input className={formInputClass} value={catData.activityLocation} onChange={(e) => updateCatData("activityLocation", e.target.value)} required /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Activity name *"><input autoFocus className={formInputClass} value={catData.activityName} onChange={(e) => updateCatData("activityName", e.target.value)} placeholder="e.g. Snorkeling trip" required /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Location / Venue (optional)"><input className={formInputClass} value={catData.activityLocation} onChange={(e) => updateCatData("activityLocation", e.target.value)} placeholder="e.g. Blue Lagoon" /></Field></div>
                   <Field label="Start time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
                   <Field label="End time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
-                  <Field label="Ticket/booking reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} /></Field>
-                  <div className="sm:col-span-2"><Field label="Address (optional)"><input className={formInputClass} value={form.address ?? ""} onChange={(e) => update("address", e.target.value || undefined)} /></Field></div>
-                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Booking reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} placeholder="e.g. TIX123" /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="What to bring, meeting spot..." /></Field></div>
                 </div>
               </div>
             ) : form.category === "shopping" ? (
               <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2"><Field label="Shopping place/mall/market *"><input autoFocus className={formInputClass} value={catData.shoppingPlace} onChange={(e) => updateCatData("shoppingPlace", e.target.value)} required /></Field></div>
-                  <Field label="Time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
-                  <Field label="Budget (optional)"><input type="number" step="0.01" className={formInputClass} value={catData.shoppingBudget} onChange={(e) => updateCatData("shoppingBudget", e.target.value)} /></Field>
-                  <div className="sm:col-span-2"><Field label="Shopping purpose (optional)"><input className={formInputClass} value={catData.shoppingPurpose} onChange={(e) => updateCatData("shoppingPurpose", e.target.value)} placeholder="e.g. Souvenirs, clothes" /></Field></div>
-                  <div className="sm:col-span-2"><Field label="Address (optional)"><input className={formInputClass} value={form.address ?? ""} onChange={(e) => update("address", e.target.value || undefined)} /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Place / Market *"><input autoFocus className={formInputClass} value={catData.shoppingPlace} onChange={(e) => updateCatData("shoppingPlace", e.target.value)} placeholder="e.g. Chatuchak Market" required /></Field></div>
+                  <Field label="Start time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
+                  <Field label="End time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
+                  <Field label="Purpose (optional)"><input className={formInputClass} value={catData.shoppingPurpose} onChange={(e) => updateCatData("shoppingPurpose", e.target.value)} placeholder="e.g. Souvenirs" /></Field>
+                  <Field label="Estimated budget (optional)"><input type="number" className={formInputClass} value={catData.shoppingBudget} onChange={(e) => updateCatData("shoppingBudget", e.target.value)} placeholder="e.g. 500" /></Field>
                   <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} /></Field></div>
                 </div>
               </div>
@@ -870,12 +938,12 @@ function ItineraryForm({
                         <option value="Free time">Free time</option>
                         <option value="Rest">Rest</option>
                         <option value="Explore nearby">Explore nearby</option>
-                        <option value="Custom">Custom</option>
+                        <option value="Custom">Custom...</option>
                       </select>
                     </Field>
                   </div>
                   {catData.freeTimeLabel === "Custom" && (
-                    <div className="sm:col-span-2"><Field label="Custom label *"><input autoFocus className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-lg text-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" value={form.title} onChange={(e) => update("title", e.target.value)} required /></Field></div>
+                    <div className="sm:col-span-2"><Field label="Custom label *"><input autoFocus className={formInputClass} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Pool time" required /></Field></div>
                   )}
                   <Field label="Start time (optional)"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} /></Field>
                   <Field label="End time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
@@ -883,51 +951,40 @@ function ItineraryForm({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Field label="Title *">
-                    <input autoFocus className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-lg text-primary placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" value={form.title} onChange={(e) => update("title", e.target.value)} required />
-                  </Field>
-                </div>
-                <Field label="Start time *">
-                  <input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required />
-                </Field>
-                <Field label="End time (optional)">
-                  <input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} />
-                </Field>
-                <div className="sm:col-span-2">
-                  <Field label="Location name (optional)">
-                    <input className={formInputClass} value={form.locationName ?? ""} onChange={(e) => update("locationName", e.target.value || undefined)} />
-                  </Field>
-                </div>
-                <div className="sm:col-span-2">
-                  <Field label="Notes (optional)">
-                    <textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(e) => update("notes", e.target.value || undefined)} placeholder="Any special instructions or thoughts?" />
-                  </Field>
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2"><Field label="Title *"><input autoFocus className={formInputClass} value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="e.g. Unexpected event" required /></Field></div>
+                  <Field label="Time *"><input type="time" className={formInputClass} value={form.startTime} onChange={(e) => update("startTime", e.target.value)} required /></Field>
+                  <Field label="End time (optional)"><input type="time" className={formInputClass} value={form.endTime ?? ""} onChange={(e) => update("endTime", e.target.value || undefined)} /></Field>
+                  <div className="sm:col-span-2"><Field label="Location (optional)"><input className={formInputClass} value={form.locationName ?? ""} onChange={(e) => update("locationName", e.target.value || undefined)} /></Field></div>
+                  <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(e) => update("notes", e.target.value || undefined)} /></Field></div>
                 </div>
               </div>
             )}
 
-            <div className="rounded-xl border border-border bg-muted overflow-hidden">
-              <button type="button" onClick={() => setShowOptional(!showOptional)} className="flex w-full items-center justify-between p-4 text-sm font-semibold text-secondary hover:bg-muted">
-                Advanced / Optional fields
+            <div className="border-t border-border/50 pt-4 pb-2">
+              <button type="button" onClick={() => setShowOptional(!showOptional)} className="flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover">
                 {showOptional ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                Advanced options
               </button>
-              {showOptional && (
-                <div className="grid gap-4 p-4 border-t border-border sm:grid-cols-2">
-                  {!["hotel", "food", "activity", "shopping"].includes(form.category) && <Field label="Address"><input className={formInputClass} value={form.address ?? ""} onChange={(event) => update("address", event.target.value || undefined)} /></Field>}
-                  {form.category !== "shopping" && <Field label="Estimated cost"><input type="number" step="0.01" className={formInputClass} value={form.estimatedCost ?? ""} onChange={(event) => update("estimatedCost", event.target.value ? Number(event.target.value) : undefined)} /></Field>}
-                  {!["flight", "hotel", "transport", "food", "activity"].includes(form.category) && <Field label="Booking reference"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(event) => update("bookingReference", event.target.value || undefined)} /></Field>}
-                  <Field label="Attachment URL"><input className={formInputClass} value={form.attachmentUrl ?? ""} onChange={(event) => update("attachmentUrl", event.target.value || undefined)} /></Field>
-                  <Field label="Visibility"><select className={formSelectClass} value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility}</option>)}</select></Field>
-                  <Field label="Sort order"><input type="number" className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-primary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none" value={form.sortOrder} onChange={(event) => update("sortOrder", Number(event.target.value))} /></Field>
-                </div>
-              )}
             </div>
+            
+            {showOptional && (
+              <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-muted/50 p-4 animate-in fade-in">
+                <Field label="Visibility">
+                  <select className={formSelectClass} value={form.visibility} onChange={(e) => update("visibility", e.target.value as Visibility)}>
+                    {visibilityOptions.map(v => <option key={v} value={v}>{v.replace("_", " ")}</option>)}
+                  </select>
+                </Field>
+                <Field label="Sort order">
+                  <input type="number" className={formInputClass} value={form.sortOrder} onChange={(e) => update("sortOrder", parseInt(e.target.value) || 0)} />
+                </Field>
+              </div>
+            )}
 
-            <div className="flex gap-3 pt-4 border-t border-border">
-              <Button type="submit" disabled={busy}>Save to itinerary</Button>
-              <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+              <Button type="submit" disabled={busy}>Save plan</Button>
             </div>
           </div>
         )}
