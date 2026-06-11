@@ -1,5 +1,5 @@
 import { CalendarCheck, FileText, Luggage, Map, Plane, ReceiptText } from "lucide-react";
-import { Badge, Card, SectionHeader } from "../components/ui";
+import { Badge, Card, EmptyState, SectionHeader } from "../components/ui";
 import type { AppData } from "../types";
 
 function daysUntil(date: string) {
@@ -11,7 +11,7 @@ function daysUntil(date: string) {
 export function Dashboard({ data, openView }: { data: AppData; openView: (view: string) => void }) {
   const currentPlan = data.itinerary[0];
   const totalSpend = data.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const budgetPct = Math.round((totalSpend / data.trip.estimatedBudget) * 100);
+  const budgetPct = data.trip.estimatedBudget > 0 ? Math.round((totalSpend / data.trip.estimatedBudget) * 100) : 0;
   const quickButtons = [
     { id: "itinerary", label: "Itinerary", icon: CalendarCheck },
     { id: "map", label: "Map", icon: Map },
@@ -44,16 +44,23 @@ export function Dashboard({ data, openView }: { data: AppData; openView: (view: 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-4 lg:col-span-2">
           <SectionHeader title="Current Day Plan" eyebrow="Today focus" />
-          <div className="mt-4 flex gap-3 rounded-lg bg-slate-50 p-4">
-            <Plane className="mt-1 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
-            <div>
-              <p className="font-semibold text-slate-900">{currentPlan.title}</p>
-              <p className="text-sm text-slate-600">
-                {currentPlan.date} at {currentPlan.startTime} - {currentPlan.locationName}
-              </p>
-              <p className="mt-2 text-sm text-slate-700">{currentPlan.notes}</p>
+          {currentPlan ? (
+            <div className="mt-4 flex gap-3 rounded-lg bg-slate-50 p-4">
+              <Plane className="mt-1 h-5 w-5 shrink-0 text-brand-700" aria-hidden="true" />
+              <div>
+                <p className="font-semibold text-slate-900">{currentPlan.title}</p>
+                <p className="text-sm text-slate-600">
+                  {currentPlan.date} at {currentPlan.startTime}
+                  {currentPlan.locationName ? ` - ${currentPlan.locationName}` : ""}
+                </p>
+                {currentPlan.notes ? <p className="mt-2 text-sm text-slate-700">{currentPlan.notes}</p> : null}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mt-4">
+              <EmptyState title="No itinerary yet" body="Open Itinerary to start adding flights, hotels, meals, and activities." />
+            </div>
+          )}
         </Card>
 
         <Card className="p-4">
