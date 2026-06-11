@@ -1,12 +1,12 @@
 import { Ban, Copy, KeyRound, Link2, Shield, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader } from "../components/ui";
-import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled } from "../lib/supabase";
-import type { AccessMode, AppData, Role, ShareLink, TripMember } from "../types";
+import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled, updateTrip } from "../lib/supabase";
+import type { AccessMode, AppData, Role, ShareLink, TripInput, TripMember } from "../types";
 
 const FAMILY_TRAVEL_PUBLIC_URL = "https://al89er.github.io/FamilyTravel/";
 
-export function Settings({ data, role, accessMode }: { data: AppData; role: Role; accessMode: AccessMode }) {
+export function Settings({ data, role, accessMode, onRefresh }: { data: AppData; role: Role; accessMode: AccessMode; onRefresh?: () => Promise<void> }) {
   if (accessMode === "family" || accessMode === "demo") {
     return (
       <div className="space-y-5">
@@ -19,26 +19,97 @@ export function Settings({ data, role, accessMode }: { data: AppData; role: Role
   return (
     <div className="space-y-5">
       <SectionHeader title="Trip Settings" eyebrow={`Current role: ${role}`} />
-      <Card className="p-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Currency">
-            <input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.currency} />
-          </Field>
-          <Field label="Timezone">
-            <input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.timezone} />
-          </Field>
-          <Field label="Date format">
-            <input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.dateFormat} />
-          </Field>
-          <Field label="Default visibility">
-            <input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.defaultVisibility} />
-          </Field>
-        </div>
-      </Card>
+      <TripOverviewEditor data={data} onRefresh={onRefresh} />
 
       <OrganizerManagement data={data} role={role} />
       <ShareLinkManagement data={data} role={role} />
     </div>
+  );
+}
+
+function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: () => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<TripInput>({
+    title: data.trip.title,
+    destination: data.trip.destination,
+    startDate: data.trip.startDate,
+    endDate: data.trip.endDate,
+    timezone: data.trip.timezone,
+    currency: data.trip.currency,
+    dateFormat: data.trip.dateFormat,
+    defaultVisibility: data.trip.defaultVisibility,
+    hotelInfo: data.trip.hotelInfo,
+    emergencySummary: data.trip.emergencySummary,
+    estimatedBudget: data.trip.estimatedBudget
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  function update<K extends keyof TripInput>(key: K, value: TripInput[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    setStatus(null);
+    try {
+      await updateTrip(data.trip.id, {
+        ...form,
+        title: form.title.trim(),
+        destination: form.destination.trim(),
+        currency: form.currency.trim().toUpperCase() || data.trip.currency,
+        timezone: form.timezone.trim() || data.trip.timezone,
+        dateFormat: form.dateFormat.trim() || data.trip.dateFormat,
+        estimatedBudget: Number(form.estimatedBudget || 0)
+      });
+      await onRefresh?.();
+      setEditing(false);
+      setStatus("Trip overview saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save trip overview.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="font-semibold text-slate-950">Trip overview</h3>
+        <Button variant="ghost" onClick={() => setEditing((value) => !value)}>{editing ? "Cancel" : "Edit"}</Button>
+      </div>
+      {error ? <div className="mt-4"><ErrorState message={error} /></div> : null}
+      {status ? <p className="mt-4 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{status}</p> : null}
+      {editing ? (
+        <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={save}>
+          <Field label="Trip title"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.title} onChange={(event) => update("title", event.target.value)} /></Field>
+          <Field label="Destination"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.destination} onChange={(event) => update("destination", event.target.value)} /></Field>
+          <Field label="Start date"><input type="date" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.startDate} onChange={(event) => update("startDate", event.target.value)} /></Field>
+          <Field label="End date"><input type="date" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.endDate} onChange={(event) => update("endDate", event.target.value)} /></Field>
+          <Field label="Timezone"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.timezone} onChange={(event) => update("timezone", event.target.value)} /></Field>
+          <Field label="Currency"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.currency} onChange={(event) => update("currency", event.target.value)} maxLength={3} /></Field>
+          <Field label="Date format"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.dateFormat} onChange={(event) => update("dateFormat", event.target.value)} /></Field>
+          <Field label="Estimated budget"><input type="number" min="0" step="0.01" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.estimatedBudget} onChange={(event) => update("estimatedBudget", Number(event.target.value))} /></Field>
+          <Field label="Default visibility"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.defaultVisibility} onChange={(event) => update("defaultVisibility", event.target.value as TripInput["defaultVisibility"])}><option value="shared">shared</option><option value="planner_only">planner_only</option><option value="private">private</option></select></Field>
+          <Field label="Hotel/accommodation summary"><textarea className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2" value={form.hotelInfo} onChange={(event) => update("hotelInfo", event.target.value)} /></Field>
+          <Field label="Emergency summary"><textarea className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2" value={form.emergencySummary} onChange={(event) => update("emergencySummary", event.target.value)} /></Field>
+          <div className="flex gap-2 md:col-span-2">
+            <Button type="submit" disabled={busy}>Save</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        </form>
+      ) : (
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <Field label="Currency"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.currency} /></Field>
+          <Field label="Timezone"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.timezone} /></Field>
+          <Field label="Date format"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.dateFormat} /></Field>
+          <Field label="Default visibility"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" readOnly value={data.trip.defaultVisibility} /></Field>
+        </div>
+      )}
+    </Card>
   );
 }
 

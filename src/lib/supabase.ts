@@ -3,11 +3,20 @@ import { demoData } from "../data/demoData";
 import type {
   AppData,
   CommentTarget,
+  DocumentInput,
+  EmergencyContactInput,
+  ExpenseInput,
   FamilyPermissions,
   FamilySession,
+  InsuranceInput,
+  ItineraryInput,
+  MedicalNoteInput,
   NewTripInput,
+  PackingInput,
+  PlaceInput,
   Role,
   ShareLink,
+  TripInput,
   TripSummary,
   VoteValue
 } from "../types";
@@ -130,7 +139,8 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     votesResult,
     commentsResult,
     emergencyResult,
-    insuranceResult
+    insuranceResult,
+    medicalNotesResult
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userData.user.id).maybeSingle(),
     supabase.from("trips").select("*").eq("id", tripId).maybeSingle(),
@@ -166,7 +176,8 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     supabase.from("votes").select("*").eq("trip_id", tripId),
     supabase.from("comments").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }),
     supabase.from("emergency_contacts").select("*").eq("trip_id", tripId).order("name", { ascending: true }),
-    supabase.from("travel_insurance").select("*").eq("trip_id", tripId).limit(1).maybeSingle()
+    supabase.from("travel_insurance").select("*").eq("trip_id", tripId).limit(1).maybeSingle(),
+    supabase.from("family_medical_notes").select("*").eq("trip_id", tripId)
   ]);
 
   throwIfError(profileResult.error);
@@ -181,6 +192,7 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
   throwIfError(commentsResult.error);
   throwIfError(emergencyResult.error);
   throwIfError(insuranceResult.error);
+  throwIfError(medicalNotesResult.error);
 
   if (!tripResult.data) throw new Error("Trip not found for this account.");
   if (!profileResult.data) throw new Error("Profile not found for this account.");
@@ -216,10 +228,20 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     checksByItem.set(packingItemId, [...(checksByItem.get(packingItemId) ?? []), profileId]);
   });
 
+  const members = asArray(membersResult.data).map(memberToTripMember);
+  const medicalNotesByProfile = new Map(asArray(medicalNotesResult.data).map((note) => [asString(note.profile_id), note]));
+  members.forEach((member) => {
+    const note = medicalNotesByProfile.get(member.profileId);
+    if (!note) return;
+    member.profile.allergies = optionalString(note.allergies);
+    member.profile.medications = optionalString(note.medications);
+    member.profile.medicalNotes = optionalString(note.notes);
+  });
+
   return {
     currentUser: profileToProfile(asRecord(profileResult.data)),
     trip: tripToTrip(asRecord(tripResult.data)),
-    members: asArray(membersResult.data).map(memberToTripMember),
+    members,
     itinerary: asArray(itineraryResult.data).map(itineraryToItineraryItem),
     places: asArray(placesResult.data).map(placeToPlace),
     documents: asArray(documentsResult.data).map(documentToTravelDocument),
@@ -228,7 +250,16 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     votes: asArray(votesResult.data).map(voteToVote),
     comments: asArray(commentsResult.data).map(commentToComment),
     emergencyContacts: asArray(emergencyResult.data).map(emergencyToEmergencyContact),
-    insurance: insuranceResult.data ? insuranceToTravelInsurance(asRecord(insuranceResult.data)) : { ...demoData.insurance, tripId }
+    insurance: insuranceResult.data
+      ? insuranceToTravelInsurance(asRecord(insuranceResult.data))
+      : {
+          id: "",
+          tripId,
+          provider: "",
+          policyNumber: "",
+          emergencyPhone: "",
+          notes: ""
+        }
   };
 }
 
@@ -247,6 +278,237 @@ export async function createAuthenticatedTrip(input: NewTripInput): Promise<stri
 
   if (error) throw error;
   return asString(data);
+}
+
+export async function updateTrip(tripId: string, input: TripInput) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase
+    .from("trips")
+    .update({
+      title: input.title,
+      destination: input.destination,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      timezone: input.timezone,
+      currency: input.currency,
+      date_format: input.dateFormat,
+      default_visibility: input.defaultVisibility,
+      hotel_info: input.hotelInfo,
+      emergency_summary: input.emergencySummary,
+      estimated_budget: input.estimatedBudget
+    })
+    .eq("id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertItineraryItem(tripId: string, input: ItineraryInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    date: input.date,
+    start_time: input.startTime,
+    end_time: input.endTime || null,
+    title: input.title,
+    category: input.category,
+    location_name: input.locationName || null,
+    address: input.address || null,
+    notes: input.notes || null,
+    estimated_cost: input.estimatedCost ?? null,
+    booking_reference: input.bookingReference || null,
+    attachment_url: input.attachmentUrl || null,
+    visibility: input.visibility,
+    sort_order: input.sortOrder,
+    created_by: userData.user.id
+  };
+  const query = id ? supabase.from("itinerary_items").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("itinerary_items").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteItineraryItem(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("itinerary_items").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertPlace(tripId: string, input: PlaceInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    itinerary_item_id: input.itineraryItemId || null,
+    name: input.name,
+    category: input.category,
+    address: input.address,
+    latitude: input.latitude ?? null,
+    longitude: input.longitude ?? null,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id ? supabase.from("places").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("places").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deletePlace(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("places").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertExpense(tripId: string, input: ExpenseInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    amount: input.amount,
+    currency: input.currency,
+    category: input.category,
+    paid_by: input.paidBy,
+    date: input.date,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const result = id
+    ? await supabase.from("expenses").update(payload).eq("id", id).eq("trip_id", tripId).select("id").single()
+    : await supabase.from("expenses").insert(payload).select("id").single();
+  if (result.error) throw result.error;
+  const expenseId = asString(result.data.id);
+  const { error: deleteSplitsError } = await supabase.from("expense_splits").delete().eq("expense_id", expenseId);
+  if (deleteSplitsError) throw deleteSplitsError;
+  if (input.splitBetween.length) {
+    const shareAmount = input.amount / input.splitBetween.length;
+    const { error: splitError } = await supabase.from("expense_splits").insert(
+      input.splitBetween.map((profileId) => ({
+        expense_id: expenseId,
+        profile_id: profileId,
+        share_amount: shareAmount
+      }))
+    );
+    if (splitError) throw splitError;
+  }
+}
+
+export async function deleteExpense(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("expenses").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertPackingItem(tripId: string, input: PackingInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    name: input.name,
+    category: input.category,
+    quantity: input.quantity,
+    assigned_to: input.assignedTo || null,
+    is_shared: input.isShared,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id ? supabase.from("packing_items").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("packing_items").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deletePackingItem(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("packing_items").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertDocument(tripId: string, input: DocumentInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  let storagePath: string | undefined;
+  if (input.file) {
+    storagePath = `${tripId}/${crypto.randomUUID()}-${input.file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+    const { error: uploadError } = await supabase.storage.from("trip-documents").upload(storagePath, input.file, { upsert: false });
+    if (uploadError) throw uploadError;
+  }
+  const payload = {
+    trip_id: tripId,
+    itinerary_item_id: input.itineraryItemId || null,
+    file_name: input.fileName,
+    file_type: input.fileType,
+    category: input.category,
+    uploaded_by: userData.user.id,
+    is_private: input.isPrivate,
+    ...(storagePath ? { storage_path: storagePath } : {})
+  };
+  const query = id ? supabase.from("documents").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("documents").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteDocument(tripId: string, id: string, storagePath?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("documents").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+  if (storagePath) {
+    await supabase.storage.from("trip-documents").remove([storagePath]);
+  }
+}
+
+export async function upsertEmergencyContact(tripId: string, input: EmergencyContactInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    name: input.name,
+    relationship: input.relationship,
+    phone: input.phone,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id ? supabase.from("emergency_contacts").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("emergency_contacts").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteEmergencyContact(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("emergency_contacts").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function upsertInsurance(tripId: string, input: InsuranceInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    provider: input.provider,
+    policy_number: input.policyNumber,
+    emergency_phone: input.emergencyPhone,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id ? supabase.from("travel_insurance").update(payload).eq("id", id).eq("trip_id", tripId) : supabase.from("travel_insurance").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function upsertMedicalNote(tripId: string, input: MedicalNoteInput) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("family_medical_notes").upsert({
+    trip_id: tripId,
+    profile_id: input.profileId,
+    allergies: input.allergies || null,
+    medications: input.medications || null,
+    notes: input.medicalNotes || null,
+    visible_to_owner: input.visibleToOwner
+  });
+  if (error) throw error;
 }
 
 export async function listShareLinks(tripId: string): Promise<ShareLink[]> {

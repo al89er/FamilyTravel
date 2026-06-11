@@ -28,6 +28,7 @@ export default function App() {
     loadAdminTrips,
     openAuthenticatedTrip,
     createTrip,
+    refreshCurrentTrip,
     joinFamilyTrip,
     startDemo,
     leaveSession,
@@ -38,6 +39,8 @@ export default function App() {
     setActiveView(view as AppView);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  const canEdit = accessMode === "owner" || accessMode === "organizer";
 
   if (!data) {
     return (
@@ -72,13 +75,13 @@ export default function App() {
       {!loading ? (
         <>
           {activeView === "dashboard" ? <Dashboard data={data} openView={openView} /> : null}
-          {activeView === "itinerary" ? <Itinerary data={data} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
-          {activeView === "map" ? <MapPlaces data={data} /> : null}
-          {activeView === "documents" ? <Documents data={data} /> : null}
-          {activeView === "expenses" ? <Expenses data={data} /> : null}
-          {activeView === "packing" ? <Packing data={data} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
-          {activeView === "emergency" ? <Emergency data={data} /> : null}
-          {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} /> : null}
+          {activeView === "itinerary" ? <Itinerary data={data} familySession={familySession} canEdit={canEdit} onRefresh={refreshCurrentTrip} onRefreshFamily={refreshFamilySession} /> : null}
+          {activeView === "map" ? <MapPlaces data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "documents" ? <Documents data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "expenses" ? <Expenses data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "packing" ? <Packing data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
+          {activeView === "emergency" ? <Emergency data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} onRefresh={refreshCurrentTrip} /> : null}
         </>
       ) : null}
     </Layout>

@@ -212,6 +212,22 @@ trip-documents
 
 Document object access is controlled by RLS policies that check trip membership and the matching row in `public.documents`.
 
+## How to Add Real Trip Details
+
+Sign in as the trip Owner or an Organizer, then use the app screens directly:
+
+- `Settings -> Trip overview`: edit title, destination, dates, timezone, currency, budget, accommodation summary, emergency summary, and default visibility.
+- `Itinerary`: add, edit, or delete flights, hotels, meals, activities, booking references, attachment URLs, and item visibility.
+- `Map`: add, edit, or delete hotels, restaurants, attractions, airports, hospitals, pharmacies, meeting points, and optional coordinates.
+- `Expenses`: add, edit, or delete expenses, choose who paid, and choose split members.
+- `Packing`: add, edit, or delete shared/personal packing items and assignments.
+- `Documents`: add document metadata, upload files to the private `trip-documents` bucket, mark documents private/shared, edit metadata, or delete records.
+- `Emergency`: manage emergency contacts, nearby hospitals, insurance information, and member medical notes.
+
+Family and Demo sessions do not see edit buttons. Family users remain limited to shared trip data plus comments, votes, and shared packing checks when enabled on the share link.
+
+All Owner/Organizer edits persist through Supabase and then refresh the current trip from the database. The frontend only uses the public anon key with the signed-in user session; RLS remains the enforcement layer. The service-role key is still only used by the organizer-management Edge Function.
+
 ## GitHub Pages Deployment
 
 The repo includes a GitHub Actions workflow:

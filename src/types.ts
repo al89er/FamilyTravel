@@ -232,3 +232,21 @@ export interface ShareLink {
   createdAt: string;
   token?: string;
 }
+
+export type TripInput = Omit<Trip, "id">;
+export type ItineraryInput = Omit<ItineraryItem, "id" | "tripId">;
+export type PlaceInput = Omit<Place, "id" | "tripId">;
+export type ExpenseInput = Omit<Expense, "id" | "tripId" | "receiptPath">;
+export type PackingInput = Omit<PackingItem, "id" | "tripId" | "checkedBy">;
+export type DocumentInput = Omit<TravelDocument, "id" | "tripId" | "uploadedBy" | "storagePath" | "createdAt"> & {
+  file?: File | null;
+};
+export type EmergencyContactInput = Omit<EmergencyContact, "id" | "tripId">;
+export type InsuranceInput = Omit<TravelInsurance, "id" | "tripId">;
+export interface MedicalNoteInput {
+  profileId: string;
+  allergies?: string;
+  medications?: string;
+  medicalNotes?: string;
+  visibleToOwner: boolean;
+}

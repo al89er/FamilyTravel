@@ -138,6 +138,24 @@ export function useAppState() {
     }
   }
 
+  async function refreshCurrentTrip() {
+    if (!data || accessMode === "family") return;
+    if (accessMode === "demo") {
+      setData({ ...data });
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await loadAuthenticatedTrip(data.trip.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not refresh trip data.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function createTrip(input: NewTripInput) {
     setLoading(true);
     setAccessStatus("loading");
@@ -225,6 +243,7 @@ export function useAppState() {
     loadAdminTrips,
     openAuthenticatedTrip,
     createTrip,
+    refreshCurrentTrip,
     joinFamilyTrip,
     startDemo,
     leaveSession,
