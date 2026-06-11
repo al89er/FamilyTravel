@@ -168,7 +168,7 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
 }
 
 function HospitalForm({ tripId, hospital, onSaved, onCancel }: { tripId: string; hospital?: Place; onSaved: () => Promise<void>; onCancel: () => void }) {
-  const [form, setForm] = useState<PlaceInput>({ name: hospital?.name ?? "", category: "hospital", address: hospital?.address ?? "", latitude: hospital?.latitude, longitude: hospital?.longitude, notes: hospital?.notes });
+  const [form, setForm] = useState<PlaceInput>({ name: hospital?.name ?? "", category: "hospital", address: hospital?.address ?? "", latitude: hospital?.latitude, longitude: hospital?.longitude, visibility: hospital?.visibility ?? "shared", notes: hospital?.notes });
   return <SimpleForm onCancel={onCancel} onSave={async () => { await upsertPlace(tripId, form, hospital?.id); await onSaved(); }}>
     <Field label="Hospital name"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
     <Field label="Address"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></Field>

@@ -100,6 +100,9 @@ export const demoData: AppData = {
       name: "Sunrise Nusa Dua Resort",
       category: "hotel",
       address: "Nusa Dua, Bali",
+      latitude: -8.8006,
+      longitude: 115.2287,
+      visibility: "shared",
       notes: "Ask for baby cot and late checkout."
     },
     {
@@ -108,14 +111,21 @@ export const demoData: AppData = {
       name: "BIMC Hospital Nusa Dua",
       category: "hospital",
       address: "Kawasan ITDC Blok D, Nusa Dua",
+      latitude: -8.8012,
+      longitude: 115.2237,
+      visibility: "shared",
       notes: "International clinic with 24-hour emergency service."
     },
     {
       id: "40000000-0000-0000-0000-000000000003",
       tripId: "10000000-0000-0000-0000-000000000001",
+      itineraryItemId: "30000000-0000-0000-0000-000000000003",
       name: "Jimbaran Bay",
       category: "restaurant",
       address: "Jimbaran Beach",
+      latitude: -8.7816,
+      longitude: 115.1628,
+      visibility: "shared",
       notes: "Sunset seafood dinner area."
     }
   ],

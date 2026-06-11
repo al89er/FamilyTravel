@@ -345,6 +345,7 @@ export async function upsertPlace(tripId: string, input: PlaceInput, id?: string
     address: input.address,
     latitude: input.latitude ?? null,
     longitude: input.longitude ?? null,
+    visibility: input.visibility,
     notes: input.notes || null,
     created_by: userData.user.id
   };
@@ -748,6 +749,7 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       address: asString(place.address),
       latitude: optionalNumber(place.latitude),
       longitude: optionalNumber(place.longitude),
+      visibility: asVisibility(place.visibility),
       notes: optionalString(place.notes)
     })),
     documents: payload.documents.map((document) => ({
@@ -920,6 +922,7 @@ function placeToPlace(place: Record<string, unknown>) {
     address: asString(place.address),
     latitude: optionalNumber(place.latitude),
     longitude: optionalNumber(place.longitude),
+    visibility: asVisibility(place.visibility),
     notes: optionalString(place.notes)
   };
 }
