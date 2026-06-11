@@ -10,23 +10,56 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["pwa-192.svg", "pwa-512.svg"],
+      // Include all icon PNGs and the favicon in the precache
+      includeAssets: [
+        "favicon.ico",
+        "apple-touch-icon.png",
+        "icon-16.png",
+        "icon-32.png",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-maskable-192.png",
+        "icon-maskable-512.png"
+      ],
       manifest: {
         name: "Family Travel Companion",
-        short_name: "FamilyTrip",
-        description: "Plan, share, and follow family travel itineraries.",
+        short_name: "FamilyTravel",
+        description:
+          "Plan family trips, itineraries, rooms, seats, documents, expenses, and emergency details.",
         theme_color: "#0f766e",
-        background_color: "#f8fafc",
+        background_color: "#f3f6fb",
         display: "standalone",
         start_url: base,
         scope: base,
         icons: [
-          { src: `${base}pwa-192.svg`, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
-          { src: `${base}pwa-512.svg`, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+          {
+            src: `${base}icon-192.png`,
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: `${base}icon-512.png`,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"
+          },
+          {
+            src: `${base}icon-maskable-192.png`,
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable"
+          },
+          {
+            src: `${base}icon-maskable-512.png`,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+          }
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,json}"],
+        globPatterns: ["**/*.{js,css,html,png,ico,json}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,

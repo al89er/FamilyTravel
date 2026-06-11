@@ -1,8 +1,8 @@
 import L from "leaflet";
-import { ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
 import { deletePlace, upsertPlace } from "../lib/supabase";
 import type { AppData, ItineraryItem, Place, PlaceCategory, PlaceInput, Visibility } from "../types";
 
@@ -94,26 +94,29 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         />
       ) : null}
 
-      <Card className="p-3 sm:p-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Day">
-            <select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={filters.date} onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))}>
-              <option value="all">All days</option>
-              {itineraryDates.map((date) => (
-                <option key={date} value={date}>{formatDateLabel(date, data.trip.dateFormat)}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Category">
-            <select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value as MapFilters["category"] }))}>
-              <option value="all">All categories</option>
-              {placeCategories.map((category) => (
-                <option key={category} value={category}>{formatCategory(category)}</option>
-              ))}
-            </select>
-          </Field>
+      <div className="flex flex-col gap-3 mb-4">
+        {/* Day filter chips */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted">Day</span>
+          <FilterChip active={filters.date === "all"} onClick={() => setFilters(c => ({ ...c, date: "all" }))}>All</FilterChip>
+          {itineraryDates.map((date) => (
+            <FilterChip key={date} active={filters.date === date} onClick={() => setFilters(c => ({ ...c, date }))}>
+              {formatDateLabel(date, data.trip.dateFormat)}
+            </FilterChip>
+          ))}
         </div>
-      </Card>
+        {/* Category filter chips */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted">Type</span>
+          <FilterChip active={filters.category === "all"} onClick={() => setFilters(c => ({ ...c, category: "all" }))}>All</FilterChip>
+          {placeCategories.map((category) => (
+            <FilterChip key={category} active={filters.category === category} onClick={() => setFilters(c => ({ ...c, category }))}
+            >
+              {formatCategory(category)}
+            </FilterChip>
+          ))}
+        </div>
+      </div>
 
       <Card className="overflow-hidden">
         <div className="h-[360px] min-h-[320px] w-full sm:h-[440px]">
@@ -121,18 +124,30 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-secondary">
         <Badge>{filteredPlaces.length} places</Badge>
         <Badge>{markerPlaces.length} mapped</Badge>
         <Badge>{routePlaces.length > 1 ? "Route drawn" : "Add two mapped places for a route"}</Badge>
       </div>
 
       {filteredPlaces.length === 0 ? (
-        <EmptyState title="No places match the filters" body="Add hotels, restaurants, attractions, pharmacies, hospitals, and meeting points." />
+        <EmptyState 
+          icon={<MapPinned className="h-8 w-8" />}
+          title="No places match" 
+          body="Add hotels, restaurants, attractions, pharmacies, hospitals, and meeting points." 
+        />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {filteredPlaces.map((place) => (
-            <PlaceCard key={place.id} data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} />
+        <div className="space-y-3">
+          {filteredPlaces.map((place, idx) => (
+            <div key={place.id} className="flex gap-3">
+              {/* Numbered place indicator */}
+              <div className="shrink-0 mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm">
+                {idx + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <PlaceCard data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} />
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -231,19 +246,30 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh }: { data: A
   return (
     <Card className="p-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-brand-50 p-2 text-brand-800">
-          {place.category === "hospital" ? <Hospital className="h-5 w-5" /> : <MapPinned className="h-5 w-5" />}
+        <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-xl ${place.category === "hospital" ? "bg-red-100 dark:bg-red-950" : "bg-primary/10"}`}>
+          {place.category === "hospital" ? (
+            <Hospital className="h-5 w-5 text-red-600 dark:text-red-400" />
+          ) : (
+            <MapPinned className="h-5 w-5 text-primary" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-slate-950">{place.name}</h3>
-            <Badge>{formatCategory(place.category)}</Badge>
-            <Badge>{place.visibility.replace("_", " ")}</Badge>
+            <h3 className="font-semibold text-primary">{place.name}</h3>
+            <Badge tone="slate">{formatCategory(place.category)}</Badge>
+            {place.visibility !== "shared" && <Badge tone="zinc">{place.visibility.replace("_", " ")}</Badge>}
           </div>
-          <p className="mt-1 text-sm text-slate-600">{place.address || "No address saved"}</p>
-          {itineraryItem ? <p className="mt-1 text-xs text-slate-500">{formatDateLabel(itineraryItem.date, data.trip.dateFormat)} | Stop {itineraryItem.sortOrder}: {itineraryItem.title}</p> : null}
-          {place.latitude != null && place.longitude != null ? <p className="mt-1 text-xs text-slate-500">{place.latitude}, {place.longitude}</p> : <p className="mt-1 text-xs text-amber-700">No coordinates saved. This place appears in the list only.</p>}
-          {place.notes ? <p className="mt-2 text-sm text-slate-700">{place.notes}</p> : null}
+          <p className="mt-1 text-sm text-secondary">{place.address || "No address saved"}</p>
+          {itineraryItem ? <p className="mt-1 text-xs text-muted">{formatDateLabel(itineraryItem.date, data.trip.dateFormat)} · Stop {itineraryItem.sortOrder}: {itineraryItem.title}</p> : null}
+          {place.latitude != null && place.longitude != null ? (
+            <p className="mt-1 text-xs text-muted">{place.latitude}, {place.longitude}</p>
+          ) : (
+            <div className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-warning/10 px-2.5 py-1.5 ring-1 ring-warning/20">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
+              <p className="text-xs font-medium text-warning">No coordinates — place appears in list only</p>
+            </div>
+          )}
+          {place.notes ? <p className="mt-2 text-sm text-secondary">{place.notes}</p> : null}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button variant="ghost" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
               <ExternalLink className="h-4 w-4" aria-hidden="true" />Open in Google Maps
@@ -255,7 +281,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh }: { data: A
               </>
             ) : null}
           </div>
-          {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
+          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
         </div>
       </div>
     </Card>
@@ -376,41 +402,41 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
         <div className="space-y-2 md:col-span-2">
           <Field label="Search place">
             <input
-              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              className={formInputClass}
               placeholder="Search a hotel, restaurant, landmark, or address"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </Field>
-          <p className="text-xs text-slate-500">Search is powered by OpenStreetMap Nominatim. Please verify coordinates before travel.</p>
-          {searchLoading ? <p className="text-sm text-slate-600">Searching places...</p> : null}
-          {searchError ? <p className="text-sm text-red-700">{searchError}</p> : null}
+          <p className="text-xs text-muted">Search is powered by OpenStreetMap Nominatim. Please verify coordinates before travel.</p>
+          {searchLoading ? <p className="text-sm text-secondary">Searching places...</p> : null}
+          {searchError ? <p className="text-sm text-danger">{searchError}</p> : null}
           {searchResults.length ? (
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="overflow-hidden rounded-lg border border-border bg-surface">
               {searchResults.map((result) => (
                 <button
-                  className="block w-full border-b border-slate-100 px-3 py-3 text-left last:border-b-0 hover:bg-slate-50 focus:bg-slate-50"
+                  className="block w-full border-b border-border px-3 py-3 text-left last:border-b-0 hover:bg-muted focus:bg-muted"
                   key={`${result.osm_type ?? "place"}-${result.osm_id ?? result.place_id ?? result.display_name}`}
                   type="button"
                   onClick={() => selectSearchResult(result)}
                 >
-                  <span className="block text-sm font-semibold text-slate-900">{result.name || result.display_name.split(",")[0]}</span>
-                  <span className="mt-1 block text-xs leading-5 text-slate-600">{result.display_name}</span>
+                  <span className="block text-sm font-semibold text-primary">{result.name || result.display_name.split(",")[0]}</span>
+                  <span className="mt-1 block text-xs leading-5 text-secondary">{result.display_name}</span>
                 </button>
               ))}
             </div>
           ) : null}
         </div>
-        <Field label="Name"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.name} onChange={(event) => update("name", event.target.value)} /></Field>
-        <Field label="Category"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.category} onChange={(event) => update("category", event.target.value as PlaceCategory)}>{placeCategories.map((category) => <option key={category} value={category}>{formatCategory(category)}</option>)}</select></Field>
-        <Field label="Visibility"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility.replace("_", " ")}</option>)}</select></Field>
-        <Field label="Linked itinerary item"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}><option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.date} - {item.title}</option>)}</select></Field>
-        <Field label="Address"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.address} onChange={(event) => update("address", event.target.value)} /></Field>
+        <Field label="Name"><input className={formInputClass} value={form.name} onChange={(event) => update("name", event.target.value)} /></Field>
+        <Field label="Category"><select className={formSelectClass} value={form.category} onChange={(event) => update("category", event.target.value as PlaceCategory)}>{placeCategories.map((category) => <option key={category} value={category}>{formatCategory(category)}</option>)}</select></Field>
+        <Field label="Visibility"><select className={formSelectClass} value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility.replace("_", " ")}</option>)}</select></Field>
+        <Field label="Linked itinerary item"><select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}><option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.date} - {item.title}</option>)}</select></Field>
+        <Field label="Address"><input className={formInputClass} value={form.address} onChange={(event) => update("address", event.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Latitude"><input type="number" min="-90" max="90" step="0.0000001" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
-          <Field label="Longitude"><input type="number" min="-180" max="180" step="0.0000001" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.longitude ?? ""} onChange={(event) => update("longitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
+          <Field label="Latitude"><input type="number" min="-90" max="90" step="0.0000001" className={formInputClass} value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
+          <Field label="Longitude"><input type="number" min="-180" max="180" step="0.0000001" className={formInputClass} value={form.longitude ?? ""} onChange={(event) => update("longitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
         </div>
-        <Field label="Notes"><textarea className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2" value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
+        <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
         <div className="flex gap-2 md:col-span-2">
           <Button type="submit" disabled={busy}>Save</Button>
@@ -461,6 +487,30 @@ function toDegrees(value: number) {
 function googleMapsUrl(place: Place) {
   const query = place.latitude != null && place.longitude != null ? `${place.latitude},${place.longitude}` : `${place.name} ${place.address}`.trim();
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${
+        active
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "bg-surface text-secondary ring-1 ring-border hover:bg-muted hover:text-primary"
+      }`}
+    >
+      {children}
+    </button>
+  );
 }
 
 function formatCategory(category: string) {

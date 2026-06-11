@@ -1,8 +1,31 @@
-import { Pencil, Plus, ReceiptText, Trash2 } from "lucide-react";
+import { DollarSign, Pencil, Plus, ReceiptText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
 import { deleteExpense, upsertExpense } from "../lib/supabase";
 import type { AppData, Expense, ExpenseInput } from "../types";
+
+// Map common expense category names to a colour
+const EXPENSE_CATEGORY_COLOURS: Record<string, string> = {
+  food: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  dining: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  restaurant: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  transport: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300",
+  taxi: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300",
+  flight: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  hotel: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
+  accommodation: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
+  shopping: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+  activity: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  entertainment: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+};
+
+function expenseCategoryClass(category: string) {
+  const key = category.trim().toLowerCase();
+  for (const [k, v] of Object.entries(EXPENSE_CATEGORY_COLOURS)) {
+    if (key.includes(k)) return v;
+  }
+  return "bg-muted text-secondary";
+}
 
 export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
   const [showForm, setShowForm] = useState(false);
@@ -17,44 +40,76 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
     <div className="space-y-5">
       <SectionHeader title="Expense Tracker" eyebrow="Actual vs estimated" action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add expense</Button> : null} />
       {canEdit && showForm ? <ExpenseForm data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="p-4">
-          <p className="text-sm text-slate-600">Total spending</p>
-          <p className="mt-2 text-3xl font-bold text-ink tabular-nums">
-            {data.trip.currency} {total.toLocaleString()}
-          </p>
+
+      {/* Summary strip */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="relative overflow-hidden p-5">
+          <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-primary/10" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <DollarSign className="h-5 w-5 text-primary" aria-hidden="true" />
+          </div>
+          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted">Total spent</p>
+          <p className="mt-1 text-2xl font-bold text-primary tabular-nums">{data.trip.currency} {total.toLocaleString()}</p>
         </Card>
-        <Card className="p-4 lg:col-span-2">
-          <p className="text-sm font-semibold text-slate-900">Spending by category</p>
-          <div className="mt-3 space-y-2">
+
+        <Card className="p-5 sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">By category</p>
+          <div className="mt-3 space-y-2.5">
             {Object.entries(byCategory).map(([category, amount]) => (
               <div key={category}>
-                <div className="flex justify-between text-sm">
-                  <span>{category}</span>
-                  <span className="tabular-nums">{amount.toLocaleString()}</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${expenseCategoryClass(category)}`}>{category}</span>
+                  <span className="font-semibold tabular-nums text-primary">{data.trip.currency} {amount.toLocaleString()}</span>
                 </div>
-                <div className="mt-1 h-2 rounded-full bg-slate-100">
-                  <div className="h-2 rounded-full bg-brand-700" style={{ width: `${total > 0 ? Math.max(8, (amount / total) * 100) : 0}%` }} />
+                <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full bg-primary transition-all"
+                    style={{ width: `${total > 0 ? Math.max(6, (amount / total) * 100) : 0}%` }}
+                  />
                 </div>
               </div>
             ))}
+            {Object.keys(byCategory).length === 0 && <p className="text-sm text-muted">No spending yet.</p>}
           </div>
         </Card>
       </div>
 
-      <Card className="p-4">
-        <SectionHeader title="Who Owes Whom" />
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
-          {balance.map((line) => (
-            <div key={line} className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
-              {line}
+      {/* Who owes whom */}
+      {balance.length > 0 ? (
+        <Card className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
+              <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
             </div>
-          ))}
-        </div>
-      </Card>
+            <h3 className="font-semibold text-primary">Settlement</h3>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {balance.map((line) => {
+              const owes = line.includes("owes");
+              return (
+                <div
+                  key={line}
+                  className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium ${owes ? "bg-danger/8 text-danger ring-1 ring-danger/20" : "bg-success/8 text-success ring-1 ring-success/20"}`}
+                >
+                  {owes
+                    ? <TrendingDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    : <TrendingUp className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  }
+                  {line}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      ) : null}
 
       {data.expenses.length === 0 ? (
-        <EmptyState title="No expenses yet" body="Add receipts, notes, split members, and categories as spending happens." />
+        <EmptyState
+          icon={<ReceiptText className="h-8 w-8" />}
+          title="No expenses yet"
+          body="Add receipts, notes, split members, and categories as spending happens."
+          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first expense</Button> : null}
+        />
       ) : (
         <div className="space-y-3">
           {data.expenses.map((expense) => (
@@ -93,22 +148,35 @@ function ExpenseCard({ data, expense, canEdit, onRefresh }: { data: AppData; exp
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex gap-3">
-          <ReceiptText className="mt-1 h-5 w-5 text-brand-700" aria-hidden="true" />
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <ReceiptText className="h-5 w-5 text-secondary" aria-hidden="true" />
+          </div>
           <div>
-            <h3 className="font-semibold text-slate-950">{expense.category}</h3>
-            <p className="text-sm text-slate-600">{expense.date}{paidBy ? ` | paid by ${paidBy}` : ""}</p>
-            {expense.notes ? <p className="mt-1 text-sm text-slate-700">{expense.notes}</p> : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${expenseCategoryClass(expense.category)}`}>
+                {expense.category}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-secondary">
+              {expense.date}{paidBy ? ` · paid by ${paidBy}` : ""}
+            </p>
+            {expense.notes ? <p className="mt-1 text-sm text-secondary">{expense.notes}</p> : null}
             {canEdit ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
                 <Button variant="ghost" disabled={busy} onClick={() => void remove()}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
               </div>
             ) : null}
-            {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
+            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
           </div>
         </div>
-        <Badge tone="coral">{expense.currency} {expense.amount.toLocaleString()}</Badge>
+        <div className="shrink-0 text-right">
+          <p className="text-lg font-bold tabular-nums text-primary">{expense.currency} {expense.amount.toLocaleString()}</p>
+          {expense.splitBetween.length > 0 && (
+            <p className="mt-0.5 text-xs text-muted">÷ {expense.splitBetween.length} people</p>
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -162,17 +230,17 @@ function ExpenseForm({ data, expense, onSaved, onCancel }: { data: AppData; expe
   return (
     <Card className="p-4">
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
-        <Field label="Category"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.category} onChange={(event) => update("category", event.target.value)} /></Field>
-        <Field label="Amount"><input type="number" min="0" step="0.01" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.amount} onChange={(event) => update("amount", Number(event.target.value))} /></Field>
-        <Field label="Currency"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.currency} onChange={(event) => update("currency", event.target.value)} maxLength={3} /></Field>
-        <Field label="Date"><input type="date" className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.date} onChange={(event) => update("date", event.target.value)} /></Field>
-        <Field label="Paid by"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.paidBy} onChange={(event) => update("paidBy", event.target.value)}>{data.members.map((member) => <option key={member.profileId} value={member.profileId}>{member.profile.displayName}</option>)}</select></Field>
-        <Field label="Notes"><textarea className="min-h-24 w-full rounded-lg border border-slate-300 px-3 py-2" value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
+        <Field label="Category"><input className={formInputClass} value={form.category} onChange={(event) => update("category", event.target.value)} placeholder="e.g. Food, Transport, Hotel" /></Field>
+        <Field label="Amount"><input type="number" min="0" step="0.01" className={formInputClass} value={form.amount} onChange={(event) => update("amount", Number(event.target.value))} /></Field>
+        <Field label="Currency"><input className={formInputClass} value={form.currency} onChange={(event) => update("currency", event.target.value)} maxLength={3} /></Field>
+        <Field label="Date"><input type="date" className={formInputClass} value={form.date} onChange={(event) => update("date", event.target.value)} /></Field>
+        <Field label="Paid by"><select className={formSelectClass} value={form.paidBy} onChange={(event) => update("paidBy", event.target.value)}>{data.members.map((member) => <option key={member.profileId} value={member.profileId}>{member.profile.displayName}</option>)}</select></Field>
+        <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
         <div className="md:col-span-2">
-          <p className="text-sm font-medium text-slate-800">Split between</p>
+          <p className="text-sm font-semibold text-primary">Split between</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {data.members.map((member) => (
-              <label key={member.profileId} className="flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm">
+              <label key={member.profileId} className="flex min-h-10 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-primary transition-colors hover:bg-muted">
                 <input type="checkbox" checked={form.splitBetween.includes(member.profileId)} onChange={() => toggleSplit(member.profileId)} />
                 {member.profile.displayName}
               </label>
@@ -181,7 +249,7 @@ function ExpenseForm({ data, expense, onSaved, onCancel }: { data: AppData; expe
         </div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
         <div className="flex gap-2 md:col-span-2">
-          <Button type="submit" disabled={busy}>Save</Button>
+          <Button type="submit" disabled={busy}>Save expense</Button>
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
       </form>

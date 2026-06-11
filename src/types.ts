@@ -163,6 +163,31 @@ export interface EmergencyContact {
   notes?: string;
 }
 
+export interface RoomAssignment {
+  id: string;
+  tripId: string;
+  itineraryItemId?: string;
+  hotelName: string;
+  checkInDate?: string;
+  checkOutDate?: string;
+  roomNumber: string;
+  guestIds: string[];
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface FlightSeatAssignment {
+  id: string;
+  tripId: string;
+  itineraryItemId?: string;
+  flightLabel: string;
+  guestId: string;
+  guestName: string;
+  seatNumber: string;
+  notes?: string;
+  createdAt?: string;
+}
+
 export interface TravelInsurance {
   id: string;
   tripId: string;
@@ -185,6 +210,8 @@ export interface AppData {
   comments: Comment[];
   emergencyContacts: EmergencyContact[];
   insurance: TravelInsurance;
+  roomAssignments: RoomAssignment[];
+  flightSeatAssignments: FlightSeatAssignment[];
 }
 
 export interface FamilyPermissions {
@@ -200,7 +227,7 @@ export interface FamilySession {
   permissions: FamilyPermissions;
 }
 
-export type AccessMode = "locked" | "owner" | "organizer" | "family" | "demo";
+export type AccessMode = "locked" | "owner" | "organizer" | "family";
 
 export interface TripSummary {
   id: string;
@@ -244,6 +271,8 @@ export type DocumentInput = Omit<TravelDocument, "id" | "tripId" | "uploadedBy" 
 };
 export type EmergencyContactInput = Omit<EmergencyContact, "id" | "tripId">;
 export type InsuranceInput = Omit<TravelInsurance, "id" | "tripId">;
+export type RoomAssignmentInput = Omit<RoomAssignment, "id" | "tripId" | "createdAt">;
+export type FlightSeatAssignmentInput = Omit<FlightSeatAssignment, "id" | "tripId" | "createdAt">;
 export interface MedicalNoteInput {
   profileId: string;
   allergies?: string;

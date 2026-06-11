@@ -1,10 +1,29 @@
-import { FileLock2, FileText, Pencil, Trash2, Upload } from "lucide-react";
+import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
 import { deleteDocument, upsertDocument } from "../lib/supabase";
 import type { AppData, DocumentCategory, DocumentInput, TravelDocument } from "../types";
 
 const documentCategories: DocumentCategory[] = ["flight_ticket", "hotel_booking", "passport", "insurance", "attraction_ticket", "other"];
+
+function DocumentCategoryIcon({ category }: { category: string }) {
+  const cls = "h-5 w-5";
+  if (category === "flight_ticket") return <Plane className={cls} />;
+  if (category === "hotel_booking") return <Hotel className={cls} />;
+  if (category === "passport") return <ShieldCheck className={cls} />;
+  if (category === "insurance") return <ShieldCheck className={cls} />;
+  if (category === "attraction_ticket") return <Ticket className={cls} />;
+  return <FileQuestion className={cls} />;
+}
+
+const DOC_CATEGORY_STYLE: Record<string, string> = {
+  flight_ticket: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  hotel_booking: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
+  passport: "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
+  insurance: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  attraction_ticket: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  other: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400",
+};
 
 export function Documents({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
   const [showForm, setShowForm] = useState(false);
@@ -22,11 +41,22 @@ export function Documents({ data, canEdit = false, onRefresh }: { data: AppData;
         ) : null}
       />
       {canEdit && showForm ? <DocumentForm data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-        Sensitive documents should be protected. Store only what the family needs, mark private files carefully, and keep RLS policies enabled.
+
+      {/* Security notice */}
+      <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/8 p-4">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+        <p className="text-sm leading-relaxed text-warning">
+          Sensitive documents should be protected. Store only what the family needs, mark private files carefully, and keep RLS policies enabled.
+        </p>
       </div>
+
       {data.documents.length === 0 ? (
-        <EmptyState title="No documents uploaded" body="Upload PDFs or images for tickets, bookings, passports, insurance, and attraction passes." />
+        <EmptyState
+          icon={<FileText className="h-8 w-8" />}
+          title="No documents uploaded"
+          body="Upload PDFs or images for tickets, bookings, passports, insurance, and attraction passes."
+          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first document</Button> : null}
+        />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {data.documents.map((document) => (
@@ -61,18 +91,30 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
     return <DocumentForm data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
   }
 
+  const iconStyle = DOC_CATEGORY_STYLE[document.category] ?? DOC_CATEGORY_STYLE.other;
+
   return (
     <Card className="p-4">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-slate-100 p-2 text-slate-700">
-          {document.isPrivate ? <FileLock2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+        {/* Category icon */}
+        <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-xl ${iconStyle}`}>
+          {document.isPrivate
+            ? <FileLock2 className="h-5 w-5" aria-hidden="true" />
+            : <DocumentCategoryIcon category={document.category} />
+          }
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="break-words font-semibold text-slate-950">{document.fileName}</h3>
-          <p className="mt-1 text-sm text-slate-600">{document.fileType}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge tone="brand">{document.category.replace("_", " ")}</Badge>
-            <Badge tone={document.isPrivate ? "red" : "slate"}>{document.isPrivate ? "Private" : "Shared"}</Badge>
+          <h3 className="break-words font-semibold text-primary">{document.fileName}</h3>
+          <p className="mt-0.5 text-xs text-muted">{document.fileType}</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${iconStyle} ring-current/20`}>
+              {document.category.replace(/_/g, " ")}
+            </span>
+            {document.isPrivate ? (
+              <Badge tone="red">Private</Badge>
+            ) : (
+              <Badge tone="slate">Shared</Badge>
+            )}
           </div>
           {canEdit ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -80,7 +122,7 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
               <Button variant="ghost" disabled={busy} onClick={() => void remove()}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
             </div>
           ) : null}
-          {error ? <p className="mt-2 text-sm text-red-700">{error}</p> : null}
+          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
         </div>
       </div>
     </Card>
@@ -124,12 +166,22 @@ function DocumentForm({ data, document, onSaved, onCancel }: { data: AppData; do
   return (
     <Card className="p-4">
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
-        <Field label="File name"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.fileName} onChange={(event) => update("fileName", event.target.value)} /></Field>
-        <Field label="File type"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.fileType} onChange={(event) => update("fileType", event.target.value)} /></Field>
-        <Field label="Category"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.category} onChange={(event) => update("category", event.target.value as DocumentCategory)}>{documentCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></Field>
-        <Field label="Linked itinerary item"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}><option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></Field>
-        <Field label="Upload file"><input type="file" className="min-h-11 w-full rounded-lg border border-slate-300 px-3 py-2" onChange={(event) => update("file", event.target.files?.[0] ?? null)} /></Field>
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 px-3 text-sm">
+        <Field label="File name"><input className={formInputClass} value={form.fileName} onChange={(event) => update("fileName", event.target.value)} /></Field>
+        <Field label="File type"><input className={formInputClass} value={form.fileType} onChange={(event) => update("fileType", event.target.value)} /></Field>
+        <Field label="Category">
+          <select className={formSelectClass} value={form.category} onChange={(event) => update("category", event.target.value as DocumentCategory)}>
+            {documentCategories.map((category) => <option key={category} value={category}>{category.replace(/_/g, " ")}</option>)}
+          </select>
+        </Field>
+        <Field label="Linked itinerary item">
+          <select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}>
+            <option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+          </select>
+        </Field>
+        <Field label="Upload file">
+          <input type="file" className={`${formInputClass} py-2`} onChange={(event) => update("file", event.target.files?.[0] ?? null)} />
+        </Field>
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-primary hover:bg-muted transition-colors">
           <input type="checkbox" checked={form.isPrivate} onChange={(event) => update("isPrivate", event.target.checked)} />
           Private document
         </label>

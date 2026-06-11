@@ -266,5 +266,7 @@ export const demoData: AppData = {
     policyNumber: "ST-BALI-2026-8891",
     emergencyPhone: "+60 3 0000 0000",
     notes: "Covers outpatient clinic, hospital admission, and trip interruption."
-  }
+  },
+  roomAssignments: [],
+  flightSeatAssignments: []
 };

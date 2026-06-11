@@ -10,6 +10,23 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 - PWA install support with offline shell/data cache
 - GitHub Pages deployment
 
+## PWA Icons
+
+PWA icons are stored in `public/` and configured through `vite-plugin-pwa`.
+
+| File | Size | Purpose |
+|---|---|---|
+| `favicon.ico` | multi-size | Browser tab favicon |
+| `icon-16.png` | 16×16 | Browser tab (PNG fallback) |
+| `icon-32.png` | 32×32 | Browser tab (PNG fallback) |
+| `apple-touch-icon.png` | 180×180 | iOS home screen icon |
+| `icon-192.png` | 192×192 | PWA install icon |
+| `icon-512.png` | 512×512 | PWA splash / install |
+| `icon-maskable-192.png` | 192×192 | Android adaptive icon |
+| `icon-maskable-512.png` | 512×512 | Android adaptive icon (large) |
+
+Source icon files (used to generate the above) are in the `icons/` folder.
+
 ## Features
 
 - Three access roles: Owner, Organizer, and no-login Family Guest
@@ -21,6 +38,7 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 - Shared and personal packing lists with per-person checked state
 - Family voting, comments, and packing checks through share-token RPCs
 - Emergency contacts, insurance, nearby hospitals, and private-aware medical notes
+- **Family Assignments**: room numbers and flight seat assignments grouped by hotel and flight
 - Trip settings for currency, timezone, date format, default visibility, and member permissions
 - Explicit Demo Mode for the Bali Family Trip sample data
 
@@ -217,12 +235,13 @@ Document object access is controlled by RLS policies that check trip membership 
 Sign in as the trip Owner or an Organizer, then use the app screens directly:
 
 - `Settings -> Trip overview`: edit title, destination, dates, timezone, currency, budget, accommodation summary, emergency summary, and default visibility.
-- `Itinerary`: add, edit, or delete flights, hotels, meals, activities, booking references, attachment URLs, and item visibility.
+- `Itinerary`: add, edit, or delete flights, hotels, meals, activities, booking references, attachment URLs, and item visibility. Features a guided, mobile-friendly wizard form for easy entry!
 - `Map`: search for places with OpenStreetMap Nominatim, add/edit/delete hotels, restaurants, attractions, airports, hospitals, pharmacies, meeting points, and manually correct coordinates.
 - `Expenses`: add, edit, or delete expenses, choose who paid, and choose split members.
 - `Packing`: add, edit, or delete shared/personal packing items and assignments.
 - `Documents`: add document metadata, upload files to the private `trip-documents` bucket, mark documents private/shared, edit metadata, or delete records.
 - `Emergency`: manage emergency contacts, nearby hospitals, insurance information, and member medical notes.
+- `Assignments` (More menu): add and manage hotel room assignments (who is in which room) and flight seat assignments (who sits where on each flight). Grouped by hotel name and flight label.
 
 Family and Demo sessions do not see edit buttons. Family users remain limited to shared trip data plus comments, votes, and shared packing checks when enabled on the share link.
 
@@ -301,6 +320,8 @@ Password sign-in does not require OAuth redirects, but these URLs keep future re
 - Family users can view shared data and optionally comment, vote, and check packing items
 - Private document metadata is visible only to owners or uploader
 - Medical notes are visible to the person and optionally to trip owners
+- `family_room_assignments` stores hotel room allocations per trip; read/write by authenticated trip members via RLS
+- `family_flight_seat_assignments` stores per-passenger seat numbers per flight label; read/write by authenticated trip members via RLS
 
 ## Future Integration Points
 

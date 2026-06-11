@@ -1,6 +1,6 @@
 import { CalendarPlus, KeyRound, Link2, LogIn, Play, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState, formInputClass } from "../components/ui";
 import {
   completeRequiredPasswordChange,
   getPasswordChangeRequired,
@@ -19,8 +19,7 @@ export function AccessGate({
   onAdminAuthenticated,
   onSelectTrip,
   onCreateTrip,
-  onFamilyJoin,
-  onTryDemo
+  onFamilyJoin
 }: {
   loading: boolean;
   error: string | null;
@@ -31,29 +30,29 @@ export function AccessGate({
   onSelectTrip: (tripId: string) => Promise<void>;
   onCreateTrip: (input: NewTripInput) => Promise<void>;
   onFamilyJoin: (displayName: string, shareToken: string) => Promise<void>;
-  onTryDemo: () => void;
 }) {
+  const showFamilyFormByDefault = !!shareTokenFromUrl;
+  const [showFamilyAccess, setShowFamilyAccess] = useState(showFamilyFormByDefault);
+
+  if (accessStatus === "checking") {
+    return (
+      <main className="min-h-dvh bg-app flex items-center justify-center p-4">
+        <LoadingState label="Checking access..." />
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-dvh bg-slate-50 px-4 py-8 sm:px-6">
-      <div className="mx-auto grid min-h-[calc(100dvh-4rem)] max-w-6xl content-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="flex flex-col justify-center">
-          <p className="text-sm font-semibold text-brand-700">Private family planning workspace</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-normal text-ink sm:text-5xl">Family Travel Companion</h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-            Sign in as the trip owner or organizer, join with a family share token, or open the sample trip deliberately.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={onTryDemo}>
-              <Play className="h-4 w-4" aria-hidden="true" />
-              Try Demo Trip
-            </Button>
-          </div>
-          <p className="mt-4 text-sm text-slate-500">Trip details stay hidden until one of these access paths succeeds.</p>
+    <main className="min-h-dvh bg-app px-4 py-8 sm:px-6">
+      <div className="mx-auto grid min-h-[calc(100dvh-4rem)] max-w-lg content-center gap-6">
+        <section className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">Family Travel Companion</h1>
+          <p className="mt-3 text-base text-secondary">Plan together. Travel easier.</p>
         </section>
 
         <section className="space-y-4">
           {error ? <ErrorState message={error} /> : null}
-          {loading || accessStatus === "checking" ? <LoadingState label="Checking access" /> : null}
+          {loading ? <LoadingState label="Loading" /> : null}
           {accessStatus === "trip-select" ? <TripSelector trips={availableTrips} onSelectTrip={onSelectTrip} /> : null}
           {accessStatus === "empty" ? (
             <EmptyState
@@ -62,8 +61,35 @@ export function AccessGate({
             />
           ) : null}
           {accessStatus === "empty" || accessStatus === "trip-select" ? <CreateTripCard disabled={loading} onCreateTrip={onCreateTrip} /> : null}
-          <AdminAccessCard disabled={loading} onAuthenticated={onAdminAuthenticated} />
-          <FamilyAccessCard disabled={loading} initialShareToken={shareTokenFromUrl} onFamilyJoin={onFamilyJoin} />
+          
+          {(accessStatus === "locked") ? (
+            <>
+              {!showFamilyAccess && !showFamilyFormByDefault ? (
+                <>
+                  <AdminAccessCard disabled={loading} onAuthenticated={onAdminAuthenticated} />
+                  <div className="text-center pt-4">
+                     <p className="text-sm text-secondary mb-3">Joining as family?</p>
+                     <Button variant="secondary" onClick={() => setShowFamilyAccess(true)}>Join a family trip</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <FamilyAccessCard disabled={loading} initialShareToken={shareTokenFromUrl} onFamilyJoin={onFamilyJoin} />
+                  {!showFamilyFormByDefault ? (
+                    <div className="text-center mt-6">
+                       <p className="text-sm text-muted mb-3">Are you the trip organizer?</p>
+                       <Button variant="ghost" onClick={() => setShowFamilyAccess(false)}>Planner sign in</Button>
+                    </div>
+                  ) : (
+                    <div className="text-center mt-6">
+                       <p className="text-sm text-muted mb-3">Are you the trip organizer?</p>
+                       <Button variant="ghost" onClick={() => window.location.href = window.location.pathname}>Planner sign in</Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          ) : null}
         </section>
       </div>
     </main>
@@ -81,7 +107,7 @@ export function AccessStatusCard({
   familySession: FamilySession | null;
   onLeave: () => Promise<void>;
 }) {
-  const label = accessMode === "owner" ? "Owner" : accessMode === "organizer" ? "Organizer" : accessMode === "family" ? "Family" : "Demo";
+  const label = accessMode === "owner" ? "Owner" : accessMode === "organizer" ? "Organizer" : "Family";
   const detail = accessMode === "family" ? familySession?.displayName : data.currentUser.displayName;
 
   return (
@@ -89,12 +115,12 @@ export function AccessStatusCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-brand-700" aria-hidden="true" />
-            <h2 className="font-semibold text-slate-950">Access</h2>
+            <ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+            <h2 className="font-semibold text-primary">Access</h2>
           </div>
-          <p className="mt-1 text-sm text-slate-600">{detail}</p>
+          <p className="mt-1 text-sm text-secondary">{detail}</p>
         </div>
-        <Badge tone={accessMode === "demo" ? "amber" : "brand"}>{label}</Badge>
+        <Badge tone="brand">{label}</Badge>
       </div>
       <Button variant="ghost" onClick={() => void onLeave()}>
         Sign out
@@ -174,10 +200,10 @@ function AdminAccessCard({
 
   return (
     <Card className="p-4">
-      <h2 className="text-lg font-semibold text-slate-950">Owner / Organizer sign in</h2>
-      <p className="mt-1 text-sm text-slate-600">Use the username and password managed in Supabase Auth.</p>
+      <h2 className="text-lg font-semibold text-primary">Owner / Organizer sign in</h2>
+      <p className="mt-1 text-sm text-secondary">Use the username and password managed in Supabase Auth.</p>
       {!hasSupabaseConfig ? (
-        <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
+        <div className="mt-4 rounded-lg bg-muted p-3 text-sm text-secondary">
           Add your Supabase anon key in `.env.local` to enable authentication.
         </div>
       ) : null}
@@ -185,7 +211,7 @@ function AdminAccessCard({
         <form className="mt-4 space-y-3" onSubmit={onPasswordChangeSubmit}>
           <Field label="New password">
             <input
-              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              className={formInputClass}
               type="password"
               autoComplete="new-password"
               value={newPassword}
@@ -193,7 +219,7 @@ function AdminAccessCard({
             />
           </Field>
           {error ? <ErrorState message={error} /> : null}
-          {status ? <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">{status}</p> : null}
+          {status ? <p className="rounded-lg bg-primary/10 p-3 text-sm text-primary">{status}</p> : null}
           <Button type="submit" disabled={busy || disabled || !hasSupabaseConfig}>
             <KeyRound className="h-4 w-4" aria-hidden="true" />
             Update password
@@ -203,7 +229,7 @@ function AdminAccessCard({
         <form className="mt-4 space-y-3" onSubmit={onSubmit}>
           <Field label="Username">
             <input
-              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              className={formInputClass}
               type="text"
               autoComplete="username"
               value={username}
@@ -213,7 +239,7 @@ function AdminAccessCard({
           </Field>
           <Field label="Password">
             <input
-              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              className={formInputClass}
               type="password"
               autoComplete="current-password"
               value={password}
@@ -276,12 +302,12 @@ function FamilyAccessCard({
 
   return (
     <Card className="p-4">
-      <h2 className="text-lg font-semibold text-slate-950">Family trip access</h2>
-      <p className="mt-1 text-sm text-slate-600">No account needed. Use your name and the family share token.</p>
+      <h2 className="text-lg font-semibold text-primary">Family trip access</h2>
+      <p className="mt-1 text-sm text-secondary">No account needed. Use your name and the family share token.</p>
       <form className="mt-4 space-y-3" onSubmit={onFamilySubmit}>
         <Field label="Your name">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             type="text"
             autoComplete="name"
             value={familyName}
@@ -291,7 +317,7 @@ function FamilyAccessCard({
         </Field>
         <Field label="Share token">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             type="text"
             value={shareToken}
             onChange={(event) => setShareToken(event.target.value)}
@@ -311,25 +337,29 @@ function FamilyAccessCard({
 function TripSelector({ trips, onSelectTrip }: { trips: TripSummary[]; onSelectTrip: (tripId: string) => Promise<void> }) {
   return (
     <Card className="p-4">
-      <h2 className="text-lg font-semibold text-slate-950">My Trips</h2>
-      <p className="mt-1 text-sm text-slate-600">Choose which trip to open.</p>
+      <h2 className="text-lg font-semibold text-primary">My Trips</h2>
+      <p className="mt-1 text-sm text-secondary">Choose which trip to open.</p>
       <div className="mt-4 space-y-2">
-        {trips.map((trip) => (
-          <button
-            key={trip.id}
-            type="button"
-            onClick={() => void onSelectTrip(trip.id)}
-            className="flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left hover:border-brand-300 hover:bg-brand-50"
-          >
-            <span>
-              <span className="block font-medium text-slate-950">{trip.title}</span>
-              <span className="block text-sm text-slate-600">
-                {trip.destination} | {trip.startDate} to {trip.endDate}
+        {trips.length === 0 ? (
+          <p className="text-sm text-secondary">No trips available.</p>
+        ) : (
+          trips.map((trip) => (
+            <button
+              key={trip.id}
+              type="button"
+              onClick={() => void onSelectTrip(trip.id)}
+              className="flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 text-left hover:border-primary/20 hover:bg-primary/5 transition-colors"
+            >
+              <span>
+                <span className="block font-medium text-primary">{trip.title}</span>
+                <span className="block text-sm text-secondary">
+                  {trip.destination} | {trip.startDate} to {trip.endDate}
+                </span>
               </span>
-            </span>
-            <Badge>{trip.role}</Badge>
-          </button>
-        ))}
+              <Badge>{trip.role}</Badge>
+            </button>
+          ))
+        )}
       </div>
     </Card>
   );
@@ -398,15 +428,15 @@ function CreateTripCard({
   return (
     <Card className="p-4">
       <div className="flex items-center gap-2">
-        <CalendarPlus className="h-5 w-5 text-brand-700" aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-slate-950">Create a new trip</h2>
+        <CalendarPlus className="h-5 w-5 text-primary" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-primary">Create a new trip</h2>
       </div>
-      <p className="mt-1 text-sm text-slate-600">The new trip opens immediately with you as Owner.</p>
+      <p className="mt-1 text-sm text-secondary">The new trip opens immediately with you as Owner.</p>
 
       <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={submit}>
         <Field label="Trip title">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             value={form.title}
             onChange={(event) => update("title", event.target.value)}
             placeholder="Bali Family Trip"
@@ -414,7 +444,7 @@ function CreateTripCard({
         </Field>
         <Field label="Destination">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             value={form.destination}
             onChange={(event) => update("destination", event.target.value)}
             placeholder="Bali, Indonesia"
@@ -422,7 +452,7 @@ function CreateTripCard({
         </Field>
         <Field label="Start date">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             type="date"
             value={form.startDate}
             onChange={(event) => update("startDate", event.target.value)}
@@ -430,7 +460,7 @@ function CreateTripCard({
         </Field>
         <Field label="End date">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             type="date"
             value={form.endDate}
             onChange={(event) => update("endDate", event.target.value)}
@@ -438,14 +468,14 @@ function CreateTripCard({
         </Field>
         <Field label="Timezone">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             value={form.timezone}
             onChange={(event) => update("timezone", event.target.value)}
           />
         </Field>
         <Field label="Currency">
           <input
-            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            className={formInputClass}
             value={form.currency}
             onChange={(event) => update("currency", event.target.value)}
             maxLength={3}

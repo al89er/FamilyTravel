@@ -8,6 +8,7 @@ import type {
   ExpenseInput,
   FamilyPermissions,
   FamilySession,
+  FlightSeatAssignmentInput,
   InsuranceInput,
   ItineraryInput,
   MedicalNoteInput,
@@ -15,6 +16,7 @@ import type {
   PackingInput,
   PlaceInput,
   Role,
+  RoomAssignmentInput,
   ShareLink,
   TripInput,
   TripSummary,
@@ -140,7 +142,9 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     commentsResult,
     emergencyResult,
     insuranceResult,
-    medicalNotesResult
+    medicalNotesResult,
+    roomAssignmentsResult,
+    flightSeatsResult
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userData.user.id).maybeSingle(),
     supabase.from("trips").select("*").eq("id", tripId).maybeSingle(),
@@ -177,7 +181,9 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     supabase.from("comments").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }),
     supabase.from("emergency_contacts").select("*").eq("trip_id", tripId).order("name", { ascending: true }),
     supabase.from("travel_insurance").select("*").eq("trip_id", tripId).limit(1).maybeSingle(),
-    supabase.from("family_medical_notes").select("*").eq("trip_id", tripId)
+    supabase.from("family_medical_notes").select("*").eq("trip_id", tripId),
+    supabase.from("family_room_assignments").select("*").eq("trip_id", tripId).order("hotel_name", { ascending: true }),
+    supabase.from("family_flight_seat_assignments").select("*").eq("trip_id", tripId).order("flight_label", { ascending: true })
   ]);
 
   throwIfError(profileResult.error);
@@ -193,6 +199,8 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
   throwIfError(emergencyResult.error);
   throwIfError(insuranceResult.error);
   throwIfError(medicalNotesResult.error);
+  throwIfError(roomAssignmentsResult.error);
+  throwIfError(flightSeatsResult.error);
 
   if (!tripResult.data) throw new Error("Trip not found for this account.");
   if (!profileResult.data) throw new Error("Profile not found for this account.");
@@ -259,7 +267,9 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
           policyNumber: "",
           emergencyPhone: "",
           notes: ""
-        }
+        },
+    roomAssignments: asArray(roomAssignmentsResult.data).map(roomAssignmentToRoomAssignment),
+    flightSeatAssignments: asArray(flightSeatsResult.data).map(flightSeatToFlightSeatAssignment)
   };
 }
 
@@ -630,6 +640,27 @@ export async function setFamilyPackingCheck(session: FamilySession, packingItemI
   });
 }
 
+export async function togglePackingItemCheck(tripId: string, itemId: string, checked: boolean) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  if (checked) {
+    const { error } = await supabase.from("packing_item_checks").insert({
+      packing_item_id: itemId,
+      profile_id: userData.user.id
+    });
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("packing_item_checks")
+      .delete()
+      .eq("packing_item_id", itemId)
+      .eq("profile_id", userData.user.id);
+    if (error) throw error;
+  }
+}
+
 export type OrganizerAction =
   | {
       action: "addOrganizer";
@@ -659,6 +690,83 @@ export async function manageOrganizer(payload: OrganizerAction) {
   if (error) throw await functionErrorToError(error);
   if (data?.error) throw new Error(data.error);
   return data as { username?: string; temporaryPassword?: string; userId?: string; ok?: boolean };
+}
+
+export async function listRoomAssignments(tripId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("family_room_assignments")
+    .select("*")
+    .eq("trip_id", tripId)
+    .order("hotel_name", { ascending: true });
+  if (error) throw error;
+  return asArray(data).map(roomAssignmentToRoomAssignment);
+}
+
+export async function upsertRoomAssignment(tripId: string, input: RoomAssignmentInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    itinerary_item_id: input.itineraryItemId || null,
+    hotel_name: input.hotelName,
+    check_in_date: input.checkInDate || null,
+    check_out_date: input.checkOutDate || null,
+    room_number: input.roomNumber,
+    guest_ids: input.guestIds,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id
+    ? supabase.from("family_room_assignments").update(payload).eq("id", id).eq("trip_id", tripId)
+    : supabase.from("family_room_assignments").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteRoomAssignment(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("family_room_assignments").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
+export async function listFlightSeatAssignments(tripId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("family_flight_seat_assignments")
+    .select("*")
+    .eq("trip_id", tripId)
+    .order("flight_label", { ascending: true });
+  if (error) throw error;
+  return asArray(data).map(flightSeatToFlightSeatAssignment);
+}
+
+export async function upsertFlightSeatAssignment(tripId: string, input: FlightSeatAssignmentInput, id?: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+  const payload = {
+    trip_id: tripId,
+    itinerary_item_id: input.itineraryItemId || null,
+    flight_label: input.flightLabel,
+    guest_id: input.guestId,
+    guest_name: input.guestName,
+    seat_number: input.seatNumber,
+    notes: input.notes || null,
+    created_by: userData.user.id
+  };
+  const query = id
+    ? supabase.from("family_flight_seat_assignments").update(payload).eq("id", id).eq("trip_id", tripId)
+    : supabase.from("family_flight_seat_assignments").insert(payload);
+  const { error } = await query;
+  if (error) throw error;
+}
+
+export async function deleteFlightSeatAssignment(tripId: string, id: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("family_flight_seat_assignments").delete().eq("id", id).eq("trip_id", tripId);
+  if (error) throw error;
 }
 
 async function functionErrorToError(error: unknown) {
@@ -817,7 +925,9 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       provider: "Admin only",
       policyNumber: "Hidden from family share",
       emergencyPhone: demoData.insurance.emergencyPhone
-    }
+    },
+    roomAssignments: [],
+    flightSeatAssignments: []
   };
 
   return {
@@ -1014,6 +1124,35 @@ function insuranceToTravelInsurance(insurance: Record<string, unknown>) {
     policyNumber: asString(insurance.policy_number),
     emergencyPhone: asString(insurance.emergency_phone),
     notes: optionalString(insurance.notes)
+  };
+}
+
+function roomAssignmentToRoomAssignment(row: Record<string, unknown>) {
+  return {
+    id: asString(row.id),
+    tripId: asString(row.trip_id),
+    itineraryItemId: optionalString(row.itinerary_item_id),
+    hotelName: asString(row.hotel_name),
+    checkInDate: optionalString(row.check_in_date),
+    checkOutDate: optionalString(row.check_out_date),
+    roomNumber: asString(row.room_number),
+    guestIds: Array.isArray(row.guest_ids) ? row.guest_ids.map(String) : [],
+    notes: optionalString(row.notes),
+    createdAt: optionalString(row.created_at)
+  };
+}
+
+function flightSeatToFlightSeatAssignment(row: Record<string, unknown>) {
+  return {
+    id: asString(row.id),
+    tripId: asString(row.trip_id),
+    itineraryItemId: optionalString(row.itinerary_item_id),
+    flightLabel: asString(row.flight_label),
+    guestId: asString(row.guest_id),
+    guestName: asString(row.guest_name),
+    seatNumber: asString(row.seat_number),
+    notes: optionalString(row.notes),
+    createdAt: optionalString(row.created_at)
   };
 }
 
