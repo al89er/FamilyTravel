@@ -15,7 +15,7 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 - Three access roles: Owner, Organizer, and no-login Family Guest
 - Trip dashboard with countdown, hotel info, emergency summary, budget status, and quick actions
 - Shared itinerary with timeline/day grouping, categories, booking references, votes, and comments summary
-- Map places module with provider-ready placeholder abstraction
+- Leaflet/OpenStreetMap places map with free OpenStreetMap Nominatim place search
 - Documents vault metadata with Supabase Storage bucket and RLS policies
 - Expense tracker with category totals and balance summary
 - Shared and personal packing lists with per-person checked state
@@ -218,7 +218,7 @@ Sign in as the trip Owner or an Organizer, then use the app screens directly:
 
 - `Settings -> Trip overview`: edit title, destination, dates, timezone, currency, budget, accommodation summary, emergency summary, and default visibility.
 - `Itinerary`: add, edit, or delete flights, hotels, meals, activities, booking references, attachment URLs, and item visibility.
-- `Map`: add, edit, or delete hotels, restaurants, attractions, airports, hospitals, pharmacies, meeting points, and optional coordinates.
+- `Map`: search for places with OpenStreetMap Nominatim, add/edit/delete hotels, restaurants, attractions, airports, hospitals, pharmacies, meeting points, and manually correct coordinates.
 - `Expenses`: add, edit, or delete expenses, choose who paid, and choose split members.
 - `Packing`: add, edit, or delete shared/personal packing items and assignments.
 - `Documents`: add document metadata, upload files to the private `trip-documents` bucket, mark documents private/shared, edit metadata, or delete records.
@@ -227,6 +227,14 @@ Sign in as the trip Owner or an Organizer, then use the app screens directly:
 Family and Demo sessions do not see edit buttons. Family users remain limited to shared trip data plus comments, votes, and shared packing checks when enabled on the share link.
 
 All Owner/Organizer edits persist through Supabase and then refresh the current trip from the database. The frontend only uses the public anon key with the signed-in user session; RLS remains the enforcement layer. The service-role key is still only used by the organizer-management Edge Function.
+
+## Maps and Place Search
+
+The map display uses Leaflet with OpenStreetMap tiles. Place search uses the free OpenStreetMap Nominatim search API from the Owner/Organizer place form.
+
+No Google Maps API key is required. The `Open in Google Maps` button is only an outbound navigation link for convenience and does not use the Google Maps API.
+
+Nominatim results can be less polished than Google Places for commercial venues or new locations, so verify saved names, addresses, latitude, and longitude before travel.
 
 ## GitHub Pages Deployment
 
@@ -296,7 +304,6 @@ Password sign-in does not require OAuth redirects, but these URLs keep future re
 
 ## Future Integration Points
 
-- Replace the map placeholder with Google Maps or Mapbox using `VITE_MAP_PROVIDER_KEY`
 - Add Realtime subscriptions for itinerary, comments, votes, expenses, and packing checks
 - Add offline write queue after conflict rules are finalized
 - Add AI assistant after core planner workflows are stable

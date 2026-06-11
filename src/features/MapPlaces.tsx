@@ -1,6 +1,6 @@
 import L from "leaflet";
 import { ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader } from "../components/ui";
 import { deletePlace, upsertPlace } from "../lib/supabase";
@@ -20,6 +20,16 @@ type CoordinatePlace = Place & {
 type MapFilters = {
   date: string;
   category: "all" | PlaceCategory;
+};
+
+type NominatimResult = {
+  place_id?: number;
+  osm_type?: string;
+  osm_id?: number;
+  name?: string;
+  display_name: string;
+  lat: string;
+  lon: string;
 };
 
 export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
@@ -258,11 +268,83 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
     notes: place?.notes,
     itineraryItemId: place?.itineraryItemId
   });
+  const [searchQuery, setSearchQuery] = useState(place?.name ?? "");
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const selectedSearchQuery = useRef("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 3) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError(null);
+      return;
+    }
+    if (query === selectedSearchQuery.current) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      setSearchError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setSearchLoading(true);
+      setSearchError(null);
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          format: "jsonv2",
+          addressdetails: "1",
+          limit: "5"
+        });
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json"
+          }
+        });
+        if (!response.ok) throw new Error("Place search is temporarily unavailable.");
+        const results = (await response.json()) as NominatimResult[];
+        setSearchResults(Array.isArray(results) ? results : []);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setSearchResults([]);
+        setSearchError(err instanceof Error ? err.message : "Could not search places.");
+      } finally {
+        if (!controller.signal.aborted) setSearchLoading(false);
+      }
+    }, 650);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [searchQuery]);
+
   function update<K extends keyof PlaceInput>(key: K, value: PlaceInput[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function selectSearchResult(result: NominatimResult) {
+    const latitude = Number(result.lat);
+    const longitude = Number(result.lon);
+    const name = (result.name || result.display_name.split(",")[0] || "").trim();
+    setForm((current) => ({
+      ...current,
+      name: name || current.name,
+      address: result.display_name,
+      latitude: Number.isFinite(latitude) ? latitude : current.latitude,
+      longitude: Number.isFinite(longitude) ? longitude : current.longitude
+    }));
+    selectedSearchQuery.current = result.display_name;
+    setSearchQuery(result.display_name);
+    setSearchResults([]);
+    setSearchError(null);
   }
 
   async function save(event: React.FormEvent) {
@@ -286,6 +368,34 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
   return (
     <Card className="p-4">
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
+        <div className="space-y-2 md:col-span-2">
+          <Field label="Search place">
+            <input
+              className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+              placeholder="Search a hotel, restaurant, landmark, or address"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </Field>
+          <p className="text-xs text-slate-500">Search is powered by OpenStreetMap Nominatim. Please verify coordinates before travel.</p>
+          {searchLoading ? <p className="text-sm text-slate-600">Searching places...</p> : null}
+          {searchError ? <p className="text-sm text-red-700">{searchError}</p> : null}
+          {searchResults.length ? (
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+              {searchResults.map((result) => (
+                <button
+                  className="block w-full border-b border-slate-100 px-3 py-3 text-left last:border-b-0 hover:bg-slate-50 focus:bg-slate-50"
+                  key={`${result.osm_type ?? "place"}-${result.osm_id ?? result.place_id ?? result.display_name}`}
+                  type="button"
+                  onClick={() => selectSearchResult(result)}
+                >
+                  <span className="block text-sm font-semibold text-slate-900">{result.name || result.display_name.split(",")[0]}</span>
+                  <span className="mt-1 block text-xs leading-5 text-slate-600">{result.display_name}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <Field label="Name"><input className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.name} onChange={(event) => update("name", event.target.value)} /></Field>
         <Field label="Category"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.category} onChange={(event) => update("category", event.target.value as PlaceCategory)}>{placeCategories.map((category) => <option key={category} value={category}>{formatCategory(category)}</option>)}</select></Field>
         <Field label="Visibility"><select className="min-h-11 w-full rounded-lg border border-slate-300 px-3" value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility.replace("_", " ")}</option>)}</select></Field>
