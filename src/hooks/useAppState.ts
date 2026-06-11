@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { demoData } from "../data/demoData";
 import { saveTripSnapshot } from "../lib/offline";
 import {
+  createAuthenticatedTrip,
   hasSupabaseConfig,
   loadAuthenticatedTrip,
   loadAuthenticatedTrips,
@@ -9,7 +10,7 @@ import {
   signOut,
   supabase
 } from "../lib/supabase";
-import type { AccessMode, AppData, FamilySession, TripSummary } from "../types";
+import type { AccessMode, AppData, FamilySession, NewTripInput, TripSummary } from "../types";
 
 export type AppView =
   | "dashboard"
@@ -137,6 +138,27 @@ export function useAppState() {
     }
   }
 
+  async function createTrip(input: NewTripInput) {
+    setLoading(true);
+    setAccessStatus("loading");
+    setError(null);
+    setFamilySession(null);
+
+    try {
+      const tripId = await createAuthenticatedTrip(input);
+      const trips = await loadAuthenticatedTrips();
+      setAvailableTrips(trips);
+      await openAuthenticatedTrip(tripId, trips);
+    } catch (err) {
+      setData(null);
+      setAccessMode("locked");
+      setAccessStatus(availableTrips.length > 0 ? "trip-select" : "empty");
+      setError(err instanceof Error ? err.message : "Could not create the trip.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function joinFamilyTrip(displayName: string, shareToken: string) {
     setLoading(true);
     setAccessStatus("loading");
@@ -202,6 +224,7 @@ export function useAppState() {
     availableTrips,
     loadAdminTrips,
     openAuthenticatedTrip,
+    createTrip,
     joinFamilyTrip,
     startDemo,
     leaveSession,

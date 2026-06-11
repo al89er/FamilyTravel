@@ -27,6 +27,7 @@ export default function App() {
     availableTrips,
     loadAdminTrips,
     openAuthenticatedTrip,
+    createTrip,
     joinFamilyTrip,
     startDemo,
     leaveSession,
@@ -48,6 +49,7 @@ export default function App() {
         shareTokenFromUrl={shareTokenFromUrl}
         onAdminAuthenticated={loadAdminTrips}
         onSelectTrip={openAuthenticatedTrip}
+        onCreateTrip={createTrip}
         onFamilyJoin={joinFamilyTrip}
         onTryDemo={startDemo}
       />

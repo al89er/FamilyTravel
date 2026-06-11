@@ -122,7 +122,9 @@ After sign-in, the app loads trips available through `trip_members`.
 
 - One trip opens automatically.
 - Multiple trips show a `My Trips` selector.
-- No trips shows an empty state with setup guidance.
+- No trips shows an empty state and a `Create a new trip` form.
+
+Owners can create a new trip inside the app after signing in. The app calls `create_trip_as_owner`, which creates the trip and first `trip_members` owner row in one transaction, then opens the new trip automatically.
 
 ### Organizers
 

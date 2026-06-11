@@ -1,4 +1,4 @@
-import { KeyRound, Link2, LogIn, Play, ShieldCheck } from "lucide-react";
+import { CalendarPlus, KeyRound, Link2, LogIn, Play, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, LoadingState } from "../components/ui";
 import {
@@ -7,7 +7,7 @@ import {
   hasSupabaseConfig,
   signInWithPassword
 } from "../lib/supabase";
-import type { AccessMode, AppData, FamilySession, TripSummary } from "../types";
+import type { AccessMode, AppData, FamilySession, NewTripInput, TripSummary } from "../types";
 import type { AccessStatus } from "../hooks/useAppState";
 
 export function AccessGate({
@@ -18,6 +18,7 @@ export function AccessGate({
   shareTokenFromUrl,
   onAdminAuthenticated,
   onSelectTrip,
+  onCreateTrip,
   onFamilyJoin,
   onTryDemo
 }: {
@@ -28,6 +29,7 @@ export function AccessGate({
   shareTokenFromUrl: string;
   onAdminAuthenticated: () => Promise<void>;
   onSelectTrip: (tripId: string) => Promise<void>;
+  onCreateTrip: (input: NewTripInput) => Promise<void>;
   onFamilyJoin: (displayName: string, shareToken: string) => Promise<void>;
   onTryDemo: () => void;
 }) {
@@ -56,9 +58,10 @@ export function AccessGate({
           {accessStatus === "empty" ? (
             <EmptyState
               title="No trips for this account"
-              body="Create a trip row and add your Auth user to trip_members as owner, or ask the current owner to add you as an organizer."
+              body="Create your first trip here, or ask the current owner to add you as an organizer."
             />
           ) : null}
+          {accessStatus === "empty" || accessStatus === "trip-select" ? <CreateTripCard disabled={loading} onCreateTrip={onCreateTrip} /> : null}
           <AdminAccessCard disabled={loading} onAuthenticated={onAdminAuthenticated} />
           <FamilyAccessCard disabled={loading} initialShareToken={shareTokenFromUrl} onFamilyJoin={onFamilyJoin} />
         </section>
@@ -328,6 +331,134 @@ function TripSelector({ trips, onSelectTrip }: { trips: TripSummary[]; onSelectT
           </button>
         ))}
       </div>
+    </Card>
+  );
+}
+
+function CreateTripCard({
+  disabled,
+  onCreateTrip
+}: {
+  disabled: boolean;
+  onCreateTrip: (input: NewTripInput) => Promise<void>;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = useState<NewTripInput>({
+    title: "",
+    destination: "",
+    startDate: today,
+    endDate: today,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    currency: "USD",
+    dateFormat: "DD MMM YYYY"
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  function update<K extends keyof NewTripInput>(key: K, value: NewTripInput[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+
+    if (form.title.trim().length < 2) {
+      setError("Enter a trip title.");
+      return;
+    }
+
+    if (form.destination.trim().length < 2) {
+      setError("Enter a destination.");
+      return;
+    }
+
+    if (!form.startDate || !form.endDate || form.endDate < form.startDate) {
+      setError("Choose valid trip dates.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await onCreateTrip({
+        ...form,
+        title: form.title.trim(),
+        destination: form.destination.trim(),
+        timezone: form.timezone.trim() || "UTC",
+        currency: form.currency.trim().toUpperCase() || "USD",
+        dateFormat: form.dateFormat.trim() || "DD MMM YYYY"
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create the trip.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center gap-2">
+        <CalendarPlus className="h-5 w-5 text-brand-700" aria-hidden="true" />
+        <h2 className="text-lg font-semibold text-slate-950">Create a new trip</h2>
+      </div>
+      <p className="mt-1 text-sm text-slate-600">The new trip opens immediately with you as Owner.</p>
+
+      <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={submit}>
+        <Field label="Trip title">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            value={form.title}
+            onChange={(event) => update("title", event.target.value)}
+            placeholder="Bali Family Trip"
+          />
+        </Field>
+        <Field label="Destination">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            value={form.destination}
+            onChange={(event) => update("destination", event.target.value)}
+            placeholder="Bali, Indonesia"
+          />
+        </Field>
+        <Field label="Start date">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            type="date"
+            value={form.startDate}
+            onChange={(event) => update("startDate", event.target.value)}
+          />
+        </Field>
+        <Field label="End date">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            type="date"
+            value={form.endDate}
+            onChange={(event) => update("endDate", event.target.value)}
+          />
+        </Field>
+        <Field label="Timezone">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            value={form.timezone}
+            onChange={(event) => update("timezone", event.target.value)}
+          />
+        </Field>
+        <Field label="Currency">
+          <input
+            className="min-h-11 w-full rounded-lg border border-slate-300 px-3"
+            value={form.currency}
+            onChange={(event) => update("currency", event.target.value)}
+            maxLength={3}
+          />
+        </Field>
+        {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
+        <div className="md:col-span-2">
+          <Button type="submit" disabled={busy || disabled || !hasSupabaseConfig}>
+            <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+            Create trip
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 }

@@ -5,6 +5,7 @@ import type {
   CommentTarget,
   FamilyPermissions,
   FamilySession,
+  NewTripInput,
   Role,
   ShareLink,
   TripSummary,
@@ -229,6 +230,23 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
     emergencyContacts: asArray(emergencyResult.data).map(emergencyToEmergencyContact),
     insurance: insuranceResult.data ? insuranceToTravelInsurance(asRecord(insuranceResult.data)) : { ...demoData.insurance, tripId }
   };
+}
+
+export async function createAuthenticatedTrip(input: NewTripInput): Promise<string> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data, error } = await supabase.rpc("create_trip_as_owner", {
+    p_title: input.title,
+    p_destination: input.destination,
+    p_start_date: input.startDate,
+    p_end_date: input.endDate,
+    p_timezone: input.timezone,
+    p_currency: input.currency,
+    p_date_format: input.dateFormat
+  });
+
+  if (error) throw error;
+  return asString(data);
 }
 
 export async function listShareLinks(tripId: string): Promise<ShareLink[]> {

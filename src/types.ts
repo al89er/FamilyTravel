@@ -210,6 +210,16 @@ export interface TripSummary {
   role: Role;
 }
 
+export interface NewTripInput {
+  title: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  currency: string;
+  dateFormat: string;
+}
+
 export interface ShareLink {
   id: string;
   tripId: string;
