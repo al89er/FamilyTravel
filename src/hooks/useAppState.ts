@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { demoData } from "../data/demoData";
-import { loadTripSnapshot, saveTripSnapshot } from "../lib/offline";
-import { hasSupabaseConfig, loadFamilyTrip, supabase } from "../lib/supabase";
-import type { AppData, FamilySession } from "../types";
+import { saveTripSnapshot } from "../lib/offline";
+import {
+  hasSupabaseConfig,
+  loadAuthenticatedTrip,
+  loadAuthenticatedTrips,
+  loadFamilyTrip,
+  signOut,
+  supabase
+} from "../lib/supabase";
+import type { AccessMode, AppData, FamilySession, TripSummary } from "../types";
 
 export type AppView =
   | "dashboard"
@@ -14,27 +21,21 @@ export type AppView =
   | "emergency"
   | "settings";
 
+export type AccessStatus = "checking" | "locked" | "loading" | "trip-select" | "empty" | "ready";
+
 export function useAppState() {
   const [activeView, setActiveView] = useState<AppView>("dashboard");
-  const [data, setData] = useState<AppData>(() => loadTripSnapshot() ?? demoData);
+  const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [accessStatus, setAccessStatus] = useState<AccessStatus>("checking");
   const [error, setError] = useState<string | null>(null);
   const [offline, setOffline] = useState(!navigator.onLine);
   const [familyRefreshKey, setFamilyRefreshKey] = useState(0);
-  const [shareIntent] = useState(() => Boolean(new URLSearchParams(window.location.search).get("share")));
-  const [familySession, setFamilySession] = useState<FamilySession | null>(() => {
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get("share") ?? "";
-    const savedName = localStorage.getItem("family-travel-display-name") ?? "";
-    const savedToken = localStorage.getItem("family-travel-share-token") ?? "";
-    const shareToken = urlToken || savedToken;
-    if (!shareToken || !savedName) return null;
-    return {
-      displayName: savedName,
-      shareToken,
-      permissions: { comments: false, votes: false, packingChecks: false }
-    };
-  });
+  const [familySession, setFamilySession] = useState<FamilySession | null>(null);
+  const [accessMode, setAccessMode] = useState<AccessMode>("locked");
+  const [availableTrips, setAvailableTrips] = useState<TripSummary[]>([]);
+
+  const shareTokenFromUrl = useMemo(() => new URLSearchParams(window.location.search).get("share") ?? "", []);
 
   useEffect(() => {
     const onOnline = () => setOffline(false);
@@ -48,64 +49,141 @@ export function useAppState() {
   }, []);
 
   useEffect(() => {
+    if (!data || accessStatus !== "ready") return;
     saveTripSnapshot(data);
-  }, [data]);
+  }, [accessStatus, data]);
 
   useEffect(() => {
-    async function loadRemote() {
-      if (!supabase || familySession) return;
+    if (accessMode !== "family" || !familySession?.displayName || !familySession.shareToken) return;
+    if (familyRefreshKey === 0) return;
+    void joinFamilyTrip(familySession.displayName, familySession.shareToken);
+  }, [familyRefreshKey]);
 
-      setLoading(true);
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        setLoading(false);
+  useEffect(() => {
+    async function restoreAuthenticatedSession() {
+      if (!supabase) {
+        setAccessStatus("locked");
         return;
       }
 
-      const { data: trips, error: tripError } = await supabase
-        .from("trips")
-        .select("*")
-        .order("start_date", { ascending: true })
-        .limit(1);
-
-      if (tripError) {
-        setError(tripError.message);
-      } else if (!trips?.length) {
-        setError("No trips are available for this account yet.");
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setAccessStatus("locked");
+        return;
       }
 
-      setLoading(false);
+      await loadAdminTrips();
     }
 
-    void loadRemote();
+    void restoreAuthenticatedSession();
   }, []);
 
-  useEffect(() => {
-    if (!familySession?.displayName || !familySession.shareToken || !hasSupabaseConfig) return;
-    const session = familySession;
+  async function loadAdminTrips() {
+    setLoading(true);
+    setAccessStatus("loading");
+    setError(null);
+    setFamilySession(null);
 
-    async function loadFamily() {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await loadFamilyTrip(session.displayName, session.shareToken);
-        setData(result.data);
-        setFamilySession(result.session);
-        localStorage.setItem("family-travel-display-name", result.session.displayName);
-        localStorage.setItem("family-travel-share-token", result.session.shareToken);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not load the shared trip.");
-      } finally {
-        setLoading(false);
+    try {
+      const trips = await loadAuthenticatedTrips();
+      setAvailableTrips(trips);
+
+      if (trips.length === 0) {
+        setData(null);
+        setAccessMode("locked");
+        setAccessStatus("empty");
+        return;
       }
-    }
 
-    void loadFamily();
-  }, [familySession?.displayName, familySession?.shareToken, familyRefreshKey]);
+      if (trips.length === 1) {
+        await openAuthenticatedTrip(trips[0].id, trips);
+        return;
+      }
+
+      setData(null);
+      setAccessMode("locked");
+      setAccessStatus("trip-select");
+    } catch (err) {
+      setData(null);
+      setAccessMode("locked");
+      setAccessStatus("locked");
+      setError(err instanceof Error ? err.message : "Could not load trips for this account.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openAuthenticatedTrip(tripId: string, knownTrips = availableTrips) {
+    setLoading(true);
+    setAccessStatus("loading");
+    setError(null);
+    setFamilySession(null);
+
+    try {
+      const tripData = await loadAuthenticatedTrip(tripId);
+      const summary = knownTrips.find((trip) => trip.id === tripId);
+      const role = summary?.role ?? tripData.members.find((member) => member.userId === tripData.currentUser.id)?.role ?? "organizer";
+      setData(tripData);
+      setAccessMode(role);
+      setActiveView("dashboard");
+      setAccessStatus("ready");
+    } catch (err) {
+      setData(null);
+      setAccessMode("locked");
+      setAccessStatus(knownTrips.length > 1 ? "trip-select" : "locked");
+      setError(err instanceof Error ? err.message : "Could not open this trip.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function joinFamilyTrip(displayName: string, shareToken: string) {
+    setLoading(true);
+    setAccessStatus("loading");
+    setError(null);
+
+    try {
+      const result = await loadFamilyTrip(displayName, shareToken);
+      setData(result.data);
+      setFamilySession(result.session);
+      setAccessMode("family");
+      setActiveView("dashboard");
+      setAccessStatus("ready");
+      window.history.replaceState({}, "", `${window.location.pathname}?share=${encodeURIComponent(result.session.shareToken)}`);
+    } catch (err) {
+      setData(null);
+      setFamilySession(null);
+      setAccessMode("locked");
+      setAccessStatus("locked");
+      setError(err instanceof Error ? err.message : "Could not load the shared trip.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function startDemo() {
+    setError(null);
+    setFamilySession(null);
+    setData(demoData);
+    setAccessMode("demo");
+    setActiveView("dashboard");
+    setAccessStatus("ready");
+  }
+
+  async function leaveSession() {
+    await signOut();
+    setData(null);
+    setFamilySession(null);
+    setAccessMode("locked");
+    setAvailableTrips([]);
+    setActiveView("dashboard");
+    setAccessStatus("locked");
+  }
 
   const role = useMemo(() => {
-    return data.members.find((member) => member.profileId === data.currentUser.id)?.role ?? "organizer";
-  }, [data.currentUser.id, data.members]);
+    if (!data || accessMode === "family" || accessMode === "demo") return "organizer";
+    return data.members.find((member) => member.userId === data.currentUser.id)?.role ?? "organizer";
+  }, [accessMode, data]);
 
   return {
     activeView,
@@ -113,12 +191,20 @@ export function useAppState() {
     data,
     setData,
     loading,
+    accessStatus,
     error,
+    setError,
     offline,
     role,
-    accessMode: (familySession || shareIntent ? "family" : "admin") as "family" | "admin",
+    accessMode,
     familySession,
-    setFamilySession,
+    shareTokenFromUrl,
+    availableTrips,
+    loadAdminTrips,
+    openAuthenticatedTrip,
+    joinFamilyTrip,
+    startDemo,
+    leaveSession,
     refreshFamilySession: () => setFamilyRefreshKey((key) => key + 1),
     configured: hasSupabaseConfig
   };

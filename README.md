@@ -22,7 +22,7 @@ A production-ready mobile-first PWA foundation for planning family trips, sharin
 - Family voting, comments, and packing checks through share-token RPCs
 - Emergency contacts, insurance, nearby hospitals, and private-aware medical notes
 - Trip settings for currency, timezone, date format, default visibility, and member permissions
-- Demo Bali Family Trip data in app and Supabase seed SQL
+- Explicit Demo Mode for the Bali Family Trip sample data
 
 ## Local Setup
 
@@ -92,6 +92,12 @@ supabase/seed.sql
 
 ## Access Model
 
+The app starts locked. It does not render trip dashboards, itinerary, documents, expenses, packing, emergency details, settings, cached snapshots, or demo data until one of these access paths succeeds:
+
+- Owner/Organizer signs in with Supabase Auth
+- Family user enters a display name and valid share token
+- User clicks `Try Demo Trip`
+
 ### Admin
 
 The authenticated planning roles are Owner and Organizer.
@@ -111,6 +117,12 @@ Supabase Auth email: afif@familytravel.local
 ```
 
 Admins can also type a full email address in the username field.
+
+After sign-in, the app loads trips available through `trip_members`.
+
+- One trip opens automatically.
+- Multiple trips show a `My Trips` selector.
+- No trips shows an empty state with setup guidance.
 
 ### Organizers
 
@@ -147,32 +159,33 @@ Supabase provides the first three values automatically in hosted Edge Functions.
 
 Family members do not need Supabase Auth accounts. They open a shared URL, enter their display name, and use a share token.
 
-Example:
+Production family link format:
+
+```text
+https://al89er.github.io/FamilyTravel/?share=<token>
+```
+
+Local example:
 
 ```text
 http://localhost:5174/?share=bali-family-2026
 ```
 
-Create a share token for a real trip:
+The share token is prefilled from the URL. Trip data is hidden until `get_family_trip` succeeds. Invalid or expired tokens keep the app locked.
 
-```sql
-insert into public.trip_share_links (
-  trip_id,
-  token,
-  label,
-  allow_comments,
-  allow_votes,
-  allow_packing_checks
-)
-values (
-  '<trip-id>',
-  'your-private-family-token',
-  'Family share link',
-  true,
-  true,
-  true
-);
-```
+### Family Share Links
+
+Owners manage family links from `Settings -> Family share links`.
+
+Owner actions:
+
+- List share links for the current trip
+- Create a new link with a generated `ft_...` URL-safe token
+- Set label, comments, votes, and packing-check permissions
+- Copy the family URL immediately after creation
+- Revoke or reactivate a link
+
+Share tokens are written through the normal Supabase client and protected by RLS. The database trigger hashes the token and clears plaintext storage, so existing full URLs cannot be recovered later. If a URL is lost, revoke the old link and create a new one.
 
 Family RPCs:
 
@@ -182,6 +195,10 @@ Family RPCs:
 - `set_family_packing_check(share_token, display_name, packing_item_id, checked)`
 
 Family users only receive shared itinerary items, shared document metadata, places, expenses, packing lists, comments, votes, and emergency contacts. Private documents, storage paths, medical notes, and admin-only insurance details are not exposed through the family RPC.
+
+### Demo Mode
+
+Demo data is not loaded automatically. Click `Try Demo Trip` on the landing screen to open the sample trip. Demo Mode is labeled in the app and does not create a Supabase Auth session or grant Owner/Organizer permissions.
 
 ## Storage
 
@@ -234,12 +251,27 @@ https://al89er.github.io/FamilyTravel/
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` out of the frontend. It is only for server-side code such as Supabase Edge Functions or secure CI tasks.
 
+In Supabase Auth URL configuration, set:
+
+```text
+Site URL:
+https://al89er.github.io/FamilyTravel/
+
+Redirect URLs:
+https://al89er.github.io/FamilyTravel/
+https://al89er.github.io/FamilyTravel/**
+http://localhost:5174/
+http://localhost:5174/**
+```
+
+Password sign-in does not require OAuth redirects, but these URLs keep future recovery or invite flows inside the GitHub Pages app.
+
 ## Data Model Highlights
 
 - `trip_members` controls authenticated Owner/Organizer access
 - `trip_share_links` controls no-login family access
 - Owner can manage trip, organizers, ownership transfer, share links, emergency info, documents, and settings
-- Organizer can manage planning data only for trips they are assigned to
+- Organizer can manage planning data only for trips they are assigned to, but cannot manage family share links
 - Family users can view shared data and optionally comment, vote, and check packing items
 - Private document metadata is visible only to owners or uploader
 - Medical notes are visible to the person and optionally to trip owners

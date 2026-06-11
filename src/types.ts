@@ -198,3 +198,27 @@ export interface FamilySession {
   guestId?: string;
   permissions: FamilyPermissions;
 }
+
+export type AccessMode = "locked" | "owner" | "organizer" | "family" | "demo";
+
+export interface TripSummary {
+  id: string;
+  title: string;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  role: Role;
+}
+
+export interface ShareLink {
+  id: string;
+  tripId: string;
+  label: string;
+  isEnabled: boolean;
+  allowComments: boolean;
+  allowVotes: boolean;
+  allowPackingChecks: boolean;
+  expiresAt?: string;
+  createdAt: string;
+  token?: string;
+}

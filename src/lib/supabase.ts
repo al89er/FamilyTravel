@@ -5,6 +5,9 @@ import type {
   CommentTarget,
   FamilyPermissions,
   FamilySession,
+  Role,
+  ShareLink,
+  TripSummary,
   VoteValue
 } from "../types";
 
@@ -68,6 +71,231 @@ export async function completeRequiredPasswordChange(newPassword: string) {
 export async function signOut() {
   if (!supabase) return;
   await supabase.auth.signOut();
+}
+
+export async function loadAuthenticatedTrips(): Promise<TripSummary[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  const { data, error } = await supabase
+    .from("trip_members")
+    .select(`
+      trip_id,
+      role,
+      trip:trips (
+        id,
+        title,
+        destination,
+        start_date,
+        end_date
+      )
+    `)
+    .eq("user_id", userData.user.id)
+    .order("created_at", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const record = asRecord(row);
+    const trip = asRecord(record.trip);
+    return {
+      id: asString(trip.id || record.trip_id),
+      title: asString(trip.title || "Untitled trip"),
+      destination: asString(trip.destination),
+      startDate: asString(trip.start_date),
+      endDate: asString(trip.end_date),
+      role: asRole(record.role)
+    };
+  });
+}
+
+export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  const [
+    profileResult,
+    tripResult,
+    membersResult,
+    itineraryResult,
+    placesResult,
+    documentsResult,
+    expensesResult,
+    packingResult,
+    votesResult,
+    commentsResult,
+    emergencyResult,
+    insuranceResult
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userData.user.id).maybeSingle(),
+    supabase.from("trips").select("*").eq("id", tripId).maybeSingle(),
+    supabase
+      .from("trip_members")
+      .select(`
+        id,
+        trip_id,
+        user_id,
+        profile_id,
+        role,
+        can_add_expenses,
+        invited_by,
+        created_at,
+        profile:profiles (
+          id,
+          username,
+          display_name,
+          avatar_url,
+          medical_notes,
+          allergies,
+          medications,
+          must_change_password
+        )
+      `)
+      .eq("trip_id", tripId)
+      .order("created_at", { ascending: true }),
+    supabase.from("itinerary_items").select("*").eq("trip_id", tripId).order("date", { ascending: true }).order("sort_order", { ascending: true }),
+    supabase.from("places").select("*").eq("trip_id", tripId).order("name", { ascending: true }),
+    supabase.from("documents").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }),
+    supabase.from("expenses").select("*").eq("trip_id", tripId).order("date", { ascending: false }),
+    supabase.from("packing_items").select("*").eq("trip_id", tripId).order("category", { ascending: true }).order("name", { ascending: true }),
+    supabase.from("votes").select("*").eq("trip_id", tripId),
+    supabase.from("comments").select("*").eq("trip_id", tripId).order("created_at", { ascending: false }),
+    supabase.from("emergency_contacts").select("*").eq("trip_id", tripId).order("name", { ascending: true }),
+    supabase.from("travel_insurance").select("*").eq("trip_id", tripId).limit(1).maybeSingle()
+  ]);
+
+  throwIfError(profileResult.error);
+  throwIfError(tripResult.error);
+  throwIfError(membersResult.error);
+  throwIfError(itineraryResult.error);
+  throwIfError(placesResult.error);
+  throwIfError(documentsResult.error);
+  throwIfError(expensesResult.error);
+  throwIfError(packingResult.error);
+  throwIfError(votesResult.error);
+  throwIfError(commentsResult.error);
+  throwIfError(emergencyResult.error);
+  throwIfError(insuranceResult.error);
+
+  if (!tripResult.data) throw new Error("Trip not found for this account.");
+  if (!profileResult.data) throw new Error("Profile not found for this account.");
+
+  const expenses = asArray(expensesResult.data);
+  const packing = asArray(packingResult.data);
+
+  const [splitsResult, packingChecksResult] = await Promise.all([
+    expenses.length
+      ? supabase.from("expense_splits").select("*").in("expense_id", expenses.map((expense) => asString(asRecord(expense).id)))
+      : Promise.resolve({ data: [], error: null }),
+    packing.length
+      ? supabase.from("packing_item_checks").select("*").in("packing_item_id", packing.map((item) => asString(asRecord(item).id)))
+      : Promise.resolve({ data: [], error: null })
+  ]);
+
+  throwIfError(splitsResult.error);
+  throwIfError(packingChecksResult.error);
+
+  const splitsByExpense = new Map<string, string[]>();
+  asArray(splitsResult.data).forEach((split) => {
+    const record = asRecord(split);
+    const expenseId = asString(record.expense_id);
+    const profileId = asString(record.profile_id);
+    splitsByExpense.set(expenseId, [...(splitsByExpense.get(expenseId) ?? []), profileId]);
+  });
+
+  const checksByItem = new Map<string, string[]>();
+  asArray(packingChecksResult.data).forEach((check) => {
+    const record = asRecord(check);
+    const packingItemId = asString(record.packing_item_id);
+    const profileId = asString(record.profile_id);
+    checksByItem.set(packingItemId, [...(checksByItem.get(packingItemId) ?? []), profileId]);
+  });
+
+  return {
+    currentUser: profileToProfile(asRecord(profileResult.data)),
+    trip: tripToTrip(asRecord(tripResult.data)),
+    members: asArray(membersResult.data).map(memberToTripMember),
+    itinerary: asArray(itineraryResult.data).map(itineraryToItineraryItem),
+    places: asArray(placesResult.data).map(placeToPlace),
+    documents: asArray(documentsResult.data).map(documentToTravelDocument),
+    expenses: expenses.map((expense) => expenseToExpense(asRecord(expense), splitsByExpense)),
+    packing: packing.map((item) => packingToPackingItem(asRecord(item), checksByItem)),
+    votes: asArray(votesResult.data).map(voteToVote),
+    comments: asArray(commentsResult.data).map(commentToComment),
+    emergencyContacts: asArray(emergencyResult.data).map(emergencyToEmergencyContact),
+    insurance: insuranceResult.data ? insuranceToTravelInsurance(asRecord(insuranceResult.data)) : { ...demoData.insurance, tripId }
+  };
+}
+
+export async function listShareLinks(tripId: string): Promise<ShareLink[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data, error } = await supabase
+    .from("trip_share_links")
+    .select("id, trip_id, label, is_enabled, allow_comments, allow_votes, allow_packing_checks, expires_at, created_at")
+    .eq("trip_id", tripId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return asArray(data).map(shareLinkToShareLink);
+}
+
+export async function createShareLink({
+  tripId,
+  token,
+  label,
+  allowComments,
+  allowVotes,
+  allowPackingChecks
+}: {
+  tripId: string;
+  token: string;
+  label: string;
+  allowComments: boolean;
+  allowVotes: boolean;
+  allowPackingChecks: boolean;
+}): Promise<ShareLink> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  const { data, error } = await supabase
+    .from("trip_share_links")
+    .insert({
+      trip_id: tripId,
+      token,
+      label,
+      is_enabled: true,
+      allow_comments: allowComments,
+      allow_votes: allowVotes,
+      allow_packing_checks: allowPackingChecks,
+      created_by: userData.user.id
+    })
+    .select("id, trip_id, label, is_enabled, allow_comments, allow_votes, allow_packing_checks, expires_at, created_at")
+    .single();
+
+  if (error) throw error;
+  return { ...shareLinkToShareLink(asRecord(data)), token };
+}
+
+export async function setShareLinkEnabled(tripId: string, shareLinkId: string, isEnabled: boolean): Promise<ShareLink> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data, error } = await supabase
+    .from("trip_share_links")
+    .update({ is_enabled: isEnabled })
+    .eq("trip_id", tripId)
+    .eq("id", shareLinkId)
+    .select("id, trip_id, label, is_enabled, allow_comments, allow_votes, allow_packing_checks, expires_at, created_at")
+    .single();
+
+  if (error) throw error;
+  return shareLinkToShareLink(asRecord(data));
 }
 
 export async function loadFamilyTrip(displayName: string, shareToken: string): Promise<{ data: AppData; session: FamilySession }> {
@@ -304,6 +532,205 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       guestId,
       permissions: payload.permissions
     }
+  };
+}
+
+function throwIfError(error: { message: string } | null | undefined) {
+  if (error) throw new Error(error.message);
+}
+
+function asArray(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value) ? value.map(asRecord) : [];
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asRole(value: unknown): Role {
+  return value === "owner" ? "owner" : "organizer";
+}
+
+function profileToProfile(profile: Record<string, unknown>) {
+  return {
+    id: asString(profile.id),
+    username: optionalString(profile.username),
+    displayName: asString(profile.display_name),
+    avatarUrl: optionalString(profile.avatar_url),
+    medicalNotes: optionalString(profile.medical_notes),
+    allergies: optionalString(profile.allergies),
+    medications: optionalString(profile.medications),
+    mustChangePassword: Boolean(profile.must_change_password)
+  };
+}
+
+function tripToTrip(trip: Record<string, unknown>) {
+  return {
+    id: asString(trip.id),
+    title: asString(trip.title),
+    destination: asString(trip.destination),
+    startDate: asString(trip.start_date),
+    endDate: asString(trip.end_date),
+    timezone: asString(trip.timezone),
+    currency: asString(trip.currency),
+    dateFormat: asString(trip.date_format),
+    defaultVisibility: asVisibility(trip.default_visibility),
+    hotelInfo: asString(trip.hotel_info),
+    emergencySummary: asString(trip.emergency_summary),
+    estimatedBudget: asNumber(trip.estimated_budget)
+  };
+}
+
+function memberToTripMember(member: Record<string, unknown>) {
+  const profile = profileToProfile(asRecord(member.profile));
+  return {
+    id: asString(member.id),
+    tripId: asString(member.trip_id),
+    userId: asString(member.user_id || member.profile_id),
+    profileId: asString(member.profile_id || member.user_id),
+    role: asRole(member.role),
+    canAddExpenses: Boolean(member.can_add_expenses),
+    invitedBy: optionalString(member.invited_by),
+    createdAt: optionalString(member.created_at),
+    profile
+  };
+}
+
+function itineraryToItineraryItem(item: Record<string, unknown>) {
+  return {
+    id: asString(item.id),
+    tripId: asString(item.trip_id),
+    date: asString(item.date),
+    startTime: asString(item.start_time).slice(0, 5),
+    endTime: optionalString(item.end_time)?.slice(0, 5),
+    title: asString(item.title),
+    category: asString(item.category) as AppData["itinerary"][number]["category"],
+    locationName: optionalString(item.location_name),
+    address: optionalString(item.address),
+    notes: optionalString(item.notes),
+    estimatedCost: optionalNumber(item.estimated_cost),
+    bookingReference: optionalString(item.booking_reference),
+    attachmentUrl: optionalString(item.attachment_url),
+    visibility: asVisibility(item.visibility),
+    sortOrder: asNumber(item.sort_order)
+  };
+}
+
+function placeToPlace(place: Record<string, unknown>) {
+  return {
+    id: asString(place.id),
+    tripId: asString(place.trip_id),
+    itineraryItemId: optionalString(place.itinerary_item_id),
+    name: asString(place.name),
+    category: asString(place.category) as AppData["places"][number]["category"],
+    address: asString(place.address),
+    latitude: optionalNumber(place.latitude),
+    longitude: optionalNumber(place.longitude),
+    notes: optionalString(place.notes)
+  };
+}
+
+function documentToTravelDocument(document: Record<string, unknown>) {
+  return {
+    id: asString(document.id),
+    tripId: asString(document.trip_id),
+    itineraryItemId: optionalString(document.itinerary_item_id),
+    fileName: asString(document.file_name),
+    fileType: asString(document.file_type),
+    category: asString(document.category) as AppData["documents"][number]["category"],
+    uploadedBy: asString(document.uploaded_by),
+    storagePath: optionalString(document.storage_path),
+    isPrivate: Boolean(document.is_private),
+    createdAt: asString(document.created_at)
+  };
+}
+
+function expenseToExpense(expense: Record<string, unknown>, splitsByExpense: Map<string, string[]>) {
+  const id = asString(expense.id);
+  return {
+    id,
+    tripId: asString(expense.trip_id),
+    amount: asNumber(expense.amount),
+    currency: asString(expense.currency),
+    category: asString(expense.category),
+    paidBy: asString(expense.paid_by),
+    splitBetween: splitsByExpense.get(id) ?? [],
+    date: asString(expense.date),
+    notes: optionalString(expense.notes),
+    receiptPath: optionalString(expense.receipt_path)
+  };
+}
+
+function packingToPackingItem(item: Record<string, unknown>, checksByItem: Map<string, string[]>) {
+  const id = asString(item.id);
+  return {
+    id,
+    tripId: asString(item.trip_id),
+    name: asString(item.name),
+    category: asString(item.category),
+    quantity: asNumber(item.quantity),
+    assignedTo: optionalString(item.assigned_to),
+    isShared: Boolean(item.is_shared),
+    checkedBy: checksByItem.get(id) ?? [],
+    notes: optionalString(item.notes)
+  };
+}
+
+function voteToVote(vote: Record<string, unknown>) {
+  return {
+    id: asString(vote.id),
+    tripId: asString(vote.trip_id),
+    itineraryItemId: asString(vote.itinerary_item_id),
+    profileId: asString(vote.profile_id),
+    value: asString(vote.value) as VoteValue
+  };
+}
+
+function commentToComment(comment: Record<string, unknown>) {
+  return {
+    id: asString(comment.id),
+    tripId: asString(comment.trip_id),
+    targetType: asString(comment.target_type) as CommentTarget,
+    targetId: asString(comment.target_id),
+    profileId: asString(comment.profile_id),
+    body: asString(comment.body),
+    createdAt: asString(comment.created_at)
+  };
+}
+
+function emergencyToEmergencyContact(contact: Record<string, unknown>) {
+  return {
+    id: asString(contact.id),
+    tripId: asString(contact.trip_id),
+    name: asString(contact.name),
+    relationship: asString(contact.relationship),
+    phone: asString(contact.phone),
+    notes: optionalString(contact.notes)
+  };
+}
+
+function insuranceToTravelInsurance(insurance: Record<string, unknown>) {
+  return {
+    id: asString(insurance.id),
+    tripId: asString(insurance.trip_id),
+    provider: asString(insurance.provider),
+    policyNumber: asString(insurance.policy_number),
+    emergencyPhone: asString(insurance.emergency_phone),
+    notes: optionalString(insurance.notes)
+  };
+}
+
+function shareLinkToShareLink(link: Record<string, unknown>): ShareLink {
+  return {
+    id: asString(link.id),
+    tripId: asString(link.trip_id),
+    label: asString(link.label),
+    isEnabled: Boolean(link.is_enabled),
+    allowComments: Boolean(link.allow_comments),
+    allowVotes: Boolean(link.allow_votes),
+    allowPackingChecks: Boolean(link.allow_packing_checks),
+    expiresAt: optionalString(link.expires_at),
+    createdAt: asString(link.created_at)
   };
 }
 
