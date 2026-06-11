@@ -145,7 +145,7 @@ export async function loadAuthenticatedTrip(tripId: string): Promise<AppData> {
         can_add_expenses,
         invited_by,
         created_at,
-        profile:profiles (
+        profile:profiles!trip_members_profile_id_fkey (
           id,
           username,
           display_name,
