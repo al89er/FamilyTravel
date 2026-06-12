@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon } from "lucide-react";
+import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, Cross, HeartPulse } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
@@ -254,14 +254,33 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
   }
 
   const isHospital = place.category === "hospital";
+  const isPharmacy = place.category === "pharmacy";
+  const isHotel = place.category === "hotel";
+  const isRestaurant = place.category === "restaurant";
+  const isAttraction = place.category === "attraction";
+  const isAirport = place.category === "airport";
+  const isMeeting = place.category === "meeting_point";
+
+  let icon = <MapPinned className="h-8 w-8" />;
+  let colorClass = "bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:text-slate-400";
+  let badgeTone = "slate";
+  let bubbleClass = "bg-slate-600";
+
+  if (isHospital) { icon = <Hospital className="h-8 w-8" />; colorClass = "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"; badgeTone = "red"; bubbleClass = "bg-red-600"; }
+  else if (isPharmacy) { icon = <HeartPulse className="h-8 w-8" />; colorClass = "bg-teal-50 text-teal-600 dark:bg-teal-950/30 dark:text-teal-400"; badgeTone = "emerald"; bubbleClass = "bg-teal-600"; }
+  else if (isHotel) { icon = <Bed className="h-8 w-8" />; colorClass = "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400"; badgeTone = "indigo"; bubbleClass = "bg-indigo-600"; }
+  else if (isRestaurant) { icon = <Utensils className="h-8 w-8" />; colorClass = "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"; badgeTone = "amber"; bubbleClass = "bg-amber-600"; }
+  else if (isAttraction) { icon = <Palmtree className="h-8 w-8" />; colorClass = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"; badgeTone = "emerald"; bubbleClass = "bg-emerald-600"; }
+  else if (isAirport) { icon = <Plane className="h-8 w-8" />; colorClass = "bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400"; badgeTone = "sky"; bubbleClass = "bg-sky-600"; }
+  else if (isMeeting) { icon = <Users className="h-8 w-8" />; colorClass = "bg-primary/10 text-primary"; badgeTone = "slate"; bubbleClass = "bg-primary"; }
 
   return (
-    <Card className="relative overflow-hidden shadow-soft border border-border/50 rounded-3xl p-4 sm:p-5 group hover:shadow-md transition-all bg-surface">
+    <Card className="relative overflow-hidden shadow-sm border border-border/50 rounded-3xl p-4 sm:p-5 group hover:shadow-md transition-all bg-surface">
       <div className="flex gap-4 sm:gap-5">
-        <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl transition-colors ${isHospital ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400" : "bg-primary/10 text-primary"}`}>
-          {isHospital ? <Hospital className="h-8 w-8" /> : <MapPinned className="h-8 w-8" />}
+        <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[1.25rem] transition-colors ring-1 ring-border/20 shadow-sm ${colorClass}`}>
+          {icon}
           
-          <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${isHospital ? "bg-red-600" : "bg-primary"} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
+          <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
             {listIndex}
           </div>
         </div>
@@ -269,8 +288,8 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h3 className="font-bold text-lg text-primary truncate">{place.name}</h3>
-            <Badge tone="slate" className="capitalize text-[10px]">{formatCategory(place.category)}</Badge>
-            {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px]">{place.visibility.replace("_", " ")}</Badge>}
+            <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
+            {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
           </div>
           <p className="mt-1 text-sm font-medium text-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
           {itineraryItem ? <p className="mt-1.5 text-xs font-bold text-muted uppercase tracking-wider">{formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}</p> : null}

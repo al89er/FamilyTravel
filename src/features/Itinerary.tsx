@@ -1,4 +1,4 @@
-import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight } from "lucide-react";
+import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight, Palmtree, Train, Bus } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
@@ -45,32 +45,37 @@ export function Itinerary({
       ) : null}
       {Object.keys(itemsByDate).length === 0 ? (
         <EmptyState 
-          icon={<CalendarClock className="h-8 w-8" />}
+          icon={<Plane className="h-10 w-10 opacity-80" />}
           title="Start building your trip plan" 
           body="Add flights, hotels, meals, activities, and free time to build the shared plan." 
         />
       ) : (
         <div className="space-y-8">
-          {Object.entries(itemsByDate).map(([date, items]) => {
+          {Object.entries(itemsByDate).map(([date, items], dayIndex) => {
             const dateObj = new Date(`${date}T00:00:00`);
             const dayLabel = isNaN(dateObj.getTime())
               ? date
-              : dateObj.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-            
-            const shortDay = dayLabel.split(",")[0];
+              : dateObj.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 
             return (
-              <div key={date} className="relative">
-                <div className="sticky top-14 z-20 -mx-4 mb-5 flex items-center gap-3 bg-surface/90 px-4 py-3 backdrop-blur-md sm:mx-0 sm:rounded-2xl sm:border sm:border-border sm:bg-surface/95 sm:px-5 sm:shadow-sm">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-bold uppercase tracking-widest text-primary-foreground shadow-sm">
-                    {shortDay}
-                  </span>
-                  <h3 className="font-bold text-primary text-lg">{dayLabel}</h3>
-                  <span className="ml-auto rounded-full bg-muted px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-secondary">
-                    {items.length} {items.length === 1 ? 'plan' : 'plans'}
-                  </span>
+              <div key={date} className="relative mt-8 first:mt-0">
+                <div className="sticky top-14 z-20 -mx-4 mb-6 sm:mx-0">
+                  <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-surface/95 px-4 py-4 sm:px-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border-b sm:border border-border/50 backdrop-blur-md relative overflow-hidden">
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/80" />
+                    <div className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-[1.25rem] bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                      <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 opacity-80">Day</span>
+                      <span className="text-xl font-black leading-none">{dayIndex + 1}</span>
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-primary text-lg sm:text-xl tracking-tight">{dayLabel}</h3>
+                      <p className="text-xs font-bold text-secondary uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                        <CalendarClock className="h-3.5 w-3.5 opacity-70" />
+                        {items.length} {items.length === 1 ? 'plan' : 'plans'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-3 relative">
+                <div className="space-y-4 relative">
                   {items.map((item, idx) => (
                     <ItineraryRow key={item.id} item={item} data={data} canEdit={canEdit} familySession={familySession} onRefresh={onRefresh} onRefreshFamily={onRefreshFamily} isLast={idx === items.length - 1} />
                   ))}
@@ -91,7 +96,7 @@ export const getCategoryIcon = (cat: ItineraryCategory, className?: string) => {
     case "transport": return <Car className={c} />;
     case "hotel": return <Bed className={c} />;
     case "food": return <Utensils className={c} />;
-    case "activity": return <Ticket className={c} />;
+    case "activity": return <Palmtree className={c} />;
     case "shopping": return <ShoppingBag className={c} />;
     case "free_time": return <Coffee className={c} />;
     case "emergency": return <AlertCircle className={c} />;
@@ -221,38 +226,38 @@ function ItineraryCard({
   }
 
   const FamilyInteractions = () => (
-    <div className="mt-4 pt-3 border-t border-border/40">
+    <div className="mt-5 pt-4 border-t border-border/30">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {votes.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">
-              👍 {mustDo} <span className="text-primary/60 px-0.5">•</span> {votes.length}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-bold text-primary border border-primary/10 shadow-sm">
+              👍 {mustDo} <span className="text-primary/40 px-0.5">•</span> {votes.length}
             </span>
           )}
           {comments.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 py-1 text-[11px] font-bold text-secondary">
-              💬 {comments.length}
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[11px] font-bold text-secondary border border-border/60 shadow-sm">
+              <MessageSquare className="h-3 w-3" /> {comments.length}
             </span>
           )}
-          {item.visibility !== "shared" && <Badge tone="zinc" className="text-[10px]">{item.visibility}</Badge>}
+          {item.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{item.visibility.replace("_", " ")}</Badge>}
         </div>
         <div className="flex gap-1 ml-auto">
           {familySession && (familySession.permissions.votes || familySession.permissions.comments) && (
-            <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-primary hover:bg-primary/10" onClick={() => setShowInteract(!showInteract)}>
+            <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-primary hover:bg-primary/10 shadow-sm ring-1 ring-primary/20" onClick={() => setShowInteract(!showInteract)}>
               {showInteract ? "Close" : "React"}
             </Button>
           )}
           {canEdit && (
             <>
-              <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-secondary hover:bg-muted" onClick={onEdit}>Edit</Button>
-              <Button variant="ghost" className="h-7 text-[10px] px-2 uppercase tracking-widest font-bold text-danger hover:bg-danger/10 hover:text-danger" onClick={() => void removeItem()}>Delete</Button>
+              <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-secondary hover:bg-muted" onClick={onEdit}>Edit</Button>
+              <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-danger hover:bg-danger/10" onClick={() => void removeItem()}>Delete</Button>
             </>
           )}
         </div>
       </div>
       
       {showInteract && familySession && (
-        <div className="mt-3 space-y-3 rounded-2xl bg-surface/80 p-3 border border-border/50 shadow-sm animate-in fade-in slide-in-from-top-2">
+        <div className="mt-4 space-y-3 rounded-3xl bg-muted/40 p-4 border border-border/50 shadow-inner animate-in fade-in slide-in-from-top-2">
           {familySession.permissions.votes && (
             <div className="flex flex-wrap gap-2">
               {(["must_do", "interested", "neutral", "skip"] as VoteValue[]).map((value) => (
@@ -261,7 +266,7 @@ function ItineraryCard({
                   type="button"
                   disabled={busy}
                   onClick={() => void submitVote(value)}
-                  className="h-8 rounded-xl border border-border bg-surface px-3 text-[10px] font-bold uppercase tracking-wider text-secondary disabled:opacity-50 hover:bg-muted"
+                  className="h-9 rounded-2xl border border-border/60 bg-surface px-4 text-[10px] font-bold uppercase tracking-wider text-secondary disabled:opacity-50 hover:bg-primary/5 hover:text-primary transition-all shadow-sm active:scale-95"
                 >
                   {value.replace("_", " ")}
                 </button>
@@ -271,15 +276,15 @@ function ItineraryCard({
           {familySession.permissions.comments && (
             <form className="flex gap-2" onSubmit={submitComment}>
               <input
-                className={`${formInputClass} min-h-9 h-9 rounded-xl text-sm`}
+                className={`${formInputClass} min-h-10 h-10 rounded-2xl text-sm shadow-sm`}
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
-                placeholder="Add a note..."
+                placeholder="Add a family note..."
               />
               <button
                 type="submit"
                 disabled={busy || !comment.trim()}
-                className="h-9 rounded-xl bg-primary px-3 text-[10px] font-bold uppercase tracking-wider text-primary-foreground disabled:opacity-50"
+                className="h-10 rounded-2xl bg-primary px-4 text-[11px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm disabled:opacity-50 transition-transform active:scale-95"
               >
                 Post
               </button>
@@ -290,11 +295,14 @@ function ItineraryCard({
       )}
 
       {comments.length > 0 && showInteract && (
-        <div className="mt-3 space-y-2 animate-in fade-in">
+        <div className="mt-4 space-y-3 animate-in fade-in pl-2 border-l-2 border-border/50">
           {comments.map((entry) => (
-            <p key={entry.id} className="rounded-xl bg-surface/80 px-3 py-2 text-sm text-secondary border border-border/30">
-              {entry.body}
-            </p>
+            <div key={entry.id} className="rounded-2xl bg-surface p-3.5 text-sm text-secondary border border-border/40 shadow-sm relative">
+              <div className="absolute -left-[11px] top-4 h-5 w-5 rounded-full bg-surface border border-border/50 flex items-center justify-center">
+                <MessageSquare className="h-2.5 w-2.5 text-muted" />
+              </div>
+              <p className="leading-relaxed">{entry.body}</p>
+            </div>
           ))}
         </div>
       )}
@@ -303,25 +311,35 @@ function ItineraryCard({
 
   if (item.category === "flight") {
     return (
-      <Card className="flex flex-col sm:flex-row overflow-hidden shadow-soft border-0 ring-1 ring-sky-200 dark:ring-sky-900 rounded-3xl bg-sky-50 dark:bg-sky-950/20 group-hover:shadow-md transition-all">
-        <div className="bg-sky-600 dark:bg-sky-800 text-white p-3 sm:p-4 flex sm:flex-col justify-between items-center sm:w-16 shrink-0 relative">
-          <Plane className="h-5 w-5 rotate-45 sm:rotate-0" />
-          <span className="text-[10px] uppercase tracking-widest font-bold rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-8">Flight</span>
-          <Ticket className="h-4 w-4 opacity-60 hidden sm:block" />
+      <Card className="flex flex-col sm:flex-row overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ring-border/50 rounded-3xl bg-surface transition-all group relative">
+        <div className="bg-gradient-to-b from-sky-600 to-sky-800 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-30 mix-blend-overlay"></div>
+          <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" />
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90">Boarding</span>
+          <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10" />
         </div>
-        <div className="hidden sm:block w-px border-l-2 border-dashed border-sky-200 dark:border-sky-800 my-4" />
-        <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col justify-center">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-lg text-primary">{item.title}</h3>
-            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase">Ref: {item.bookingReference}</Badge>}
+        
+        <div className="hidden sm:flex flex-col justify-between items-center w-4 -ml-2 -mr-2 z-10">
+           <div className="h-4 w-4 rounded-full bg-app -mt-2 shadow-inner border-b border-border/50"></div>
+           <div className="h-full w-px border-l-[3px] border-dashed border-border/60 my-2"></div>
+           <div className="h-4 w-4 rounded-full bg-app -mb-2 shadow-inner border-t border-border/50"></div>
+        </div>
+
+        <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-extrabold text-xl text-primary tracking-tight">{item.title}</h3>
+            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm">Ref: {item.bookingReference}</Badge>}
           </div>
-          <div className="flex items-center gap-4 text-secondary mb-3">
-            <div className="font-mono text-2xl font-bold text-sky-700 dark:text-sky-400">{item.startTime}</div>
-            <div className="h-px flex-1 bg-sky-200 dark:bg-sky-800/50" />
-            <div className="font-mono text-2xl font-bold text-sky-700 dark:text-sky-400">{item.endTime || "—"}</div>
+          <div className="flex items-center gap-4 text-secondary mb-4 bg-sky-50/50 dark:bg-sky-950/20 p-3 rounded-2xl border border-sky-100 dark:border-sky-900/50 shadow-inner">
+            <div className="font-mono text-2xl font-black text-sky-700 dark:text-sky-400">{item.startTime}</div>
+            <div className="flex-1 flex items-center justify-center relative">
+              <div className="h-px w-full bg-sky-200 dark:bg-sky-800/50 absolute" />
+              <Plane className="h-4 w-4 text-sky-400 dark:text-sky-600 absolute rotate-90" />
+            </div>
+            <div className="font-mono text-2xl font-black text-sky-700 dark:text-sky-400">{item.endTime || "—"}</div>
           </div>
-          {item.locationName && <p className="text-sm font-medium text-sky-800 dark:text-sky-300 flex items-center gap-1.5"><MapPin className="h-4 w-4 opacity-70" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-3 rounded-xl bg-white/60 dark:bg-slate-900/40 p-3 text-sm text-secondary border border-sky-100 dark:border-sky-800/50">{item.notes}</p>}
+          {item.locationName && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 flex items-center gap-2"><MapPin className="h-4 w-4 opacity-70" /> {item.locationName}</p>}
+          {item.notes && <p className="mt-4 rounded-2xl bg-muted/30 p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </Card>
@@ -330,24 +348,37 @@ function ItineraryCard({
 
   if (item.category === "hotel") {
     return (
-      <Card className="flex flex-col overflow-hidden shadow-soft border-0 ring-1 ring-indigo-200 dark:ring-indigo-900/60 rounded-3xl bg-surface group-hover:shadow-md transition-all">
-        <div className="h-2 w-full bg-indigo-500 dark:bg-indigo-600" />
-        <div className="p-4 sm:p-5 flex-1 min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-100 dark:ring-indigo-800/50">
-                <Bed className="h-5 w-5" />
+      <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ring-border/50 rounded-3xl bg-surface transition-all relative">
+        <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600" />
+        <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7">
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 shrink-0 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-800/50 shadow-sm">
+                <Bed className="h-6 w-6" />
               </div>
-              <h3 className="font-bold text-lg text-primary">{item.title}</h3>
+              <div>
+                <h3 className="font-extrabold text-xl text-primary tracking-tight">{item.title}</h3>
+                {item.locationName && <p className="text-sm font-bold text-secondary flex items-center gap-1.5 mt-1"><MapPin className="h-3.5 w-3.5 text-muted" /> {item.locationName}</p>}
+              </div>
             </div>
-            {item.bookingReference && <Badge tone="indigo" className="font-mono uppercase">Ref: {item.bookingReference}</Badge>}
+            {item.bookingReference && <Badge tone="indigo" className="font-mono uppercase shadow-sm">Ref: {item.bookingReference}</Badge>}
           </div>
-          <div className="inline-flex items-center gap-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/20 px-3 py-2 text-sm font-medium text-indigo-800 dark:text-indigo-300 mb-3 border border-indigo-100 dark:border-indigo-900/50">
-            <span>Check in: <span className="font-bold">{item.startTime}</span></span>
-            {item.endTime && <><span>•</span><span>Check out: <span className="font-bold">{item.endTime}</span></span></>}
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-1 items-center justify-between gap-4 rounded-2xl bg-muted/40 px-4 py-3 border border-border/50 shadow-sm">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Check-in</span>
+                <span className="font-bold text-primary text-base">{item.startTime}</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted/50" />
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Check-out</span>
+                <span className="font-bold text-primary text-base">{item.endTime || "—"}</span>
+              </div>
+            </div>
           </div>
-          {item.locationName && <p className="text-sm font-medium text-secondary flex items-center gap-1.5 mb-1"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-3 rounded-xl bg-muted/50 p-3 text-sm text-secondary border-l-2 border-indigo-300 dark:border-indigo-700">{item.notes}</p>}
+          
+          {item.notes && <p className="mt-2 rounded-2xl bg-surface p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </Card>
@@ -363,27 +394,29 @@ function ItineraryCard({
   let bgClass = "bg-surface";
   let accentClass = "text-primary";
   let badgeTone = "slate";
+  let stripClass = "bg-border/50";
 
-  if (isFood) { ringClass = "ring-amber-200 dark:ring-amber-900/60"; bgClass = "bg-amber-50/30 dark:bg-amber-950/10"; accentClass = "text-amber-600 dark:text-amber-500"; badgeTone = "amber"; }
-  else if (isActivity) { ringClass = "ring-emerald-200 dark:ring-emerald-900/60"; bgClass = "bg-emerald-50/30 dark:bg-emerald-950/10"; accentClass = "text-emerald-600 dark:text-emerald-500"; badgeTone = "emerald"; }
-  else if (isTransport) { ringClass = "ring-cyan-200 dark:ring-cyan-900/60"; bgClass = "bg-cyan-50/30 dark:bg-cyan-950/10"; accentClass = "text-cyan-600 dark:text-cyan-500"; badgeTone = "sky"; }
+  if (isFood) { ringClass = "ring-amber-200 dark:ring-amber-900/60"; bgClass = "bg-gradient-to-br from-surface to-amber-50/20 dark:to-amber-950/10"; accentClass = "text-amber-700 dark:text-amber-500"; badgeTone = "amber"; stripClass = "bg-amber-400"; }
+  else if (isActivity) { ringClass = "ring-emerald-200 dark:ring-emerald-900/60"; bgClass = "bg-gradient-to-br from-surface to-emerald-50/20 dark:to-emerald-950/10"; accentClass = "text-emerald-700 dark:text-emerald-500"; badgeTone = "emerald"; stripClass = "bg-emerald-400"; }
+  else if (isTransport) { ringClass = "ring-cyan-200 dark:ring-cyan-900/60"; bgClass = "bg-gradient-to-br from-surface to-cyan-50/20 dark:to-cyan-950/10"; accentClass = "text-cyan-700 dark:text-cyan-500"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
 
   return (
-    <Card className={`flex flex-col sm:flex-row overflow-hidden shadow-soft border-0 ring-1 ${ringClass} rounded-3xl ${bgClass} group-hover:shadow-md transition-all`}>
-      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4">
-        <div className="shrink-0 sm:w-20 mt-1">
-          <span className="inline-flex items-center rounded-xl bg-surface px-2.5 py-1.5 text-sm font-bold text-primary tabular-nums border border-border/50 shadow-sm">
+    <Card className={`relative flex flex-col sm:flex-row overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ${ringClass} rounded-3xl ${bgClass} transition-all`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5">
+        <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
+          <span className="inline-flex items-center justify-center rounded-2xl bg-surface px-3 py-2 text-sm font-black text-primary tabular-nums border border-border/60 shadow-sm min-w-[4.5rem]">
             {item.startTime}
           </span>
-          {item.endTime && <p className="mt-1.5 pl-1 text-[10px] font-bold text-muted uppercase tracking-wider">→ {item.endTime}</p>}
+          {item.endTime && <p className="sm:mt-2 sm:pl-1 text-[10px] font-bold text-muted uppercase tracking-wider">→ {item.endTime}</p>}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <h3 className={`font-bold text-lg ${accentClass}`}>{item.title}</h3>
-            <Badge tone={badgeTone as any} className="capitalize">{item.category}</Badge>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <h3 className={`font-extrabold text-lg sm:text-xl tracking-tight ${accentClass}`}>{item.title}</h3>
+            <Badge tone={badgeTone as any} className="capitalize shadow-sm">{item.category.replace("_", " ")}</Badge>
           </div>
-          {item.locationName && <p className="text-sm font-medium text-secondary flex items-center gap-1.5 mb-2"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-3 rounded-xl bg-surface/50 p-3 text-sm text-secondary border border-border/50">{item.notes}</p>}
+          {item.locationName && <p className="text-sm font-bold text-secondary flex items-center gap-1.5 mb-3"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
+          {item.notes && <p className="mt-2 rounded-2xl bg-surface p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </div>
@@ -714,7 +747,7 @@ function ItineraryForm({
       case "transport": return <Car className="h-6 w-6" />;
       case "hotel": return <Bed className="h-6 w-6" />;
       case "food": return <Utensils className="h-6 w-6" />;
-      case "activity": return <Ticket className="h-6 w-6" />;
+      case "activity": return <Palmtree className="h-6 w-6" />;
       case "shopping": return <ShoppingBag className="h-6 w-6" />;
       case "free_time": return <Coffee className="h-6 w-6" />;
       case "emergency": return <AlertCircle className="h-6 w-6" />;
@@ -725,7 +758,7 @@ function ItineraryForm({
   return (
     <Card className="p-4 sm:p-6 shadow-soft border-border/50 rounded-3xl">
       <div className="mb-5">
-        <h3 className="text-lg font-bold text-primary">{item ? "Editing itinerary item" : "Add to itinerary"}</h3>
+        <h3 className="text-lg font-bold text-primary">{item ? "Editing trip plan item" : "Add to trip plan"}</h3>
         <div className="mt-2 flex gap-2 text-sm text-muted font-medium">
           <span className={step >= 1 ? "font-bold text-primary" : ""}>1. Day</span>
           <span>→</span>
