@@ -837,6 +837,7 @@ function FlightSeatsSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedFlights, setExpandedFlights] = useState<Record<string, boolean>>({});
 
   async function handleSave(input: FlightSeatAssignmentInput, id?: string) {
     setSaving(true);
@@ -927,28 +928,47 @@ function FlightSeatsSection({
       ) : null}
 
       {/* ── 2-level hierarchy ── */}
-      {Object.entries(byFlight).map(([flightLabel, seats]) => (
-        <div key={flightLabel} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-sky-100 shadow-clay-pressed">
-              <PlaneTakeoff className="h-5 w-5 text-sky-700" />
+      {Object.entries(byFlight).map(([flightLabel, seats]) => {
+        const isExpanded = expandedFlights[flightLabel] !== false;
+        return (
+          <div key={flightLabel} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
+            {/* Level 1: Flight label (Clickable to collapse/expand) */}
+            <div
+              onClick={() => setExpandedFlights((prev) => ({ ...prev, [flightLabel]: !isExpanded }))}
+              className="flex items-center justify-between gap-3 cursor-pointer select-none group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-sky-100 shadow-clay-pressed group-hover:scale-105 transition-transform">
+                  <PlaneTakeoff className="h-5 w-5 text-sky-700" />
+                </div>
+                <div>
+                  <p className="font-black text-xl text-clay-primary">{flightLabel}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mt-0.5">
+                    {seats.length} seat assignment{seats.length > 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-recessed text-clay-secondary shadow-clay-pressed group-hover:text-clay-primary transition-all">
+                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              </div>
             </div>
-            <p className="font-black text-xl text-clay-primary">{flightLabel}</p>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/40">
-            {seats.map((seat) => (
-              <SeatCard
-                key={seat.id}
-                seat={seat}
-                canEdit={canEdit}
-                onEdit={() => { setEditingId(seat.id); setAdding(false); }}
-                onDelete={() => void handleDelete(seat.id)}
-              />
-            ))}
+            {isExpanded && (
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/40">
+                {seats.map((seat) => (
+                  <SeatCard
+                    key={seat.id}
+                    seat={seat}
+                    canEdit={canEdit}
+                    onEdit={() => { setEditingId(seat.id); setAdding(false); }}
+                    onDelete={() => void handleDelete(seat.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
