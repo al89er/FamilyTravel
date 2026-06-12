@@ -1,4 +1,4 @@
-import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight, Palmtree, Train, Bus } from "lucide-react";
+import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight, Palmtree, Train, Bus, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl, DayPickerChips } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
@@ -192,10 +192,63 @@ function ItineraryCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showInteract, setShowInteract] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const votes = data.votes.filter((vote) => vote.itineraryItemId === item.id);
   const comments = data.comments.filter((comment) => comment.targetId === item.id);
   const mustDo = votes.filter((vote) => vote.value === "must_do").length;
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onEdit();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void removeItem();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   async function submitVote(value: VoteValue) {
     if (!familySession) return;
@@ -262,14 +315,8 @@ function ItineraryCard({
         <div className="flex gap-1 ml-auto">
           {familySession && (familySession.permissions.votes || familySession.permissions.comments) && (
             <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-primary hover:bg-primary/10 shadow-sm ring-1 ring-primary/20" onClick={() => setShowInteract(!showInteract)}>
-              {showInteract ? "Close" : "React"}
+               {showInteract ? "Close" : "React"}
             </Button>
-          )}
-          {canEdit && (
-            <>
-              <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-secondary hover:bg-muted" onClick={onEdit}>Edit</Button>
-              <Button variant="ghost" className="h-8 text-[10px] px-3 rounded-full uppercase tracking-widest font-bold text-danger hover:bg-danger/10" onClick={() => void removeItem()}>Delete</Button>
-            </>
           )}
         </div>
       </div>
@@ -346,8 +393,9 @@ function ItineraryCard({
         </div>
 
         {/* Ticket body — solid clay surface, all text must be dark */}
-        <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8">
-          <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8 relative">
+          <ActionMenu />
+          <div className="flex items-start justify-between gap-3 mb-3 pr-8">
             <h3 className="font-extrabold text-xl text-clay-primary tracking-tight leading-tight">{item.title}</h3>
             {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm shrink-0">Ref: {item.bookingReference}</Badge>}
           </div>
@@ -396,8 +444,9 @@ function ItineraryCard({
     return (
       <Card className="flex flex-col overflow-hidden border-0 bg-clay-surface transition-all relative shadow-clay-card p-0">
         <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600" />
-        <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7">
-          <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+        <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7 relative">
+          <ActionMenu />
+          <div className="flex flex-wrap items-start justify-between gap-4 mb-4 pr-8">
             <div className="flex items-center gap-4">
               <div className="h-14 w-14 shrink-0 rounded-[1.25rem] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-clay-btn flex items-center justify-center text-white">
                 <Bed className="h-6 w-6" />
@@ -449,7 +498,8 @@ function ItineraryCard({
   return (
     <Card className={`relative flex flex-col sm:flex-row overflow-hidden border-0 shadow-clay-card p-0 transition-all bg-clay-surface`}>
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
-      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5">
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5 relative">
+        <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
           <span className="inline-flex items-center justify-center rounded-[16px] bg-clay-recessed shadow-clay-pressed px-3 py-2 text-sm font-black text-clay-primary tabular-nums border-0 min-w-[4.5rem]">
             {item.startTime}
@@ -457,7 +507,7 @@ function ItineraryCard({
           {item.endTime && <p className="sm:mt-2 sm:pl-1 text-[10px] font-bold text-muted uppercase tracking-wider">→ {item.endTime}</p>}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pr-8">
             <h3 className={`font-extrabold text-lg sm:text-xl tracking-tight ${accentClass}`}>{item.title}</h3>
             <Badge tone={badgeTone as any} className="capitalize shadow-sm">{item.category.replace("_", " ")}</Badge>
           </div>

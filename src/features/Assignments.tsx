@@ -9,7 +9,9 @@ import {
   PlaneTakeoff,
   Plus,
   Trash2,
-  Users
+  Users,
+  Pencil,
+  MoreVertical
 } from "lucide-react";
 import type { AppData, FlightSeatAssignment, RoomAssignment } from "../types";
 import type { FlightSeatAssignmentInput, RoomAssignmentInput } from "../types";
@@ -300,8 +302,63 @@ function RoomRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onEdit();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="relative overflow-hidden rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+      <ActionMenu />
       {/* Key card accent strip */}
       <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-400 to-purple-500" />
       
@@ -312,29 +369,9 @@ function RoomRow({
           </div>
           <div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary block mb-1">Room</span>
-            <span className="font-mono text-2xl font-black text-clay-primary leading-none">{ra.roomNumber}</span>
+            <span className="font-mono text-2xl font-black text-clay-primary leading-none pr-8">{ra.roomNumber}</span>
           </div>
         </div>
-        {canEdit ? (
-          <div className="flex gap-1 shrink-0 bg-clay-recessed shadow-clay-pressed p-1.5 rounded-[16px]">
-            <button
-              type="button"
-              onClick={onEdit}
-              className="rounded-[12px] p-2 text-clay-secondary hover:bg-clay-surface hover:text-primary transition-colors"
-              aria-label="Edit room assignment"
-            >
-              <Edit2 className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              className="rounded-[12px] p-2 text-clay-secondary hover:bg-danger/10 hover:text-danger transition-colors"
-              aria-label="Delete room assignment"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        ) : null}
       </div>
 
       {/* Guest chips */}
@@ -648,8 +685,63 @@ function SeatCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onEdit();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="relative flex flex-col overflow-hidden rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+      <ActionMenu />
       {/* Boarding pass accent strip */}
       <div className="absolute top-0 left-0 bottom-0 w-2.5 bg-gradient-to-b from-sky-400 to-blue-500" />
       
@@ -661,7 +753,7 @@ function SeatCard({
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Passenger</p>
-            <p className="font-black text-xl text-clay-primary leading-none">{seat.guestName}</p>
+            <p className="font-black text-xl text-clay-primary leading-none pr-8">{seat.guestName}</p>
           </div>
         </div>
 
@@ -673,27 +765,6 @@ function SeatCard({
               {seat.seatNumber}
             </span>
           </div>
-
-          {canEdit ? (
-            <div className="flex gap-1 shrink-0 bg-clay-recessed shadow-clay-pressed p-1.5 rounded-[16px]">
-              <button
-                type="button"
-                onClick={onEdit}
-                className="rounded-[12px] p-2 text-clay-secondary hover:bg-clay-surface hover:text-primary transition-colors"
-                aria-label="Edit seat assignment"
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="rounded-[12px] p-2 text-clay-secondary hover:bg-danger/10 hover:text-danger transition-colors"
-                aria-label="Delete seat assignment"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ) : null}
         </div>
       </div>
       

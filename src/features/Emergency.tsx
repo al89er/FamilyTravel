@@ -1,4 +1,4 @@
-import { AlertTriangle, HeartPulse, Pencil, Phone, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { AlertTriangle, HeartPulse, Pencil, Phone, Plus, ShieldCheck, Trash2, MoreVertical } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal } from "../components/ui";
 import { deleteEmergencyContact, deletePlace, upsertEmergencyContact, upsertInsurance, upsertMedicalNote, upsertPlace } from "../lib/supabase";
@@ -187,24 +187,73 @@ function MedicalNoteForm({ isOpen, tripId, profile, onSaved, onCancel }: { isOpe
 function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId: string; contact: EmergencyContact; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditing(true);
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void deleteEmergencyContact(tripId, contact.id).then(onRefresh).catch((err) => setError(err.message));
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
-    <div className="rounded-[28px] border-0 bg-clay-surface p-5 sm:p-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1">
+    <div className="rounded-[28px] border-0 bg-clay-surface p-5 sm:p-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 relative">
+      <ActionMenu />
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-red-100 shadow-clay-pressed">
           <Phone className="h-5 w-5 text-red-600" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-lg text-clay-primary">{contact.name}</h3>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary">{contact.relationship}</p>
+          <h3 className="font-bold text-lg text-clay-primary pr-8">{contact.name}</h3>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary pr-8">{contact.relationship}</p>
           <p className="mt-2 font-mono font-black text-lg text-clay-primary">{contact.phone}</p>
           {contact.notes ? <p className="mt-3 text-sm font-medium text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px]">{contact.notes}</p> : null}
-          {canEdit ? (
-            <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-border/40">
-              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" />Edit</Button>
-              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" onClick={() => void deleteEmergencyContact(tripId, contact.id).then(onRefresh).catch((err) => setError(err.message))}><Trash2 className="h-3.5 w-3.5 mr-1" />Delete</Button>
-            </div>
-          ) : null}
           {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
         </div>
       </div>
@@ -227,24 +276,73 @@ function EmergencyContactForm({ isOpen, tripId, contact, onSaved, onCancel }: { 
 function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditing(true);
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void deletePlace(hospital.tripId, hospital.id).then(onRefresh).catch((err) => setError(err.message));
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
     <Card className="relative overflow-hidden p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all">
+      <ActionMenu />
       <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-red-500" />
       <div className="flex items-start gap-4 pl-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-red-100 shadow-clay-pressed">
           <HeartPulse className="h-6 w-6 text-red-600" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-lg text-clay-primary leading-tight">{hospital.name}</p>
-          <p className="mt-1 text-sm font-medium text-clay-secondary">{hospital.address}</p>
+          <p className="font-bold text-lg text-clay-primary leading-tight pr-8">{hospital.name}</p>
+          <p className="mt-1 text-sm font-medium text-clay-secondary pr-8">{hospital.address}</p>
           {hospital.notes ? <p className="mt-3 text-sm font-medium text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px]">{hospital.notes}</p> : null}
-          {canEdit ? (
-            <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-border/40">
-              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" />Edit</Button>
-              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" onClick={() => void deletePlace(hospital.tripId, hospital.id).then(onRefresh).catch((err) => setError(err.message))}><Trash2 className="h-3.5 w-3.5 mr-1" />Delete</Button>
-            </div>
-          ) : null}
           {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
         </div>
       </div>

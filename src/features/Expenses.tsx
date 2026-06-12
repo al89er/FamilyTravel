@@ -1,4 +1,4 @@
-import { DollarSign, Pencil, Plus, ReceiptText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { DollarSign, Pencil, Plus, ReceiptText, Trash2, TrendingDown, TrendingUp, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal } from "../components/ui";
 import { deleteExpense, upsertExpense } from "../lib/supabase";
@@ -137,7 +137,60 @@ function ExpenseCard({ data, expense, canEdit, onRefresh }: { data: AppData; exp
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const paidBy = data.members.find((member) => member.profileId === expense.paidBy)?.profile.displayName;
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditing(true);
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void remove();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   async function remove() {
     if (!window.confirm("Delete this expense?")) return;
@@ -155,39 +208,30 @@ function ExpenseCard({ data, expense, canEdit, onRefresh }: { data: AppData; exp
 
   return (
     <>
-      <Card className="p-5 border-0 hover:-translate-y-1 hover:shadow-clay-hover transition-all bg-clay-surface shadow-clay-card rounded-[28px]">
+      <Card className="p-5 border-0 hover:-translate-y-1 hover:shadow-clay-hover transition-all bg-clay-surface shadow-clay-card rounded-[28px] relative">
+        <ActionMenu />
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-clay-recessed shadow-clay-pressed">
               <ReceiptText className="h-5 w-5 text-clay-secondary" aria-hidden="true" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1 pr-8">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm ${expenseCategoryClass(expense.category)}`}>
                   {expense.category}
                 </span>
               </div>
-              <p className="mt-1 text-sm font-medium text-clay-secondary">
+              <p className="mt-1 text-sm font-medium text-clay-secondary pr-8">
                 <span className="font-bold text-clay-primary">{expense.date}</span>
                 {paidBy ? ` · paid by ${paidBy}` : ""}
               </p>
-              {expense.notes ? <p className="mt-2 text-sm text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3 rounded-[16px]">{expense.notes}</p> : null}
-              {canEdit ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={() => setEditing(true)}>
-                    <Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit
-                  </Button>
-                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={() => void remove()}>
-                    <Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete
-                  </Button>
-                </div>
-              ) : null}
+              {expense.notes ? <p className="mt-2 text-sm text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3 rounded-[16px] pr-8">{expense.notes}</p> : null}
               {error ? <p className="mt-2 text-sm font-bold text-danger">{error}</p> : null}
             </div>
           </div>
           
           {/* Right side amounts */}
-          <div className="shrink-0 sm:text-right w-full sm:w-auto pt-3 border-t sm:border-t-0 border-border/40 sm:pt-0">
+          <div className="shrink-0 sm:text-right w-full sm:w-auto pt-3 border-t sm:border-t-0 border-border/40 sm:pt-0 sm:pr-8">
             <p className="text-xl font-black tabular-nums text-clay-primary">{expense.currency} {expense.amount.toLocaleString()}</p>
             {expense.splitBetween.length > 0 && (
               <p className="mt-1 text-xs font-bold text-clay-secondary uppercase tracking-wider">÷ {expense.splitBetween.length} people</p>

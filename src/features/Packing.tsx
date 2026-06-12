@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Luggage, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Luggage, Package, Pencil, Plus, Trash2, MoreVertical } from "lucide-react";
 import { useState, MouseEvent } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, SegmentedControl } from "../components/ui";
 import { deletePackingItem, setFamilyPackingCheck, togglePackingItemCheck, upsertPackingItem } from "../lib/supabase";
@@ -104,6 +104,59 @@ function PackingCard({
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditing(true);
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void remove();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   async function toggleCheck() {
     setBusy(true);
@@ -144,54 +197,49 @@ function PackingCard({
   return (
     <>
       <Card className={`relative overflow-hidden border-0 p-5 sm:p-6 flex items-start gap-4 text-left transition-all rounded-[28px] group hover:-translate-y-1 hover:shadow-clay-hover ${checked ? "bg-clay-recessed shadow-clay-pressed opacity-90" : "bg-clay-surface shadow-clay-card"}`}>
-      {/* Check button */}
-      <button
-        type="button"
-        disabled={!canToggle || busy}
-        onClick={() => void toggleCheck()}
-        className="mt-0.5 shrink-0 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full transition-transform hover:scale-110 active:scale-95"
-        aria-label={checked ? "Uncheck packing item" : "Check packing item"}
-      >
-        {checked ? (
-          <CheckCircle2 className="h-7 w-7 text-emerald-500 drop-shadow-sm" aria-hidden="true" />
-        ) : (
-          <Circle className="h-7 w-7 text-clay-secondary hover:text-primary transition-colors" aria-hidden="true" />
-        )}
-      </button>
-
-      <div className="flex-1 min-w-0">
-        <div
-          onClick={canToggle && !busy ? () => void toggleCheck() : undefined}
-          className={canToggle && !busy ? "cursor-pointer select-none" : ""}
+        <ActionMenu />
+        {/* Check button */}
+        <button
+          type="button"
+          disabled={!canToggle || busy}
+          onClick={() => void toggleCheck()}
+          className="mt-0.5 shrink-0 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full transition-transform hover:scale-110 active:scale-95"
+          aria-label={checked ? "Uncheck packing item" : "Check packing item"}
         >
-          <h3 className={`font-black text-[1.1rem] leading-tight ${checked ? "line-through text-clay-secondary" : "text-clay-primary"}`}>{item.name}</h3>
-          
-          <div className="mt-3 flex flex-wrap gap-2 items-center">
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${checked ? "bg-emerald-100 text-emerald-700 shadow-clay-pressed" : "bg-clay-recessed text-clay-secondary shadow-clay-pressed"}`}>
-              {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.category}
-            </span>
-            <Badge tone={item.isShared ? "brand" : "zinc"} className="text-[10px] shadow-sm">{item.isShared ? "Shared" : "Personal"}</Badge>
-            {assigned ? (
-              <span className="inline-flex items-center gap-1 rounded-[12px] bg-clay-recessed shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-clay-secondary">
-                {assigned}
+          {checked ? (
+            <CheckCircle2 className="h-7 w-7 text-emerald-500 drop-shadow-sm" aria-hidden="true" />
+          ) : (
+            <Circle className="h-7 w-7 text-clay-secondary hover:text-primary transition-colors" aria-hidden="true" />
+          )}
+        </button>
+
+        <div className="flex-1 min-w-0">
+          <div
+            onClick={canToggle && !busy ? () => void toggleCheck() : undefined}
+            className={canToggle && !busy ? "cursor-pointer select-none" : ""}
+          >
+            <h3 className={`font-black text-[1.1rem] leading-tight pr-8 ${checked ? "line-through text-clay-secondary" : "text-clay-primary"}`}>{item.name}</h3>
+            
+            <div className="mt-3 flex flex-wrap gap-2 items-center">
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${checked ? "bg-emerald-100 text-emerald-700 shadow-clay-pressed" : "bg-clay-recessed text-clay-secondary shadow-clay-pressed"}`}>
+                {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.category}
               </span>
-            ) : null}
-            {item.checkedBy.length > 0 && item.isShared ? (
-              <span className="inline-flex items-center gap-1 rounded-[12px] bg-emerald-100 shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                {item.checkedBy.length} packed
-              </span>
-            ) : null}
+              <Badge tone={item.isShared ? "brand" : "zinc"} className="text-[10px] shadow-sm">{item.isShared ? "Shared" : "Personal"}</Badge>
+              {assigned ? (
+                <span className="inline-flex items-center gap-1 rounded-[12px] bg-clay-recessed shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-clay-secondary">
+                  {assigned}
+                </span>
+              ) : null}
+              {item.checkedBy.length > 0 && item.isShared ? (
+                <span className="inline-flex items-center gap-1 rounded-[12px] bg-emerald-100 shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                  {item.checkedBy.length} packed
+                </span>
+              ) : null}
+            </div>
+            {item.notes ? <p className="mt-3 text-sm font-medium text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3 rounded-[16px]">{item.notes}</p> : null}
           </div>
-          {item.notes ? <p className="mt-3 text-sm font-medium text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3 rounded-[16px]">{item.notes}</p> : null}
+          {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
         </div>
-        {canEdit ? (
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-4">
-            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setEditing(true); }}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
-            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); void remove(); }}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
-          </div>
-        ) : null}
-        {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
-      </div>
       </Card>
       {canEdit && (
         <PackingForm isOpen={editing} data={data} item={item} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />

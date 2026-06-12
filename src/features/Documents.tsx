@@ -1,4 +1,4 @@
-import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload } from "lucide-react";
+import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload, MoreVertical } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { deleteDocument, upsertDocument } from "../lib/supabase";
@@ -72,6 +72,59 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const ActionMenu = () => {
+    if (!canEdit) return null;
+    return (
+      <div className="absolute top-4 right-4 z-30">
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-surface text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary active:scale-90 transition-all shadow-clay-card"
+          aria-label="Actions"
+        >
+          <MoreVertical className="h-5 w-5" />
+        </button>
+
+        {menuOpen && (
+          <>
+            {/* Click-outside backdrop */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+            />
+            
+            {/* Menu overlay */}
+            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  setEditing(true);
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-clay-secondary hover:bg-clay-recessed hover:text-clay-primary rounded-[12px] transition-colors text-left"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  void remove();
+                }}
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 rounded-[12px] transition-colors text-left"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   async function remove() {
     if (!window.confirm("Delete this document?")) return;
@@ -92,6 +145,7 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
   return (
     <>
       <Card className="relative p-5 sm:p-6 overflow-hidden border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group">
+        <ActionMenu />
         {/* Document wallet subtle top border */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-200 to-slate-300" />
         
@@ -104,8 +158,8 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
             }
           </div>
           <div className="min-w-0 flex-1 w-full">
-            <h3 className="break-words font-black text-lg text-clay-primary leading-tight">{document.fileName}</h3>
-            <p className="mt-1 text-xs font-bold text-clay-secondary truncate uppercase tracking-wider">{document.fileType}</p>
+            <h3 className="break-words font-black text-lg text-clay-primary leading-tight pr-8">{document.fileName}</h3>
+            <p className="mt-1 text-xs font-bold text-clay-secondary truncate uppercase tracking-wider pr-8">{document.fileType}</p>
             
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="inline-flex items-center rounded-[12px] bg-clay-recessed shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-clay-secondary">
@@ -117,17 +171,6 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
                 <Badge tone="slate" className="shadow-sm">Shared</Badge>
               )}
             </div>
-
-            {canEdit ? (
-              <div className="mt-5 flex flex-wrap gap-2 pt-2">
-                <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={() => setEditing(true)}>
-                  <Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit
-                </Button>
-                <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={() => void remove()}>
-                  <Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete
-                </Button>
-              </div>
-            ) : null}
             {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
           </div>
         </div>
