@@ -2,7 +2,22 @@ import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Ca
 import { useState } from "react";
 import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl, DayPickerChips } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
-import type { AppData, FamilySession, ItineraryCategory, ItineraryInput, ItineraryItem, Trip, Visibility, VoteValue } from "../types";
+import { AppData, FamilySession, ItineraryCategory, ItineraryItem, Trip, Visibility, VoteValue, ItineraryInput } from "../types";
+function getTripDates(startDateStr: string, endDateStr: string): string[] {
+  const dates: string[] = [];
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return dates;
+  
+  let current = new Date(start);
+  let safety = 0;
+  while (current <= end && safety < 100) {
+    dates.push(current.toISOString().slice(0, 10));
+    current.setDate(current.getDate() + 1);
+    safety++;
+  }
+  return dates;
+}
 
 export function Itinerary({
   data,
@@ -18,6 +33,21 @@ export function Itinerary({
   onRefreshFamily?: () => void;
 }) {
   const [showForm, setShowForm] = useState(false);
+  const tripDates = getTripDates(data.trip.startDate, data.trip.endDate);
+
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (tripDates.length === 0) return "";
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    if (tripDates.includes(todayStr)) {
+      return todayStr;
+    }
+    return tripDates[0];
+  });
+
   const itemsByDate = data.itinerary.reduce<Record<string, ItineraryItem[]>>((groups, item) => {
     groups[item.date] = [...(groups[item.date] ?? []), item].sort((a, b) => {
       const aTime = a.startTime || "";
@@ -29,6 +59,15 @@ export function Itinerary({
     });
     return groups;
   }, {});
+
+  const selectedDayIndex = tripDates.indexOf(selectedDate);
+  const selectedDayLabel = selectedDayIndex !== -1 ? `Day ${selectedDayIndex + 1}` : "";
+  const selectedDayItems = selectedDate ? (itemsByDate[selectedDate] ?? []) : [];
+
+  const selectedDateObj = selectedDate ? new Date(`${selectedDate}T00:00:00`) : null;
+  const selectedDateLabel = selectedDateObj && !isNaN(selectedDateObj.getTime())
+    ? selectedDateObj.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+    : selectedDate;
 
   return (
     <div className="space-y-6">
@@ -42,6 +81,7 @@ export function Itinerary({
           isOpen={showForm}
           trip={data.trip}
           items={data.itinerary}
+          defaultDate={selectedDate}
           onCancel={() => setShowForm(false)}
           onSaved={async () => {
             setShowForm(false);
@@ -49,46 +89,51 @@ export function Itinerary({
           }}
         />
       ) : null}
-      {Object.keys(itemsByDate).length === 0 ? (
+
+      {/* Pill navigation for the days */}
+      {tripDates.length > 0 && (
+        <div className="sticky top-[56px] z-30 bg-clay-canvas/90 backdrop-blur-md py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border/20">
+          <DayPickerChips
+            dates={tripDates}
+            dateFormat={data.trip.dateFormat}
+            value={selectedDate}
+            onChange={setSelectedDate}
+          />
+        </div>
+      )}
+
+      {selectedDayItems.length === 0 ? (
         <EmptyState 
-          icon={<Plane className="h-10 w-10 opacity-80" />}
-          title="Start building your trip plan" 
-          body="Add flights, hotels, meals, activities, and free time to build the shared plan." 
+          icon={<Palmtree className="h-10 w-10 opacity-80" />}
+          title={`No plans for ${selectedDayLabel}`} 
+          body="Relax! No scheduled items for this day yet. Click 'Add plan' to add flights, hotels, meals, or activities."
+          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add a plan</Button> : null}
         />
       ) : (
-        <div className="space-y-8">
-          {Object.entries(itemsByDate).map(([date, items], dayIndex) => {
-            const dateObj = new Date(`${date}T00:00:00`);
-            const dayLabel = isNaN(dateObj.getTime())
-              ? date
-              : dateObj.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-
-            return (
-              <div key={date} className="relative mt-8 first:mt-0">
-                <div className="sticky top-14 z-20 -mx-4 mb-6 sm:mx-0">
-                  <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-clay-surface px-4 py-4 sm:px-6 shadow-clay-card border-b sm:border border-border/50 relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/80" />
-                    <div className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-[1.25rem] bg-primary/10 text-primary border border-primary/20 shadow-sm">
-                      <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 opacity-80">Day</span>
-                      <span className="text-xl font-black leading-none">{dayIndex + 1}</span>
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-clay-primary text-lg sm:text-xl tracking-tight">{dayLabel}</h3>
-                      <p className="text-xs font-bold text-secondary uppercase tracking-widest mt-1 flex items-center gap-1.5">
-                        <CalendarClock className="h-3.5 w-3.5 opacity-70" />
-                        {items.length} {items.length === 1 ? 'plan' : 'plans'}
-                      </p>
-                    </div>
-                  </div>
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="sticky top-[136px] z-20 -mx-4 mb-6 sm:mx-0">
+              <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-clay-surface px-4 py-4 sm:px-6 shadow-clay-card border-b sm:border border-border/50 relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/80" />
+                <div className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-[1.25rem] bg-primary/10 text-primary border border-primary/20 shadow-sm">
+                  <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 opacity-80">Day</span>
+                  <span className="text-xl font-black leading-none">{selectedDayIndex + 1}</span>
                 </div>
-                <div className="space-y-4 relative">
-                  {items.map((item, idx) => (
-                    <ItineraryRow key={item.id} item={item} data={data} canEdit={canEdit} familySession={familySession} onRefresh={onRefresh} onRefreshFamily={onRefreshFamily} isLast={idx === items.length - 1} />
-                  ))}
+                <div>
+                  <h3 className="font-extrabold text-clay-primary text-lg sm:text-xl tracking-tight">{selectedDateLabel}</h3>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5 opacity-70" />
+                    {selectedDayItems.length} {selectedDayItems.length === 1 ? 'plan' : 'plans'}
+                  </p>
                 </div>
               </div>
-            );
-          })}
+            </div>
+            <div className="space-y-4 relative">
+              {selectedDayItems.map((item, idx) => (
+                <ItineraryRow key={item.id} item={item} data={data} canEdit={canEdit} familySession={familySession} onRefresh={onRefresh} onRefreshFamily={onRefreshFamily} isLast={idx === selectedDayItems.length - 1} />
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -528,6 +573,7 @@ function ItineraryForm({
   trip,
   items,
   item,
+  defaultDate,
   onSaved,
   onCancel
 }: {
@@ -535,6 +581,7 @@ function ItineraryForm({
   trip: Trip;
   items: ItineraryItem[];
   item?: ItineraryItem;
+  defaultDate?: string;
   onSaved: () => Promise<void>;
   onCancel: () => void;
 }) {
@@ -562,10 +609,10 @@ function ItineraryForm({
   }
 
   // Calculate default date for new items: latest date among existing items, or trip start
-  const defaultDate = item?.date ?? (items.length > 0 ? items[items.length - 1].date : trip.startDate);
+  const defaultDateValue = item?.date ?? defaultDate ?? (items.length > 0 ? items[items.length - 1].date : trip.startDate);
 
   const [form, setForm] = useState<ItineraryInput>({
-    date: defaultDate,
+    date: defaultDateValue,
     startTime: item?.startTime ?? "09:00",
     endTime: item?.endTime,
     title: item?.title ?? "",
