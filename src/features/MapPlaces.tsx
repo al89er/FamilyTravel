@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, Cross, HeartPulse } from "lucide-react";
+import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, HeartPulse } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl } from "../components/ui";
@@ -77,7 +77,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
   }, [markerPlaces]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
@@ -97,8 +97,8 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
 
       <div className="flex flex-col gap-4 mb-4">
         {/* Day filter chips */}
-        <div className="flex flex-wrap gap-2 items-center bg-surface p-2 rounded-2xl border border-border/50 shadow-sm w-fit">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted px-2">Day</span>
+        <div className="flex flex-wrap gap-2 items-center bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary px-2">Day</span>
           <FilterChip active={filters.date === "all"} onClick={() => setFilters(c => ({ ...c, date: "all" }))}>All</FilterChip>
           {itineraryDates.map((date) => (
             <FilterChip key={date} active={filters.date === date} onClick={() => setFilters(c => ({ ...c, date }))}>
@@ -107,8 +107,8 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
           ))}
         </div>
         {/* Category filter chips */}
-        <div className="flex flex-wrap gap-2 items-center bg-surface p-2 rounded-2xl border border-border/50 shadow-sm w-fit">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-muted px-2">Type</span>
+        <div className="flex flex-wrap gap-2 items-center bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary px-2">Type</span>
           <FilterChip active={filters.category === "all"} onClick={() => setFilters(c => ({ ...c, category: "all" }))}>All</FilterChip>
           {placeCategories.map((category) => (
             <FilterChip key={category} active={filters.category === category} onClick={() => setFilters(c => ({ ...c, category }))}
@@ -119,19 +119,19 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         </div>
       </div>
 
-      <Card className="overflow-hidden p-0 relative border-0">
+      <Card className="overflow-hidden p-0 relative border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
         <div className="h-[360px] min-h-[320px] w-full sm:h-[440px] relative">
           <LeafletTripMap places={markerPlaces} routePlaces={routePlaces} dateFormat={data.trip.dateFormat} />
         </div>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5 rounded-[16px] bg-clay-recessed shadow-clay-pressed px-4 py-2 text-xs font-bold text-primary">
           <MapIcon className="h-3.5 w-3.5" />
           {markerPlaces.length} mapped
         </div>
         {routePlaces.length > 1 ? (
-          <div className="flex items-center gap-1.5 rounded-full bg-sky-100 dark:bg-sky-900/40 px-3 py-1 text-xs font-bold text-sky-700 dark:text-sky-400">
+          <div className="flex items-center gap-1.5 rounded-[16px] bg-sky-100 shadow-clay-pressed px-4 py-2 text-xs font-bold text-sky-700">
             <Route className="h-3.5 w-3.5" />
             Route drawn
           </div>
@@ -147,11 +147,11 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       ) : (
         <div className="space-y-4 mt-8">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-secondary flex items-center gap-2">
-              <Star className="h-4 w-4" /> 
+            <h3 className="text-sm font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
+              <Star className="h-4 w-4 text-primary" /> 
               {filters.date !== "all" ? "Today's Route" : "Trip Stops"}
             </h3>
-            <div className="h-px flex-1 bg-border/50 ml-2" />
+            <div className="h-px flex-1 bg-border/40 ml-2" />
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {filteredPlaces.map((place, idx) => (
@@ -175,7 +175,7 @@ function LeafletTripMap({ places, routePlaces, dateFormat }: { places: Coordinat
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapBounds places={places} />
-      {routePositions.length > 1 ? <Polyline positions={routePositions} pathOptions={{ color: "#0f766e", weight: 4, opacity: 0.82 }} /> : null}
+      {routePositions.length > 1 ? <Polyline positions={routePositions} pathOptions={{ color: "#7C3AED", weight: 4, opacity: 0.82 }} /> : null}
       {routePositions.length > 1 ? <RouteArrows places={routePlaces} /> : null}
       {places.map((place, index) => (
         <Marker
@@ -184,11 +184,11 @@ function LeafletTripMap({ places, routePlaces, dateFormat }: { places: Coordinat
           icon={numberedIcon(place.routeOrder ?? index + 1, place.category === "hospital")}
         >
           <Popup>
-            <div className="space-y-1">
-              <p className="font-semibold">{place.name}</p>
-              <p>{formatCategory(place.category)}</p>
-              {place.itineraryItem ? <p>{formatDateLabel(place.itineraryItem.date, dateFormat)} | Stop {place.itineraryItem.sortOrder}</p> : null}
-              {place.address ? <p>{place.address}</p> : null}
+            <div className="space-y-1 font-sans">
+              <p className="font-bold text-clay-primary text-sm">{place.name}</p>
+              <p className="text-xs text-clay-secondary uppercase font-semibold">{formatCategory(place.category)}</p>
+              {place.itineraryItem ? <p className="text-xs text-primary font-medium">{formatDateLabel(place.itineraryItem.date, dateFormat)} | Stop {place.itineraryItem.sortOrder}</p> : null}
+              {place.address ? <p className="text-xs mt-1">{place.address}</p> : null}
             </div>
           </Popup>
         </Marker>
@@ -248,8 +248,6 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
     }
   }
 
-
-
   const isHospital = place.category === "hospital";
   const isPharmacy = place.category === "pharmacy";
   const isHotel = place.category === "hotel";
@@ -258,60 +256,72 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
   const isAirport = place.category === "airport";
   const isMeeting = place.category === "meeting_point";
 
-  let icon = <MapPinned className="h-8 w-8" />;
-  let colorClass = "bg-slate-100 text-slate-600 dark:bg-slate-900/40 dark:text-slate-400";
+  let icon = <MapPinned className="h-8 w-8 text-white" />;
+  let orbClass = "bg-gradient-to-br from-slate-400 to-slate-600";
   let badgeTone = "slate";
-  let bubbleClass = "bg-slate-600";
+  let bubbleClass = "bg-slate-700";
 
-  if (isHospital) { icon = <Hospital className="h-8 w-8" />; colorClass = "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400"; badgeTone = "red"; bubbleClass = "bg-red-600"; }
-  else if (isPharmacy) { icon = <HeartPulse className="h-8 w-8" />; colorClass = "bg-teal-50 text-teal-600 dark:bg-teal-950/30 dark:text-teal-400"; badgeTone = "emerald"; bubbleClass = "bg-teal-600"; }
-  else if (isHotel) { icon = <Bed className="h-8 w-8" />; colorClass = "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400"; badgeTone = "indigo"; bubbleClass = "bg-indigo-600"; }
-  else if (isRestaurant) { icon = <Utensils className="h-8 w-8" />; colorClass = "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"; badgeTone = "amber"; bubbleClass = "bg-amber-600"; }
-  else if (isAttraction) { icon = <Palmtree className="h-8 w-8" />; colorClass = "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400"; badgeTone = "emerald"; bubbleClass = "bg-emerald-600"; }
-  else if (isAirport) { icon = <Plane className="h-8 w-8" />; colorClass = "bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400"; badgeTone = "sky"; bubbleClass = "bg-sky-600"; }
-  else if (isMeeting) { icon = <Users className="h-8 w-8" />; colorClass = "bg-primary/10 text-primary"; badgeTone = "slate"; bubbleClass = "bg-primary"; }
+  if (isHospital) { icon = <Hospital className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-red-400 to-red-600"; badgeTone = "red"; bubbleClass = "bg-red-700"; }
+  else if (isPharmacy) { icon = <HeartPulse className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-emerald-400 to-teal-600"; badgeTone = "emerald"; bubbleClass = "bg-teal-700"; }
+  else if (isHotel) { icon = <Bed className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-indigo-400 to-indigo-600"; badgeTone = "indigo"; bubbleClass = "bg-indigo-700"; }
+  else if (isRestaurant) { icon = <Utensils className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-amber-400 to-orange-500"; badgeTone = "amber"; bubbleClass = "bg-orange-600"; }
+  else if (isAttraction) { icon = <Palmtree className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-emerald-400 to-emerald-600"; badgeTone = "emerald"; bubbleClass = "bg-emerald-700"; }
+  else if (isAirport) { icon = <Plane className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-sky-400 to-blue-600"; badgeTone = "sky"; bubbleClass = "bg-blue-700"; }
+  else if (isMeeting) { icon = <Users className="h-8 w-8 text-white" />; orbClass = "bg-gradient-to-br from-[#A78BFA] to-[#7C3AED]"; badgeTone = "brand"; bubbleClass = "bg-[#6D28D9]"; }
 
   return (
     <>
-      <Card className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-clay-surface">
-        <div className="flex gap-4 sm:gap-5">
-          <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[1.25rem] transition-colors ring-1 ring-border/20 shadow-sm ${colorClass}`}>
+      <Card className="relative overflow-hidden group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6">
+        <div className="flex gap-4 sm:gap-6">
+          <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[24px] shadow-clay-btn ${orbClass}`}>
             {icon}
-            
-            <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
+            <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-clay-surface`}>
               {listIndex}
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h3 className="font-bold text-lg text-primary truncate">{place.name}</h3>
+              <h3 className="font-bold text-lg text-clay-primary truncate">{place.name}</h3>
               <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
               {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
             </div>
-            <p className="mt-1 text-sm font-medium text-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
-            {itineraryItem ? <p className="mt-1.5 text-xs font-bold text-muted uppercase tracking-wider">{formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}</p> : null}
-            {place.latitude != null && place.longitude != null ? (
-              null // don't show raw coords unless needed, clean UI
-            ) : (
-              <div className="mt-2.5 flex items-center gap-1.5 rounded-xl bg-warning/10 px-3 py-2 ring-1 ring-warning/20">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-                <p className="text-[11px] font-bold uppercase tracking-wider text-warning">No coordinates — list only</p>
+            <p className="mt-1 text-sm font-medium text-clay-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
+            {itineraryItem ? (
+              <p className="mt-1.5 text-xs font-bold text-primary uppercase tracking-wider">
+                {formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}
+              </p>
+            ) : null}
+            
+            {place.latitude != null && place.longitude != null ? null : (
+              <div className="mt-3 flex w-fit items-center gap-2 rounded-[14px] bg-clay-recessed px-3 py-2 shadow-clay-pressed">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700">No coordinates — list only</p>
               </div>
             )}
-            {place.notes ? <p className="mt-3 text-sm text-secondary bg-muted/40 p-3 rounded-xl border border-border/40">{place.notes}</p> : null}
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-3">
-              <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
+            
+            {place.notes ? (
+              <p className="mt-3 text-sm text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px]">
+                {place.notes}
+              </p>
+            ) : null}
+            
+            <div className="mt-4 flex flex-wrap gap-2 pt-2">
+              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
                 <ExternalLink className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Maps
               </Button>
               {canEdit ? (
                 <>
-                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-secondary hover:bg-muted" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
-                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger hover:bg-danger/10" disabled={busy} onClick={() => void remove()}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
+                  <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={() => setEditing(true)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit
+                  </Button>
+                  <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={() => void remove()}>
+                    <Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete
+                  </Button>
                 </>
               ) : null}
             </div>
-            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+            {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
           </div>
         </div>
       </Card>
@@ -451,20 +461,21 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </Field>
-          <p className="text-[11px] text-muted font-medium uppercase tracking-wider">Search powered by OpenStreetMap.</p>
-          {searchLoading ? <p className="text-sm font-semibold text-primary">Searching...</p> : null}
-          {searchError ? <p className="text-sm font-semibold text-danger">{searchError}</p> : null}
+          <p className="text-[11px] text-clay-secondary font-medium uppercase tracking-wider ml-1">Search powered by OpenStreetMap.</p>
+          {searchLoading ? <p className="text-sm font-semibold text-primary ml-1">Searching...</p> : null}
+          {searchError ? <p className="text-sm font-semibold text-danger ml-1">{searchError}</p> : null}
+          
           {searchResults.length ? (
-            <div className="overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-sm">
+            <div className="overflow-hidden rounded-[24px] bg-clay-recessed shadow-clay-pressed mt-2">
               {searchResults.map((result) => (
                 <button
-                  className="block w-full border-b border-border/50 px-4 py-3 text-left last:border-b-0 hover:bg-muted focus:bg-muted transition-colors"
+                  className="block w-full border-b border-border/30 px-5 py-3.5 text-left last:border-b-0 hover:bg-primary/5 focus:bg-primary/10 transition-colors"
                   key={`${result.osm_type ?? "place"}-${result.osm_id ?? result.place_id ?? result.display_name}`}
                   type="button"
                   onClick={() => selectSearchResult(result)}
                 >
-                  <span className="block text-sm font-bold text-primary">{result.name || result.display_name.split(",")[0]}</span>
-                  <span className="mt-1 block text-xs font-medium text-secondary truncate">{result.display_name}</span>
+                  <span className="block text-sm font-bold text-clay-primary">{result.name || result.display_name.split(",")[0]}</span>
+                  <span className="mt-1 block text-xs font-medium text-clay-secondary truncate">{result.display_name}</span>
                 </button>
               ))}
             </div>
@@ -504,7 +515,7 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
         </div>
         <div className="md:col-span-2"><Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field></div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2 pt-2 border-t border-border/50">
+        <div className="flex gap-2 md:col-span-2 pt-4">
           <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
           <Button type="submit" disabled={busy}>Save destination</Button>
         </div>
@@ -514,7 +525,7 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
 }
 
 function numberedIcon(number: number, isHospital: boolean) {
-  const color = isHospital ? "#dc2626" : "#0f766e";
+  const color = isHospital ? "#dc2626" : "#7C3AED";
   return L.divIcon({
     className: "",
     html: `<div class="map-numbered-marker shadow-sm" style="background:${color}">${number}</div>`,
@@ -568,10 +579,10 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm ${
+      className={`rounded-[14px] px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-all ${
         active
-          ? "bg-primary text-primary-foreground ring-1 ring-primary"
-          : "bg-surface text-secondary ring-1 ring-border/50 hover:bg-muted hover:text-primary hover:shadow-md"
+          ? "bg-primary text-white shadow-clay-button"
+          : "bg-clay-recessed text-clay-secondary shadow-clay-pressed hover:bg-clay-surface hover:shadow-clay-surface"
       }`}
     >
       {children}

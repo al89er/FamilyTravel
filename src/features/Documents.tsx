@@ -7,7 +7,7 @@ import type { AppData, DocumentCategory, DocumentInput, TravelDocument } from ".
 const documentCategories: DocumentCategory[] = ["flight_ticket", "hotel_booking", "passport", "insurance", "attraction_ticket", "other"];
 
 function DocumentCategoryIcon({ category }: { category: string }) {
-  const cls = "h-5 w-5";
+  const cls = "h-6 w-6 text-white";
   if (category === "flight_ticket") return <Plane className={cls} />;
   if (category === "hotel_booking") return <Hotel className={cls} />;
   if (category === "passport") return <ShieldCheck className={cls} />;
@@ -17,19 +17,19 @@ function DocumentCategoryIcon({ category }: { category: string }) {
 }
 
 const DOC_CATEGORY_STYLE: Record<string, string> = {
-  flight_ticket: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
-  hotel_booking: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
-  passport: "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300",
-  insurance: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  attraction_ticket: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  other: "bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400",
+  flight_ticket: "bg-gradient-to-br from-sky-400 to-sky-600",
+  hotel_booking: "bg-gradient-to-br from-indigo-400 to-indigo-600",
+  passport: "bg-gradient-to-br from-teal-400 to-teal-600",
+  insurance: "bg-gradient-to-br from-emerald-400 to-emerald-600",
+  attraction_ticket: "bg-gradient-to-br from-amber-400 to-orange-500",
+  other: "bg-gradient-to-br from-slate-400 to-slate-600",
 };
 
 export function Documents({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
   const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 pb-6">
       <SectionHeader
         title="Documents Vault"
         eyebrow="Tickets, passports, insurance"
@@ -43,22 +43,22 @@ export function Documents({ data, canEdit = false, onRefresh }: { data: AppData;
       {canEdit ? <DocumentForm isOpen={showForm} data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
 
       {/* Security notice */}
-      <div className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning/8 p-4">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
-        <p className="text-sm leading-relaxed text-warning">
+      <div className="flex items-start gap-3 rounded-[20px] bg-clay-recessed shadow-clay-pressed p-4 sm:p-5">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+        <p className="text-sm font-medium text-amber-700 leading-relaxed">
           Sensitive documents should be protected. Store only what the family needs, mark private files carefully, and keep RLS policies enabled.
         </p>
       </div>
 
       {data.documents.length === 0 ? (
         <EmptyState
-          icon={<FileText className="h-8 w-8 opacity-80" />}
-          title="No documents uploaded"
+          icon={<FileText className="h-10 w-10 opacity-80" />}
+          title="Empty travel wallet"
           body="Upload PDFs or images for tickets, bookings, passports, insurance, and attraction passes."
           action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add to travel wallet</Button> : null}
         />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {data.documents.map((document) => (
             <DocumentCard key={document.id} data={data} document={document} canEdit={canEdit} onRefresh={onRefresh} />
           ))}
@@ -91,42 +91,46 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
 
   return (
     <>
-      <Card className="relative p-5 overflow-hidden border-0 bg-clay-surface group hover:shadow-lg transition-shadow">
-      {/* Document wallet subtle top border */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600" />
-      
-      <div className="flex flex-col sm:flex-row items-start gap-4">
-        {/* Category icon */}
-        <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl ring-1 ring-border/20 shadow-sm ${styleClass}`}>
-          {document.isPrivate
-            ? <FileLock2 className="h-6 w-6" aria-hidden="true" />
-            : <DocumentCategoryIcon category={document.category} />
-          }
-        </div>
-        <div className="min-w-0 flex-1 w-full">
-          <h3 className="break-words font-bold text-lg text-primary leading-tight">{document.fileName}</h3>
-          <p className="mt-0.5 text-xs font-mono text-muted truncate">{document.fileType}</p>
-          
-          <div className="mt-3 flex flex-wrap gap-2">
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm ring-1 ${styleClass} ring-current/20`}>
-              {document.category.replace(/_/g, " ")}
-            </span>
-            {document.isPrivate ? (
-              <Badge tone="red" className="shadow-sm">Private</Badge>
-            ) : (
-              <Badge tone="slate" className="shadow-sm">Shared</Badge>
-            )}
+      <Card className="relative p-5 sm:p-6 overflow-hidden border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group">
+        {/* Document wallet subtle top border */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-200 to-slate-300" />
+        
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          {/* Category icon */}
+          <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-[20px] shadow-clay-btn ${styleClass}`}>
+            {document.isPrivate
+              ? <FileLock2 className="h-6 w-6 text-white" aria-hidden="true" />
+              : <DocumentCategoryIcon category={document.category} />
+            }
           </div>
-
-          {canEdit ? (
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-4">
-              <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
-              <Button variant="ghost" disabled={busy} onClick={() => void remove()}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
+          <div className="min-w-0 flex-1 w-full">
+            <h3 className="break-words font-black text-lg text-clay-primary leading-tight">{document.fileName}</h3>
+            <p className="mt-1 text-xs font-bold text-clay-secondary truncate uppercase tracking-wider">{document.fileType}</p>
+            
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center rounded-[12px] bg-clay-recessed shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-clay-secondary">
+                {document.category.replace(/_/g, " ")}
+              </span>
+              {document.isPrivate ? (
+                <Badge tone="red" className="shadow-sm">Private</Badge>
+              ) : (
+                <Badge tone="slate" className="shadow-sm">Shared</Badge>
+              )}
             </div>
-          ) : null}
-          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+
+            {canEdit ? (
+              <div className="mt-5 flex flex-wrap gap-2 pt-2">
+                <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={() => setEditing(true)}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit
+                </Button>
+                <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={() => void remove()}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete
+                </Button>
+              </div>
+            ) : null}
+            {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
+          </div>
         </div>
-      </div>
       </Card>
       {canEdit && (
         <DocumentForm isOpen={editing} data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
@@ -191,14 +195,14 @@ function DocumentForm({ isOpen, data, document, onSaved, onCancel }: { isOpen: b
         <Field label="Upload file">
           <input type="file" className={`${formInputClass} py-2`} onChange={(event) => update("file", event.target.files?.[0] ?? null)} />
         </Field>
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-primary hover:bg-muted transition-colors">
-          <input type="checkbox" checked={form.isPrivate} onChange={(event) => update("isPrivate", event.target.checked)} />
+        <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed px-4 text-sm font-bold text-clay-primary hover:bg-primary/5 transition-colors mt-6">
+          <input type="checkbox" className="h-4 w-4 accent-primary rounded" checked={form.isPrivate} onChange={(event) => update("isPrivate", event.target.checked)} />
           Private document
         </label>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2">
+        <div className="flex gap-2 md:col-span-2 pt-4">
+          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
           <Button type="submit" disabled={busy}>Save</Button>
-          <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
       </form>
     </Modal>

@@ -187,7 +187,7 @@ function RoomForm({
               })}
             </select>
             <input
-              className={`${formInputClass} mt-2`}
+              className={`${formInputClass} mt-3`}
               value={form.hotelName}
               onChange={(e) => setForm((p) => ({ ...p, hotelName: e.target.value }))}
               placeholder="e.g. Amnaya Resort Kuta"
@@ -204,7 +204,7 @@ function RoomForm({
       </Field>
 
       {/* Check-in / Check-out dates */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         <Field label="Check-in date">
           <input
             type="date"
@@ -235,7 +235,7 @@ function RoomForm({
 
       {/* Guest chip picker */}
       <Field label="Guests in this room">
-        <div className="mt-1 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           {data.members.map((member) => {
             const selected = form.guestIds.includes(member.profileId);
             return (
@@ -243,13 +243,13 @@ function RoomForm({
                 key={member.profileId}
                 type="button"
                 onClick={() => toggleGuest(member.profileId)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ring-1 transition-colors ${
+                className={`inline-flex items-center gap-2 rounded-[16px] px-4 py-2 text-sm font-bold transition-all ${
                   selected
-                    ? "bg-primary/10 text-primary ring-primary/40"
-                    : "bg-muted text-secondary ring-border hover:bg-muted/80"
+                    ? "bg-primary shadow-clay-button text-white"
+                    : "bg-clay-recessed shadow-clay-pressed text-clay-secondary hover:bg-clay-surface hover:shadow-clay-surface"
                 }`}
               >
-                <Users className="h-3.5 w-3.5" />
+                <Users className="h-4 w-4" />
                 {member.profile.displayName}
               </button>
             );
@@ -267,7 +267,7 @@ function RoomForm({
         />
       </Field>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 pt-2">
         <Button
           type="button"
           onClick={() => void onSave(form)}
@@ -301,37 +301,37 @@ function RoomRow({
   onDelete: () => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[32px] border-0 bg-clay-surface px-5 py-4 shadow-clay-card transition-shadow hover:shadow-lg group">
+    <div className="relative overflow-hidden rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
       {/* Key card accent strip */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500" />
+      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-400 to-purple-500" />
       
-      <div className="flex items-start justify-between gap-2 mt-1">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800/50">
-            <BedDouble className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+      <div className="flex items-start justify-between gap-4 mt-2">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-clay-btn">
+            <BedDouble className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="text-xs font-bold uppercase tracking-widest text-muted block mb-0.5">Room</span>
-            <span className="font-mono text-xl font-bold text-primary leading-none">{ra.roomNumber}</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary block mb-1">Room</span>
+            <span className="font-mono text-2xl font-black text-clay-primary leading-none">{ra.roomNumber}</span>
           </div>
         </div>
         {canEdit ? (
-          <div className="flex gap-1 shrink-0">
+          <div className="flex gap-1 shrink-0 bg-clay-recessed shadow-clay-pressed p-1.5 rounded-[16px]">
             <button
               type="button"
               onClick={onEdit}
-              className="rounded-lg p-1.5 text-secondary hover:bg-muted hover:text-primary transition-colors"
+              className="rounded-[12px] p-2 text-clay-secondary hover:bg-clay-surface hover:text-primary transition-colors"
               aria-label="Edit room assignment"
             >
-              <Edit2 className="h-3.5 w-3.5" />
+              <Edit2 className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-lg p-1.5 text-secondary hover:bg-danger/10 hover:text-danger transition-colors"
+              className="rounded-[12px] p-2 text-clay-secondary hover:bg-danger/10 hover:text-danger transition-colors"
               aria-label="Delete room assignment"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ) : null}
@@ -339,23 +339,23 @@ function RoomRow({
 
       {/* Guest chips */}
       {ra.guestIds.length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-border/40 pt-4">
           {ra.guestIds.map((gid) => (
             <span
               key={gid}
-              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm ring-1 ring-indigo-200/50 dark:bg-indigo-900/20 dark:text-indigo-300 dark:ring-indigo-800/50"
+              className="inline-flex items-center gap-1.5 rounded-[12px] bg-clay-recessed px-3 py-1.5 text-xs font-bold text-clay-secondary shadow-clay-pressed"
             >
               {memberDisplayName(gid, data)}
             </span>
           ))}
         </div>
       ) : (
-        <p className="mt-1.5 pl-10 text-xs text-muted italic">No guests assigned</p>
+        <p className="mt-4 border-t border-border/40 pt-4 text-xs font-bold text-clay-secondary uppercase tracking-wider">No guests assigned</p>
       )}
 
       {ra.notes ? (
-        <div className="mt-3 rounded-xl bg-muted/50 p-3">
-          <p className="text-xs text-secondary leading-relaxed">{ra.notes}</p>
+        <div className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-3.5">
+          <p className="text-xs font-medium text-clay-secondary leading-relaxed">{ra.notes}</p>
         </div>
       ) : null}
     </div>
@@ -415,7 +415,7 @@ function RoomAssignmentsSection({
   const showModal = adding || !!editingRoom;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingRoom ? "Edit room" : "Add room"}>
         <RoomForm
           key={editingId ?? "new"}
@@ -436,8 +436,8 @@ function RoomAssignmentsSection({
 
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-primary">Room keys</h3>
-          <p className="text-xs text-muted mt-0.5">Who sleeps where</p>
+          <h3 className="font-bold text-lg text-clay-primary">Room keys</h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary mt-1">Who sleeps where</p>
         </div>
         {canEdit ? (
           <Button onClick={() => { setAdding(true); setEditingId(null); }}>
@@ -465,30 +465,31 @@ function RoomAssignmentsSection({
 
       {/* ── 3-level hierarchy ── */}
       {grouped.map((hotel) => (
-        <div key={hotel.hotelName} className="space-y-3">
+        <div key={hotel.hotelName} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
           {/* Level 1: Hotel name */}
-          <div className="flex items-center gap-2.5 pt-1">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-100 dark:bg-indigo-950">
-              <BedDouble className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-indigo-100 shadow-clay-pressed">
+              <BedDouble className="h-5 w-5 text-indigo-700" />
             </div>
-            <p className="font-bold text-primary">{hotel.hotelName}</p>
+            <p className="font-black text-xl text-clay-primary">{hotel.hotelName}</p>
           </div>
 
           {hotel.dateRanges.map((dr) => (
-            <div key={dr.key} className="ml-2 space-y-2 border-l-2 border-border pl-4">
+            <div key={dr.key} className="space-y-3 mt-4 pt-4 border-t border-border/40">
               {/* Level 2: Date range */}
               {dr.label ? (
-                <div className="flex items-center gap-1.5">
-                  <CalendarRange className="h-3.5 w-3.5 shrink-0 text-muted" />
-                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-secondary ring-1 ring-border/60">
+                <div className="flex items-center gap-2">
+                  <CalendarRange className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">
                     {dr.label}
                   </span>
                 </div>
               ) : null}
 
               {/* Level 3: Rooms */}
+              <div className="grid gap-3 sm:grid-cols-2 pt-2">
               {dr.rooms.map((room) => (
-                <div key={room.roomNumber} className="space-y-3 mt-1">
+                <div key={room.roomNumber} className="space-y-3">
                   {room.assignments.map((ra) => (
                     <RoomRow
                       key={ra.id}
@@ -501,6 +502,7 @@ function RoomAssignmentsSection({
                   ))}
                 </div>
               ))}
+              </div>
             </div>
           ))}
         </div>
@@ -565,7 +567,7 @@ function SeatForm({
           ) : null}
         </select>
         {flightItems.length === 0 ? (
-          <p className="mt-1 text-xs text-muted">No flight items in itinerary — type the label below.</p>
+          <p className="mt-1 ml-1 text-[11px] font-bold uppercase tracking-wider text-clay-secondary">No flight items in itinerary — type the label below.</p>
         ) : null}
       </Field>
 
@@ -580,29 +582,31 @@ function SeatForm({
         </Field>
       ) : null}
 
-      <Field label="Passenger">
-        <select
-          className={formSelectClass}
-          value={form.guestId}
-          onChange={(e) => selectMember(e.target.value)}
-        >
-          <option value="">Select a passenger…</option>
-          {data.members.map((m) => (
-            <option key={m.profileId} value={m.profileId}>
-              {m.profile.displayName}
-            </option>
-          ))}
-        </select>
-      </Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Passenger">
+          <select
+            className={formSelectClass}
+            value={form.guestId}
+            onChange={(e) => selectMember(e.target.value)}
+          >
+            <option value="">Select passenger…</option>
+            {data.members.map((m) => (
+              <option key={m.profileId} value={m.profileId}>
+                {m.profile.displayName}
+              </option>
+            ))}
+          </select>
+        </Field>
 
-      <Field label="Seat number">
-        <input
-          className={formInputClass}
-          value={form.seatNumber}
-          onChange={(e) => setForm((p) => ({ ...p, seatNumber: e.target.value }))}
-          placeholder="e.g. 14A"
-        />
-      </Field>
+        <Field label="Seat number">
+          <input
+            className={formInputClass}
+            value={form.seatNumber}
+            onChange={(e) => setForm((p) => ({ ...p, seatNumber: e.target.value }))}
+            placeholder="e.g. 14A"
+          />
+        </Field>
+      </div>
 
       <Field label="Notes (optional)">
         <textarea
@@ -613,7 +617,7 @@ function SeatForm({
         />
       </Field>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 pt-2">
         <Button
           type="button"
           onClick={() => void onSave(form)}
@@ -645,37 +649,37 @@ function SeatCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-[32px] border-0 bg-clay-surface shadow-clay-card transition-shadow hover:shadow-lg group">
+    <div className="relative flex flex-col overflow-hidden rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
       {/* Boarding pass accent strip */}
-      <div className="w-2 shrink-0 bg-gradient-to-b from-sky-400 to-indigo-500" />
+      <div className="absolute top-0 left-0 bottom-0 w-2.5 bg-gradient-to-b from-sky-400 to-blue-500" />
       
-      <div className="flex flex-1 flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center p-5 pl-6 sm:p-6 gap-4">
         {/* Left side: Icon & Passenger */}
-        <div className="flex items-center gap-3 min-w-[140px]">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/30 ring-1 ring-sky-200 dark:ring-sky-800/50">
-            <PlaneTakeoff className="h-5 w-5 text-sky-600 dark:text-sky-400" />
+        <div className="flex items-center gap-4 min-w-[160px]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-sky-400 to-sky-600 shadow-clay-btn">
+            <PlaneTakeoff className="h-6 w-6 text-white" />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Passenger</p>
-            <p className="font-bold text-primary leading-tight">{seat.guestName}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Passenger</p>
+            <p className="font-black text-xl text-clay-primary leading-none">{seat.guestName}</p>
           </div>
         </div>
 
         {/* Right side: Seat number & Actions */}
-        <div className="flex flex-1 w-full items-center justify-between border-t border-dashed border-border/50 sm:border-t-0 sm:border-l-2 sm:pl-5 pt-3 sm:pt-0 gap-4">
+        <div className="flex flex-1 w-full items-center justify-between border-t border-dashed border-border/50 sm:border-t-0 sm:border-l-2 sm:pl-6 pt-4 sm:pt-0 gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Seat No</p>
-            <span className="inline-flex items-center justify-center rounded-lg bg-clay-recessed border border-border/50 shadow-sm px-3 py-1 font-mono text-xl font-bold text-clay-primary">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Seat No</p>
+            <span className="inline-flex items-center justify-center rounded-[14px] bg-clay-recessed shadow-clay-pressed px-4 py-1.5 font-mono text-2xl font-black text-clay-primary">
               {seat.seatNumber}
             </span>
           </div>
 
           {canEdit ? (
-            <div className="flex gap-1 shrink-0 bg-recessed shadow-clay-pressed p-1 rounded-xl">
+            <div className="flex gap-1 shrink-0 bg-clay-recessed shadow-clay-pressed p-1.5 rounded-[16px]">
               <button
                 type="button"
                 onClick={onEdit}
-                className="rounded-lg p-2 text-secondary hover:bg-muted hover:text-primary transition-colors"
+                className="rounded-[12px] p-2 text-clay-secondary hover:bg-clay-surface hover:text-primary transition-colors"
                 aria-label="Edit seat assignment"
               >
                 <Edit2 className="h-4 w-4" />
@@ -683,7 +687,7 @@ function SeatCard({
               <button
                 type="button"
                 onClick={onDelete}
-                className="rounded-lg p-2 text-secondary hover:bg-danger/10 hover:text-danger transition-colors"
+                className="rounded-[12px] p-2 text-clay-secondary hover:bg-danger/10 hover:text-danger transition-colors"
                 aria-label="Delete seat assignment"
               >
                 <Trash2 className="h-4 w-4" />
@@ -695,8 +699,8 @@ function SeatCard({
       
       {/* Notes placed as a perforated tear-off area on the bottom if exists */}
       {seat.notes ? (
-        <div className="w-full bg-muted/30 border-t border-dashed border-border/50 px-5 py-3">
-          <p className="text-xs font-medium text-secondary">{seat.notes}</p>
+        <div className="w-full bg-clay-recessed shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-dashed border-border/50 px-6 py-4">
+          <p className="text-xs font-bold text-clay-secondary">{seat.notes}</p>
         </div>
       ) : null}
     </div>
@@ -762,7 +766,7 @@ function FlightSeatsSection({
   const showModal = adding || !!editingSeat;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingSeat ? "Edit seat" : "Add seat"}>
         <SeatForm
           key={editingId ?? "new"}
@@ -782,8 +786,8 @@ function FlightSeatsSection({
 
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-primary">Flight seats</h3>
-          <p className="text-xs text-muted mt-0.5">Seat numbers for everyone</p>
+          <h3 className="font-bold text-lg text-clay-primary">Flight seats</h3>
+          <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary mt-1">Seat numbers for everyone</p>
         </div>
         {canEdit ? (
           <Button onClick={() => { setAdding(true); setEditingId(null); }}>
@@ -809,24 +813,17 @@ function FlightSeatsSection({
         />
       ) : null}
 
-      {Object.entries(byFlight).map(([flight, seats]) => {
-        const flightItem = data.itinerary.find(
-          (item) => item.title === flight && item.category === "flight"
-        );
-        return (
-          <div key={flight} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <PlaneTakeoff className="h-4 w-4 text-muted" />
-              <div>
-                <p className="text-sm font-semibold text-secondary">{flight}</p>
-                {flightItem ? (
-                  <p className="text-xs text-muted">
-                    {flightItem.date} · {flightItem.startTime}
-                    {flightItem.endTime ? ` – ${flightItem.endTime}` : ""}
-                  </p>
-                ) : null}
-              </div>
+      {/* ── 2-level hierarchy ── */}
+      {Object.entries(byFlight).map(([flightLabel, seats]) => (
+        <div key={flightLabel} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-sky-100 shadow-clay-pressed">
+              <PlaneTakeoff className="h-5 w-5 text-sky-700" />
             </div>
+            <p className="font-black text-xl text-clay-primary">{flightLabel}</p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-border/40">
             {seats.map((seat) => (
               <SeatCard
                 key={seat.id}
@@ -837,112 +834,48 @@ function FlightSeatsSection({
               />
             ))}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Collapsible tab card
-// ─────────────────────────────────────────────────────────────────────────────
-
-function TabCard({
-  id,
-  label,
-  icon: Icon,
-  badgeCount,
-  children,
-  defaultOpen = true
-}: {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  badgeCount: number;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <Card>
-      <button
-        id={`assignments-tab-${id}`}
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between p-5 text-left"
-        aria-expanded={open}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <p className="font-semibold text-primary">{label}</p>
-            <p className="text-xs text-muted">
-              {badgeCount} {badgeCount === 1 ? "assignment" : "assignments"}
-            </p>
-          </div>
-        </div>
-        {open ? (
-          <ChevronUp className="h-5 w-5 text-muted" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-muted" />
-        )}
-      </button>
-      {open ? <div className="border-t border-border p-5">{children}</div> : null}
-    </Card>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Assignments Page
+// Main Export
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function Assignments({
   data,
-  canEdit,
+  canEdit = false,
   onRefresh
 }: {
   data: AppData;
-  canEdit: boolean;
-  onRefresh: () => Promise<void>;
+  canEdit?: boolean;
+  onRefresh?: () => Promise<void>;
 }) {
+  const noData = data.roomAssignments.length === 0 && data.flightSeatAssignments.length === 0;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-10 pb-10">
       <SectionHeader
-        eyebrow="Assignments"
-        title="Family Assignments"
-        action={
-          <Badge tone="slate">
-            <Luggage className="mr-1 h-3 w-3" />
-            {data.members.length} travellers
-          </Badge>
-        }
+        title="Assignments"
+        eyebrow="Rooms & Seats"
+        action={null} // Actions are inside the individual sections
       />
-      <p className="text-sm text-secondary">
-        Track room numbers and flight seat assignments so everyone knows where they're going.
-        {!canEdit ? " Only planners can add or edit assignments." : ""}
-      </p>
 
-      <TabCard
-        id="rooms"
-        label="Room Assignments"
-        icon={BedDouble}
-        badgeCount={data.roomAssignments.length}
-        defaultOpen
-      >
-        <RoomAssignmentsSection data={data} canEdit={canEdit} onRefresh={onRefresh} />
-      </TabCard>
-
-      <TabCard
-        id="seats"
-        label="Flight Seats"
-        icon={PlaneTakeoff}
-        badgeCount={data.flightSeatAssignments.length}
-        defaultOpen={data.flightSeatAssignments.length > 0}
-      >
-        <FlightSeatsSection data={data} canEdit={canEdit} onRefresh={onRefresh} />
-      </TabCard>
+      {noData && !canEdit ? (
+        <EmptyState
+          title="No assignments yet"
+          body="Room and seat assignments will appear here."
+          icon={<Luggage className="h-10 w-10 opacity-80" />}
+        />
+      ) : (
+        <div className="space-y-10">
+          <RoomAssignmentsSection data={data} canEdit={canEdit} onRefresh={onRefresh!} />
+          <div className="h-px w-full bg-border/40" />
+          <FlightSeatsSection data={data} canEdit={canEdit} onRefresh={onRefresh!} />
+        </div>
+      )}
     </div>
   );
 }

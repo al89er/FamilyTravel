@@ -23,7 +23,7 @@ export function Packing({
   const pct = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 pb-6">
       <SectionHeader
         title="Packing Lists"
         eyebrow={`${checkedCount} of ${total} checked by you`}
@@ -32,19 +32,19 @@ export function Packing({
 
       {/* Progress bar */}
       {total > 0 ? (
-        <Card className="relative overflow-hidden p-6 border-0">
+        <Card className="relative overflow-hidden p-6 sm:p-7 border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
           <div className="flex items-center justify-between text-sm mb-3 mt-1">
-            <span className="font-bold text-primary tracking-wide">Packing progress</span>
-            <span className="font-bold tabular-nums text-primary">{pct}%</span>
+            <span className="font-black text-clay-primary tracking-wide text-lg">Packing progress</span>
+            <span className="font-black tabular-nums text-primary text-xl">{pct}%</span>
           </div>
-          <div className="h-3 w-full rounded-full bg-muted overflow-hidden ring-1 ring-inset ring-border/50">
+          <div className="h-3.5 w-full rounded-full bg-clay-recessed shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${pct >= 100 ? "bg-success" : pct >= 60 ? "bg-emerald-500" : "bg-primary"}`}
+              className={`h-full rounded-full transition-all duration-500 ease-out shadow-clay-btn ${pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-emerald-400" : "bg-primary"}`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-widest text-muted">{checkedCount} of {total} items packed</p>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-clay-secondary">{checkedCount} of {total} items packed</p>
         </Card>
       ) : null}
 
@@ -52,13 +52,13 @@ export function Packing({
 
       {data.packing.length === 0 ? (
         <EmptyState
-          icon={<Luggage className="h-10 w-10 opacity-80 text-muted" />}
-          title="No packing items"
+          icon={<Luggage className="h-10 w-10 opacity-80" />}
+          title="Empty suitcase"
           body="Create shared and personal packing lists with per-person checklist status."
           action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first item</Button> : null}
         />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {data.packing.map((item) => {
             const checked = item.checkedBy.includes(data.currentUser.id);
             const assigned = data.members.find((member) => member.profileId === item.assignedTo)?.profile.displayName;
@@ -143,19 +143,19 @@ function PackingCard({
 
   return (
     <>
-      <Card className={`relative overflow-hidden border-0 p-4 sm:p-5 flex items-start gap-4 text-left transition-all group hover:shadow-lg ${checked ? "opacity-80 bg-success/10 shadow-clay-pressed" : "bg-clay-surface"}`}>
+      <Card className={`relative overflow-hidden border-0 p-5 sm:p-6 flex items-start gap-4 text-left transition-all rounded-[28px] group hover:-translate-y-1 hover:shadow-clay-hover ${checked ? "bg-clay-recessed shadow-clay-pressed opacity-90" : "bg-clay-surface shadow-clay-card"}`}>
       {/* Check button */}
       <button
         type="button"
         disabled={!canToggle || busy}
         onClick={() => void toggleCheck()}
-        className="mt-0.5 shrink-0 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
+        className="mt-0.5 shrink-0 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full transition-transform hover:scale-110 active:scale-95"
         aria-label={checked ? "Uncheck packing item" : "Check packing item"}
       >
         {checked ? (
-          <CheckCircle2 className="h-6 w-6 text-success drop-shadow-sm" aria-hidden="true" />
+          <CheckCircle2 className="h-7 w-7 text-emerald-500 drop-shadow-sm" aria-hidden="true" />
         ) : (
-          <Circle className="h-6 w-6 text-muted hover:text-primary transition-colors" aria-hidden="true" />
+          <Circle className="h-7 w-7 text-clay-secondary hover:text-primary transition-colors" aria-hidden="true" />
         )}
       </button>
 
@@ -164,33 +164,33 @@ function PackingCard({
           onClick={canToggle && !busy ? () => void toggleCheck() : undefined}
           className={canToggle && !busy ? "cursor-pointer select-none" : ""}
         >
-          <h3 className={`font-bold text-lg leading-tight ${checked ? "line-through text-success/80" : "text-primary"}`}>{item.name}</h3>
+          <h3 className={`font-black text-[1.1rem] leading-tight ${checked ? "line-through text-clay-secondary" : "text-clay-primary"}`}>{item.name}</h3>
           
           <div className="mt-3 flex flex-wrap gap-2 items-center">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${checked ? "bg-success/10 text-success ring-success/20" : "bg-muted text-secondary ring-border/60"}`}>
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${checked ? "bg-emerald-100 text-emerald-700 shadow-clay-pressed" : "bg-clay-recessed text-clay-secondary shadow-clay-pressed"}`}>
               {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.category}
             </span>
             <Badge tone={item.isShared ? "brand" : "zinc"} className="text-[10px] shadow-sm">{item.isShared ? "Shared" : "Personal"}</Badge>
             {assigned ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 ring-1 ring-slate-200/60 dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-800">
+              <span className="inline-flex items-center gap-1 rounded-[12px] bg-clay-recessed shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-clay-secondary">
                 {assigned}
               </span>
             ) : null}
             {item.checkedBy.length > 0 && item.isShared ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success ring-1 ring-success/20">
+              <span className="inline-flex items-center gap-1 rounded-[12px] bg-emerald-100 shadow-clay-pressed px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                 {item.checkedBy.length} packed
               </span>
             ) : null}
           </div>
-          {item.notes ? <p className="mt-2 text-sm text-secondary">{item.notes}</p> : null}
+          {item.notes ? <p className="mt-3 text-sm font-medium text-clay-secondary bg-clay-recessed shadow-clay-pressed p-3 rounded-[16px]">{item.notes}</p> : null}
         </div>
         {canEdit ? (
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-3">
-            <Button variant="ghost" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setEditing(true); }}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
-            <Button variant="ghost" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); void remove(); }}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-4">
+            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-clay-secondary bg-clay-recessed shadow-clay-pressed hover:bg-clay-recessed/80" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setEditing(true); }}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
+            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger bg-danger/5 hover:bg-danger/15" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); void remove(); }}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
           </div>
         ) : null}
-        {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
       </div>
       </Card>
       {canEdit && (
@@ -254,7 +254,7 @@ function PackingForm({ isOpen, data, item, onSaved, onCancel }: { isOpen: boolea
           <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
         </div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2">
+        <div className="flex gap-2 md:col-span-2 pt-2">
           <Button type="submit" disabled={busy}>Save item</Button>
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
