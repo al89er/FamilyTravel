@@ -56,7 +56,7 @@ export function Layout({
     <div className="min-h-dvh bg-app flex flex-col">
       {/* Skip link */}
       <a
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary focus:shadow-card"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[1050] focus:rounded-xl focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary focus:shadow-card"
         href="#main"
       >
         Skip to main content
@@ -64,13 +64,13 @@ export function Layout({
 
       {/* Offline banner */}
       {offline ? (
-        <div className="sticky top-0 z-50 border-b border-warning/30 bg-warning/10 px-4 py-2 text-center text-sm font-medium text-warning">
+        <div className="sticky top-0 z-[1040] border-b border-warning/30 bg-warning/10 px-4 py-2 text-center text-sm font-medium text-warning">
           Offline read-only mode. Recent trip data is shown.
         </div>
       ) : null}
 
       {/* Top bar – mobile only */}
-      <div className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-border/60 lg:hidden shadow-nav">
+      <div className="sticky top-0 z-[1000] bg-surface/90 backdrop-blur-md border-b border-border/60 lg:hidden shadow-nav">
         {topBar}
       </div>
 
@@ -109,7 +109,7 @@ export function Layout({
       {/* More drawer backdrop */}
       {isMoreOpen ? (
         <div
-          className="fixed inset-0 z-40 bg-app/70 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-[1010] bg-app/70 backdrop-blur-sm lg:hidden"
           onClick={() => setIsMoreOpen(false)}
           aria-hidden="true"
         />
@@ -117,7 +117,7 @@ export function Layout({
 
       {/* More nav drawer */}
       <div
-        className={`fixed inset-x-0 bottom-[calc(3.5rem+max(env(safe-area-inset-bottom),0.5rem))] z-40 rounded-t-3xl bg-surface shadow-[0_-8px_32px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-x-0 bottom-[calc(3.5rem+max(env(safe-area-inset-bottom),0.5rem))] z-[1020] rounded-t-3xl bg-surface shadow-[0_-8px_32px_rgba(15,23,42,0.14)] transition-transform duration-300 ease-in-out lg:hidden ${
           isMoreOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
@@ -150,7 +150,7 @@ export function Layout({
 
       {/* Mobile bottom nav */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur-md shadow-nav lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-[1030] border-t border-border/60 bg-surface/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur-md shadow-nav lg:hidden"
         aria-label="Primary"
       >
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
