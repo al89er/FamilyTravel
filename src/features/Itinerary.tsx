@@ -472,6 +472,19 @@ function ItineraryCard({
 
   if (item.category === "hotel") {
     const getHotelCheckOutTime = () => {
+      // If there's another hotel entry for this same hotel on a later date,
+      // it means checkout is on a different day, so we leave it blank here.
+      const hotelItems = data.itinerary.filter((i) => i.category === "hotel" && (i.locationName === item.locationName || i.title === item.title));
+      const sorted = hotelItems.sort((a, b) => a.date.localeCompare(b.date));
+      const currentIndex = sorted.findIndex((i) => i.id === item.id);
+      
+      if (currentIndex > -1 && currentIndex < sorted.length - 1) {
+        const nextItem = sorted[currentIndex + 1];
+        if (nextItem.date !== item.date) {
+          return "—";
+        }
+      }
+
       if (item.endTime) return item.endTime;
       if (item.notes) {
         const coLine = item.notes.split('\n').find(l => l.startsWith('Check-out: '));
@@ -823,11 +836,7 @@ function ItineraryForm({
       const outDayStr = outDayObj ? outDayObj.label : checkOutDateStr;
 
       notesParts.push(`Check-in: ${inDayStr} ${form.startTime}`);
-      if (checkOutDateStr === form.date) {
-        notesParts.push(`Check-out: ${outDayStr} ${catData.hotelCheckOutTime}`);
-      } else {
-        notesParts.push(`Check-out: ${outDayStr}`);
-      }
+      notesParts.push(`Check-out: ${outDayStr} ${catData.hotelCheckOutTime}`);
       if (catData.userNotes.trim()) { notesParts.push(`Notes:`); notesParts.push(catData.userNotes.trim()); }
       finalPayload.notes = notesParts.join('\n');
     } else if (form.category === "transport") {
@@ -1045,9 +1054,7 @@ function ItineraryForm({
                         )}
                       </select>
                     </Field>
-                    {currentCheckoutDate === form.date && (
-                      <Field label="Check-out time *"><input type="time" className={formInputClass} value={catData.hotelCheckOutTime} onChange={(e) => updateCatData("hotelCheckOutTime", e.target.value)} required /></Field>
-                    )}
+                    <Field label="Check-out time *"><input type="time" className={formInputClass} value={catData.hotelCheckOutTime} onChange={(e) => updateCatData("hotelCheckOutTime", e.target.value)} required /></Field>
                     <div className="sm:col-span-2"><Field label="Booking reference (optional)"><input className={formInputClass} value={form.bookingReference ?? ""} onChange={(e) => update("bookingReference", e.target.value || undefined)} placeholder="e.g. CONF123" /></Field></div>
                     <div className="sm:col-span-2"><Field label="Address (optional)"><input className={formInputClass} value={form.address ?? ""} onChange={(e) => update("address", e.target.value || undefined)} /></Field></div>
                     <div className="sm:col-span-2"><Field label="Notes (optional)"><textarea className={formTextareaClass} value={catData.userNotes} onChange={(e) => updateCatData("userNotes", e.target.value)} placeholder="Room preferences, breakfast included..." /></Field></div>
