@@ -303,6 +303,7 @@ function RoomRow({
   onDelete: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const ActionMenu = () => {
     if (!canEdit) return null;
@@ -372,29 +373,43 @@ function RoomRow({
             <span className="font-mono text-2xl font-black text-clay-primary leading-none pr-8">{ra.roomNumber}</span>
           </div>
         </div>
+
+        {/* Guest name pills on the right side, stacked */}
+        <div className="flex flex-col gap-1 items-end ml-auto pr-8">
+          {ra.guestIds.length > 0 ? (
+            ra.guestIds.map((gid) => (
+              <span
+                key={gid}
+                className="inline-flex items-center gap-1.5 rounded-[12px] bg-clay-recessed px-3 py-1 text-xs font-bold text-clay-secondary shadow-clay-pressed whitespace-nowrap"
+              >
+                {memberDisplayName(gid, data)}
+              </span>
+            ))
+          ) : (
+            <span className="inline-flex items-center rounded-[12px] bg-amber-50 text-amber-700 px-3 py-1 text-xs font-bold shadow-sm whitespace-nowrap">
+              Unassigned
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Guest chips */}
-      {ra.guestIds.length > 0 ? (
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-border/40 pt-4">
-          {ra.guestIds.map((gid) => (
-            <span
-              key={gid}
-              className="inline-flex items-center gap-1.5 rounded-[12px] bg-clay-recessed px-3 py-1.5 text-xs font-bold text-clay-secondary shadow-clay-pressed"
-            >
-              {memberDisplayName(gid, data)}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-4 border-t border-border/40 pt-4 text-xs font-bold text-clay-secondary uppercase tracking-wider">No guests assigned</p>
-      )}
-
       {ra.notes ? (
+        <div className="mt-4 pt-3 border-t border-border/40 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-secondary hover:text-clay-primary transition-all focus:outline-none bg-clay-recessed shadow-clay-pressed py-1.5 px-3 rounded-[12px]"
+          >
+            <span>{expanded ? "Hide Details" : "Show Details"}</span>
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+      ) : null}
+      {expanded && ra.notes && (
         <div className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-3.5">
           <p className="text-xs font-medium text-clay-secondary leading-relaxed">{ra.notes}</p>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -686,6 +701,7 @@ function SeatCard({
   onDelete: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const ActionMenu = () => {
     if (!canEdit) return null;
@@ -768,12 +784,23 @@ function SeatCard({
         </div>
       </div>
       
-      {/* Notes placed as a perforated tear-off area on the bottom if exists */}
       {seat.notes ? (
+        <div className="px-6 pb-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-secondary hover:text-clay-primary transition-all focus:outline-none bg-clay-recessed shadow-clay-pressed py-1.5 px-3 rounded-[12px]"
+          >
+            <span>{expanded ? "Hide Details" : "Show Details"}</span>
+            {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+        </div>
+      ) : null}
+      {expanded && seat.notes && (
         <div className="w-full bg-clay-recessed shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-dashed border-border/50 px-6 py-4">
           <p className="text-xs font-bold text-clay-secondary">{seat.notes}</p>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
