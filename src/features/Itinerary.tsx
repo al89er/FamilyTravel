@@ -103,6 +103,20 @@ export const getCategoryIcon = (cat: ItineraryCategory, className?: string) => {
   }
 };
 
+export const getCategoryGradient = (cat: ItineraryCategory) => {
+  switch(cat) {
+    case "flight": return "bg-gradient-to-br from-sky-400 to-sky-600";
+    case "transport": return "bg-gradient-to-br from-cyan-400 to-cyan-600";
+    case "hotel": return "bg-gradient-to-br from-indigo-400 to-indigo-600";
+    case "food": return "bg-gradient-to-br from-amber-400 to-amber-500";
+    case "activity": return "bg-gradient-to-br from-emerald-400 to-emerald-600";
+    case "shopping": return "bg-gradient-to-br from-rose-400 to-rose-600";
+    case "free_time": return "bg-gradient-to-br from-zinc-400 to-zinc-600";
+    case "emergency": return "bg-gradient-to-br from-red-400 to-red-600";
+    default: return "bg-gradient-to-br from-slate-400 to-slate-600";
+  }
+};
+
 function ItineraryRow({
   item,
   data,
@@ -232,7 +246,7 @@ function ItineraryCard({
             </span>
           )}
           {comments.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[11px] font-bold text-secondary border border-border/60 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 rounded-[12px] bg-clay-recessed px-3 py-1.5 text-[11px] font-bold text-clay-secondary border-0 shadow-clay-pressed">
               <MessageSquare className="h-3 w-3" /> {comments.length}
             </span>
           )}
@@ -263,7 +277,7 @@ function ItineraryCard({
                   type="button"
                   disabled={busy}
                   onClick={() => void submitVote(value)}
-                  className="h-9 rounded-2xl border border-border/60 bg-surface px-4 text-[10px] font-bold uppercase tracking-wider text-secondary disabled:opacity-50 hover:bg-primary/5 hover:text-primary transition-all shadow-sm active:scale-95"
+                  className="h-9 rounded-[16px] border-0 bg-clay-recessed shadow-clay-pressed px-4 text-[10px] font-bold uppercase tracking-wider text-clay-secondary disabled:opacity-50 hover:bg-clay-recessed/80 hover:text-primary transition-all active:scale-95"
                 >
                   {value.replace("_", " ")}
                 </button>
@@ -294,8 +308,8 @@ function ItineraryCard({
       {comments.length > 0 && showInteract && (
         <div className="mt-4 space-y-3 animate-in fade-in pl-2 border-l-2 border-border/50">
           {comments.map((entry) => (
-            <div key={entry.id} className="rounded-2xl bg-surface p-3.5 text-sm text-secondary border border-border/40 shadow-sm relative">
-              <div className="absolute -left-[11px] top-4 h-5 w-5 rounded-full bg-surface border border-border/50 flex items-center justify-center">
+            <div key={entry.id} className="rounded-[16px] bg-clay-recessed shadow-clay-pressed p-3.5 text-sm text-clay-secondary border-0 relative">
+              <div className="absolute -left-[11px] top-4 h-5 w-5 rounded-full bg-clay-recessed shadow-clay-pressed border-0 flex items-center justify-center">
                 <MessageSquare className="h-2.5 w-2.5 text-muted" />
               </div>
               <p className="leading-relaxed">{entry.body}</p>
@@ -363,7 +377,7 @@ function ItineraryCard({
         <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
-              <div className="h-14 w-14 shrink-0 rounded-[1.25rem] bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-200 dark:ring-indigo-800/50 shadow-sm">
+              <div className="h-14 w-14 shrink-0 rounded-[1.25rem] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-clay-btn flex items-center justify-center text-white">
                 <Bed className="h-6 w-6" />
               </div>
               <div>
@@ -388,7 +402,7 @@ function ItineraryCard({
             </div>
           </div>
           
-          {item.notes && <p className="mt-2 rounded-2xl bg-surface p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
+          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </Card>
@@ -401,21 +415,21 @@ function ItineraryCard({
   const isTransport = item.category === "transport";
   
   let ringClass = "ring-border/50";
-  let bgClass = "bg-surface";
+  let bgClass = "bg-clay-surface";
   let accentClass = "text-clay-primary";
   let badgeTone = "slate";
   let stripClass = "bg-border/50";
 
-  if (isFood) { ringClass = "ring-amber-200 dark:ring-amber-900/60"; bgClass = "bg-gradient-to-br from-surface to-amber-50/20 dark:to-amber-950/10"; accentClass = "text-amber-700 dark:text-amber-500"; badgeTone = "amber"; stripClass = "bg-amber-400"; }
-  else if (isActivity) { ringClass = "ring-emerald-200 dark:ring-emerald-900/60"; bgClass = "bg-gradient-to-br from-surface to-emerald-50/20 dark:to-emerald-950/10"; accentClass = "text-emerald-700 dark:text-emerald-500"; badgeTone = "emerald"; stripClass = "bg-emerald-400"; }
-  else if (isTransport) { ringClass = "ring-cyan-200 dark:ring-cyan-900/60"; bgClass = "bg-gradient-to-br from-surface to-cyan-50/20 dark:to-cyan-950/10"; accentClass = "text-cyan-700 dark:text-cyan-500"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
+  if (isFood) { ringClass = "ring-amber-200"; bgClass = "bg-gradient-to-br from-clay-surface to-amber-50/50"; accentClass = "text-amber-700"; badgeTone = "amber"; stripClass = "bg-amber-400"; }
+  else if (isActivity) { ringClass = "ring-emerald-200"; bgClass = "bg-gradient-to-br from-clay-surface to-emerald-50/50"; accentClass = "text-emerald-700"; badgeTone = "emerald"; stripClass = "bg-emerald-400"; }
+  else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
 
   return (
     <Card className={`relative flex flex-col sm:flex-row overflow-hidden border-0 shadow-clay-card p-0 transition-all bg-clay-surface`}>
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
       <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5">
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
-          <span className="inline-flex items-center justify-center rounded-2xl bg-surface px-3 py-2 text-sm font-black text-primary tabular-nums border border-border/60 shadow-sm min-w-[4.5rem]">
+          <span className="inline-flex items-center justify-center rounded-[16px] bg-clay-recessed shadow-clay-pressed px-3 py-2 text-sm font-black text-clay-primary tabular-nums border-0 min-w-[4.5rem]">
             {item.startTime}
           </span>
           {item.endTime && <p className="sm:mt-2 sm:pl-1 text-[10px] font-bold text-muted uppercase tracking-wider">→ {item.endTime}</p>}
@@ -426,7 +440,7 @@ function ItineraryCard({
             <Badge tone={badgeTone as any} className="capitalize shadow-sm">{item.category.replace("_", " ")}</Badge>
           </div>
           {item.locationName && <p className="text-sm font-bold text-secondary flex items-center gap-1.5 mb-3"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-2 rounded-2xl bg-surface p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
+          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </div>
@@ -796,7 +810,7 @@ function ItineraryForm({
                     key={d.date}
                     type="button"
                     onClick={() => { update("date", d.date); setStep(2); }}
-                    className={`rounded-2xl border-2 p-3 text-left transition-colors ${form.date === d.date ? "border-primary bg-primary/10" : "border-border/50 bg-surface hover:border-primary/50"}`}
+                    className={`rounded-[16px] border-2 p-3 text-left transition-colors ${form.date === d.date ? "border-primary bg-primary/10 shadow-clay-pressed" : "border-transparent bg-clay-recessed shadow-clay-pressed hover:border-primary/50"}`}
                   >
                     <div className="text-sm font-bold text-primary">{d.label.split(" - ")[0]}</div>
                     <div className="text-xs text-secondary mt-0.5">{d.label.split(" - ")[1]}</div>
@@ -832,18 +846,18 @@ function ItineraryForm({
                     key={cat}
                     type="button"
                     onClick={() => { handleCategoryChange(cat); setStep(3); }}
-                    className={`flex flex-col items-center gap-2.5 rounded-2xl border-2 p-4 transition-all ${
+                    className={`flex flex-col items-center justify-center rounded-[20px] p-3 transition-all ${
                       isActive
-                        ? `border-primary bg-primary/10 shadow-sm`
-                        : `border-border/50 bg-surface hover:border-primary/30 hover:bg-muted`
+                        ? `bg-clay-recessed shadow-clay-pressed border-0 scale-95`
+                        : `bg-clay-surface shadow-clay-card border-0 hover:-translate-y-1 hover:shadow-clay-hover`
                     }`}
                   >
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${
-                      isActive ? `bg-primary/15 ${cs.iconText}` : `${cs.iconBg} ${cs.iconText}`
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-[16px] transition-all ${
+                      isActive ? `${getCategoryGradient(cat)} shadow-clay-btn text-white` : `bg-clay-recessed shadow-clay-pressed ${cs.iconText}`
                     }`}>
                       {CategoryIcon(cat)}
                     </div>
-                    <span className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-primary' : 'text-secondary'}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wider mt-2 ${isActive ? 'text-primary' : 'text-clay-secondary'}`}>
                       {cat.replace("_", " ")}
                     </span>
                   </button>

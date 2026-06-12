@@ -61,11 +61,11 @@ export function Dashboard({
 
   // Quick-action grid — light-mode colours only
   const quickButtons = [
-    { id: "itinerary", label: "Plan",    icon: CalendarCheck, color: "text-violet-600", bg: "bg-violet-100" },
-    { id: "map",       label: "Explore", icon: Map,           color: "text-sky-600",    bg: "bg-sky-100"    },
-    { id: "expenses",  label: "Money",   icon: ReceiptText,   color: "text-amber-600",  bg: "bg-amber-100"  },
-    { id: "documents", label: "Docs",    icon: FileText,      color: "text-indigo-600", bg: "bg-indigo-100" },
-    { id: "packing",   label: "Packing", icon: Luggage,       color: "text-rose-600",   bg: "bg-rose-100"   },
+    { id: "itinerary", label: "Plan",    icon: CalendarCheck, gradient: "from-violet-400 to-violet-600" },
+    { id: "map",       label: "Explore", icon: Map,           gradient: "from-sky-400 to-sky-600" },
+    { id: "expenses",  label: "Money",   icon: ReceiptText,   gradient: "from-amber-400 to-amber-500" },
+    { id: "documents", label: "Docs",    icon: FileText,      gradient: "from-indigo-400 to-indigo-600" },
+    { id: "packing",   label: "Packing", icon: Luggage,       gradient: "from-rose-400 to-rose-600" },
   ];
 
   const nextPlan = data.itinerary[0];
@@ -149,9 +149,9 @@ export function Dashboard({
             className="group flex flex-col items-center gap-2 rounded-[24px] bg-clay-surface p-2.5 sm:p-3 text-center shadow-clay-card transition-all hover:-translate-y-0.5 hover:shadow-clay-hover active:scale-[0.93] active:shadow-clay-pressed"
           >
             <div
-              className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-[18px] ${btn.bg} transition-all group-hover:scale-105`}
+              className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-[16px] bg-gradient-to-br ${btn.gradient} shadow-clay-btn transition-transform duration-300 group-hover:scale-110`}
             >
-              <btn.icon className={`h-6 w-6 ${btn.color}`} aria-hidden="true" />
+              <btn.icon className="h-6 w-6 text-white drop-shadow-sm" aria-hidden="true" />
             </div>
             <span className="text-[11px] sm:text-xs font-bold text-clay-secondary group-hover:text-clay-primary tracking-wide">
               {btn.label}
