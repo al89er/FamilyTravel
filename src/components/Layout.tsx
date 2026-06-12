@@ -19,11 +19,11 @@ const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "dashboard",   label: "Home",              icon: Home       },
   { id: "itinerary",   label: "Plan",              icon: CalendarDays },
   { id: "map",         label: "Explore",           icon: Map        },
+  { id: "assignments", label: "Rooms & Seats",     icon: BedDouble  },
   { id: "expenses",    label: "Money",             icon: ReceiptText },
   { id: "documents",   label: "Docs",              icon: FileText   },
   { id: "packing",     label: "Packing",           icon: Luggage    },
   { id: "emergency",   label: "Safety",            icon: ShieldAlert },
-  { id: "assignments", label: "Rooms & Seats",     icon: BedDouble  },
   { id: "settings",    label: "Trip Settings",     icon: Settings   },
 ];
 
@@ -124,7 +124,7 @@ export function Layout({
       {/* ── More drawer backdrop ── */}
       {isMoreOpen ? (
         <div
-          className="fixed inset-0 z-[1010] bg-ink/20 lg:hidden"
+          className="fixed inset-0 z-[1040] bg-ink/20 lg:hidden"
           onClick={() => setIsMoreOpen(false)}
           aria-hidden="true"
         />
@@ -132,7 +132,7 @@ export function Layout({
 
       {/* ── More nav drawer ── */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-[1020] rounded-t-[40px] bg-clay-surface shadow-clay-card transition-transform duration-300 ease-in-out lg:hidden pb-[max(env(safe-area-inset-bottom),2rem)] ${
+        className={`fixed inset-x-0 bottom-0 z-[1045] rounded-t-[40px] bg-clay-surface shadow-clay-card transition-transform duration-300 ease-in-out lg:hidden pb-[max(env(safe-area-inset-bottom),2rem)] ${
           isMoreOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >

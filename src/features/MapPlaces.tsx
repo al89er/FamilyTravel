@@ -51,7 +51,16 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       .sort((left, right) => {
         const leftItem = left.itineraryItemId ? itineraryById.get(left.itineraryItemId) : undefined;
         const rightItem = right.itineraryItemId ? itineraryById.get(right.itineraryItemId) : undefined;
-        return (leftItem?.date ?? "").localeCompare(rightItem?.date ?? "") || (leftItem?.sortOrder ?? 9999) - (rightItem?.sortOrder ?? 9999) || left.name.localeCompare(right.name);
+        
+        const leftDate = leftItem?.date ?? "";
+        const rightDate = rightItem?.date ?? "";
+        if (leftDate !== rightDate) return leftDate.localeCompare(rightDate);
+
+        const leftTime = leftItem?.startTime || "";
+        const rightTime = rightItem?.startTime || "";
+        if (leftTime !== rightTime) return leftTime.localeCompare(rightTime);
+
+        return (leftItem?.sortOrder ?? 9999) - (rightItem?.sortOrder ?? 9999) || left.name.localeCompare(right.name);
       });
   }, [data.places, filters, itineraryById]);
 
@@ -222,8 +231,15 @@ function RouteArrows({ places }: { places: CoordinatePlace[] }) {
 }
 
 function compareRoutePlaces(left: CoordinatePlace, right: CoordinatePlace) {
+  const leftDate = left.itineraryItem?.date ?? "";
+  const rightDate = right.itineraryItem?.date ?? "";
+  if (leftDate !== rightDate) return leftDate.localeCompare(rightDate);
+
+  const leftTime = left.itineraryItem?.startTime || "";
+  const rightTime = right.itineraryItem?.startTime || "";
+  if (leftTime !== rightTime) return leftTime.localeCompare(rightTime);
+
   return (
-    (left.itineraryItem?.date ?? "").localeCompare(right.itineraryItem?.date ?? "") ||
     (left.routeOrder ?? 9999) - (right.routeOrder ?? 9999) ||
     left.name.localeCompare(right.name)
   );

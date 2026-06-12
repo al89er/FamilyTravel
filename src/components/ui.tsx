@@ -136,8 +136,8 @@ export function StatPill({
 }) {
   if (inverse) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-[20px] bg-clay-surface px-3 py-2 text-center shadow-clay-surface">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-clay-secondary">{label}</p>
+      <div className="flex flex-col items-center justify-center rounded-[20px] bg-gradient-to-br from-primary/5 to-primary/10 px-3 py-2 text-center shadow-clay-surface border border-primary/10">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-primary opacity-80">{label}</p>
         <p className="mt-0.5 text-sm font-bold text-clay-primary truncate">{value}</p>
       </div>
     );
@@ -444,13 +444,13 @@ export function Modal({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         {/* Dimmed overlay — no blur, solid clay ink */}
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/30 transition-opacity duration-300 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
+        <Dialog.Overlay className="fixed inset-0 z-[1050] bg-ink/30 transition-opacity duration-300 data-[state=closed]:opacity-0 data-[state=open]:opacity-100" />
 
         {/* Sheet / dialog */}
         <Dialog.Content
           className={[
             // Mobile: full-width bottom sheet
-            "fixed z-50 flex flex-col",
+            "fixed z-[1060] flex flex-col",
             "bg-clay-surface shadow-clay-card",
             "transition-all duration-300",
             "data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
@@ -518,12 +518,12 @@ export function OptionChips<T extends string>({
             className={[
               "inline-flex items-center gap-2 rounded-[20px] px-5 py-2.5 text-sm font-semibold transition-all duration-150",
               isSelected
-                ? "bg-primary/10 text-primary ring-2 ring-primary shadow-clay-pressed"
-                : "bg-clay-surface text-clay-secondary ring-1 ring-border hover:bg-clay-recessed hover:text-clay-primary",
+                ? "bg-gradient-to-br from-violet-200 to-violet-300 text-violet-900 ring-2 ring-violet-400 shadow-clay-pressed scale-95"
+                : "bg-clay-surface text-clay-secondary shadow-clay-card hover:-translate-y-1 hover:shadow-clay-hover",
             ].join(" ")}
           >
             {opt.icon && (
-              <span className={isSelected ? "text-primary" : "text-clay-secondary opacity-70"}>
+              <span className={isSelected ? "text-violet-900" : "text-clay-secondary opacity-70"}>
                 {opt.icon}
               </span>
             )}
@@ -608,8 +608,8 @@ export function DayPickerChips({
               "flex min-w-[4.5rem] shrink-0 snap-start flex-col items-center justify-center",
               "rounded-[20px] p-2 transition-all duration-150",
               isSelected
-                ? "bg-gradient-to-br from-[#A78BFA] to-[#7C3AED] text-white shadow-clay-btn"
-                : "bg-clay-surface text-clay-secondary ring-1 ring-border hover:bg-clay-recessed",
+                ? "bg-gradient-to-br from-violet-200 to-violet-300 text-violet-900 shadow-clay-pressed ring-2 ring-violet-400 scale-95"
+                : "bg-clay-surface text-clay-secondary shadow-clay-card hover:-translate-y-1 hover:shadow-clay-hover",
             ].join(" ")}
           >
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">

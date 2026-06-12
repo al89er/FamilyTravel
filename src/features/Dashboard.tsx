@@ -61,11 +61,11 @@ export function Dashboard({
 
   // Quick-action grid — light-mode colours only
   const quickButtons = [
-    { id: "itinerary", label: "Plan",    icon: CalendarCheck, gradient: "from-violet-400 to-violet-600" },
-    { id: "map",       label: "Explore", icon: Map,           gradient: "from-sky-400 to-sky-600" },
-    { id: "expenses",  label: "Money",   icon: ReceiptText,   gradient: "from-amber-400 to-amber-500" },
-    { id: "documents", label: "Docs",    icon: FileText,      gradient: "from-indigo-400 to-indigo-600" },
-    { id: "packing",   label: "Packing", icon: Luggage,       gradient: "from-rose-400 to-rose-600" },
+    { id: "itinerary",   label: "Plan",          icon: CalendarCheck, gradient: "from-violet-400 to-violet-600" },
+    { id: "map",         label: "Explore",       icon: Map,           gradient: "from-sky-400 to-sky-600" },
+    { id: "assignments", label: "Rooms & Seats", icon: BedDouble,     gradient: "from-emerald-400 to-emerald-600" },
+    { id: "documents",   label: "Docs",          icon: FileText,      gradient: "from-indigo-400 to-indigo-600" },
+    { id: "emergency",   label: "Safety",        icon: ShieldAlert,   gradient: "from-rose-400 to-rose-600" },
   ];
 
   const nextPlan = data.itinerary[0];
@@ -76,6 +76,13 @@ export function Dashboard({
       {/* ── Hero Card ── */}
       <Card className="overflow-hidden border-0 shadow-clay-card rounded-[48px] p-0 relative bg-clay-surface">
         <div className="relative overflow-hidden p-6 sm:p-8">
+          {/* Faded background image */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-30"
+            style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+          />
+
           {/* Decorative colour blobs — behind text, low opacity */}
           <div
             aria-hidden="true"
@@ -132,9 +139,9 @@ export function Dashboard({
 
           {/* Stats strip — recessed well */}
           <div className="relative mt-8 grid grid-cols-3 gap-3 rounded-[24px] bg-clay-recessed shadow-clay-pressed p-3">
-            <StatPill label="Plan"   value={`${data.itinerary.length} items`} />
-            <StatPill label="Budget" value={`${data.trip.currency} ${totalSpend.toLocaleString()}`} />
-            <StatPill label="Crew"   value={`${data.members.length} people`} />
+            <StatPill label="Plan"   value={`${data.itinerary.length} items`} inverse={true} />
+            <StatPill label="Budget" value={`${data.trip.currency} ${totalSpend.toLocaleString()}`} inverse={true} />
+            <StatPill label="Crew"   value={`${data.members.length} people`} inverse={true} />
           </div>
         </div>
       </Card>

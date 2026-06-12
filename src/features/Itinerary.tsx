@@ -19,7 +19,14 @@ export function Itinerary({
 }) {
   const [showForm, setShowForm] = useState(false);
   const itemsByDate = data.itinerary.reduce<Record<string, ItineraryItem[]>>((groups, item) => {
-    groups[item.date] = [...(groups[item.date] ?? []), item].sort((a, b) => a.sortOrder - b.sortOrder);
+    groups[item.date] = [...(groups[item.date] ?? []), item].sort((a, b) => {
+      const aTime = a.startTime || "";
+      const bTime = b.startTime || "";
+      if (aTime !== bTime) {
+        return aTime.localeCompare(bTime);
+      }
+      return a.sortOrder - b.sortOrder;
+    });
     return groups;
   }, {});
 
@@ -360,7 +367,7 @@ function ItineraryCard({
             </p>
           )}
           {item.notes && (
-            <p className="mt-3 rounded-[18px] bg-clay-recessed shadow-clay-pressed p-4 text-sm text-clay-secondary border border-border/30 leading-relaxed">
+            <p className="mt-3 rounded-[18px] bg-clay-recessed shadow-clay-pressed p-4 text-sm text-clay-secondary border border-border/30 leading-relaxed whitespace-pre-line">
               {item.notes}
             </p>
           )}
@@ -371,6 +378,21 @@ function ItineraryCard({
   }
 
   if (item.category === "hotel") {
+    const getHotelCheckOutTime = () => {
+      if (item.endTime) return item.endTime;
+      if (item.notes) {
+        const coLine = item.notes.split('\n').find(l => l.startsWith('Check-out: '));
+        if (coLine) {
+          const coVal = coLine.replace('Check-out: ', '').trim();
+          const lastSpace = coVal.lastIndexOf(' ');
+          if (lastSpace > -1) {
+            return coVal.substring(lastSpace + 1).trim();
+          }
+        }
+      }
+      return "—";
+    };
+
     return (
       <Card className="flex flex-col overflow-hidden border-0 bg-clay-surface transition-all relative shadow-clay-card p-0">
         <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600" />
@@ -397,12 +419,12 @@ function ItineraryCard({
               <ArrowRight className="h-4 w-4 text-muted/50" />
               <div className="flex flex-col items-end">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Check-out</span>
-                <span className="font-bold text-primary text-base">{item.endTime || "—"}</span>
+                <span className="font-bold text-primary text-base">{getHotelCheckOutTime()}</span>
               </div>
             </div>
           </div>
           
-          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed">{item.notes}</p>}
+          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed whitespace-pre-line">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </Card>
@@ -440,7 +462,7 @@ function ItineraryCard({
             <Badge tone={badgeTone as any} className="capitalize shadow-sm">{item.category.replace("_", " ")}</Badge>
           </div>
           {item.locationName && <p className="text-sm font-bold text-secondary flex items-center gap-1.5 mb-3"><MapPin className="h-4 w-4 text-muted" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed">{item.notes}</p>}
+          {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed whitespace-pre-line">{item.notes}</p>}
           <FamilyInteractions />
         </div>
       </div>
@@ -810,10 +832,14 @@ function ItineraryForm({
                     key={d.date}
                     type="button"
                     onClick={() => { update("date", d.date); setStep(2); }}
-                    className={`rounded-[16px] border-2 p-3 text-left transition-colors ${form.date === d.date ? "border-primary bg-primary/10 shadow-clay-pressed" : "border-transparent bg-clay-recessed shadow-clay-pressed hover:border-primary/50"}`}
+                    className={`rounded-[20px] p-3 text-left transition-all ${
+                      form.date === d.date
+                        ? "bg-gradient-to-br from-violet-200 to-violet-300 shadow-clay-pressed border-2 border-violet-400 scale-95"
+                        : "bg-clay-surface shadow-clay-card border-2 border-transparent hover:-translate-y-1 hover:shadow-clay-hover"
+                    }`}
                   >
-                    <div className="text-sm font-bold text-primary">{d.label.split(" - ")[0]}</div>
-                    <div className="text-xs text-secondary mt-0.5">{d.label.split(" - ")[1]}</div>
+                    <div className={`text-sm font-bold ${form.date === d.date ? "text-violet-900" : "text-primary"}`}>{d.label.split(" - ")[0]}</div>
+                    <div className={`text-xs mt-0.5 ${form.date === d.date ? "text-violet-800" : "text-secondary"}`}>{d.label.split(" - ")[1]}</div>
                   </button>
                 ))}
               </div>
