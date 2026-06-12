@@ -92,9 +92,9 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
-        className="relative z-50"
+        className="relative z-[2000]"
         action={
-          <div className="flex flex-row flex-wrap justify-end items-start gap-2 relative z-50">
+          <div className="flex flex-row flex-wrap justify-end items-start gap-2 relative z-[2000]">
             {/* Day filter chips */}
             <div className="relative w-fit min-w-[120px]">
               <button type="button" className="flex items-center justify-between gap-2 px-3 py-2 bg-clay-surface rounded-[24px] shadow-clay-card focus:outline-none w-full hover:shadow-clay-hover transition-shadow" onClick={() => setShowDayFilter(!showDayFilter)}>
@@ -108,8 +108,8 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
               </button>
               {showDayFilter && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowDayFilter(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-max max-w-[280px] p-3 bg-clay-surface rounded-[24px] shadow-clay-card border border-border/20 flex flex-wrap gap-2 items-center">
+                  <div className="fixed inset-0 z-[1900]" onClick={() => setShowDayFilter(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-[2000] w-max max-w-[280px] p-3 bg-clay-surface rounded-[24px] shadow-clay-card border border-border/20 flex flex-wrap gap-2 items-center">
                     <FilterChip active={filters.date === "all"} onClick={() => { setFilters(c => ({ ...c, date: "all" })); setShowDayFilter(false); }}>All</FilterChip>
                     {itineraryDates.map((date) => (
                       <FilterChip key={date} active={filters.date === date} onClick={() => { setFilters(c => ({ ...c, date })); setShowDayFilter(false); }}>
@@ -133,8 +133,8 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
               </button>
               {showTypeFilter && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowTypeFilter(false)} />
-                  <div className="absolute right-0 top-full mt-2 z-50 w-max max-w-[280px] p-3 bg-clay-surface rounded-[24px] shadow-clay-card border border-border/20 flex flex-wrap gap-2 items-center">
+                  <div className="fixed inset-0 z-[1900]" onClick={() => setShowTypeFilter(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-[2000] w-max max-w-[280px] p-3 bg-clay-surface rounded-[24px] shadow-clay-card border border-border/20 flex flex-wrap gap-2 items-center">
                     <FilterChip active={filters.category === "all"} onClick={() => { setFilters(c => ({ ...c, category: "all" })); setShowTypeFilter(false); }}>All</FilterChip>
                     {placeCategories.map((category) => (
                       <FilterChip key={category} active={filters.category === category} onClick={() => { setFilters(c => ({ ...c, category })); setShowTypeFilter(false); }}
