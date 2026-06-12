@@ -761,26 +761,24 @@ function SeatCard({
       {/* Boarding pass accent strip */}
       <div className="absolute top-0 left-0 bottom-0 w-2.5 bg-gradient-to-b from-sky-400 to-blue-500" />
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center p-5 pl-6 sm:p-6 gap-4">
+      <div className="flex items-center justify-between p-5 pl-8 sm:p-6 pr-14 relative mt-1.5">
         {/* Left side: Icon & Passenger */}
-        <div className="flex items-center gap-4 min-w-[160px]">
+        <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-sky-400 to-sky-600 shadow-clay-btn">
             <PlaneTakeoff className="h-6 w-6 text-white" />
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Passenger</p>
-            <p className="font-black text-xl text-clay-primary leading-none pr-8">{seat.guestName}</p>
+            <p className="font-black text-lg sm:text-xl text-clay-primary leading-none pr-2">{seat.guestName}</p>
           </div>
         </div>
 
-        {/* Right side: Seat number & Actions */}
-        <div className="flex flex-1 w-full items-center justify-between border-t border-dashed border-border/50 sm:border-t-0 sm:border-l-2 sm:pl-6 pt-4 sm:pt-0 gap-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Seat No</p>
-            <span className="inline-flex items-center justify-center rounded-[14px] bg-clay-recessed shadow-clay-pressed px-4 py-1.5 font-mono text-2xl font-black text-clay-primary">
-              {seat.seatNumber}
-            </span>
-          </div>
+        {/* Right side: Seat number */}
+        <div className="flex flex-col items-end ml-auto">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-1">Seat</p>
+          <span className="inline-flex items-center justify-center rounded-[14px] bg-clay-recessed shadow-clay-pressed px-3.5 py-1.5 font-mono text-lg font-black text-clay-primary">
+            {seat.seatNumber}
+          </span>
         </div>
       </div>
       
