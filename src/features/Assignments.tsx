@@ -178,7 +178,20 @@ function RoomForm({
               value={hotelItems.some((h) => h.locationName === form.hotelName || h.title === form.hotelName) ? form.hotelName : "__custom__"}
               onChange={(e) => {
                 if (e.target.value !== "__custom__") {
-                  setForm((p) => ({ ...p, hotelName: e.target.value }));
+                  const selectedName = e.target.value;
+                  const item = hotelItems.find(h => (h.locationName || h.title) === selectedName);
+                  setForm((p) => {
+                    const nextState = { ...p, hotelName: selectedName };
+                    if (item?.date) {
+                      if (!p.checkInDate) nextState.checkInDate = item.date;
+                      if (!p.checkOutDate) {
+                        const checkIn = new Date(item.date);
+                        checkIn.setDate(checkIn.getDate() + 1);
+                        nextState.checkOutDate = checkIn.toISOString().split('T')[0];
+                      }
+                    }
+                    return nextState;
+                  });
                 }
               }}
             >
