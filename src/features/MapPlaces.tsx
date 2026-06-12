@@ -34,6 +34,7 @@ type NominatimResult = {
 
 export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
   const [showForm, setShowForm] = useState(false);
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
   const [filters, setFilters] = useState<MapFilters>({ date: "all", category: "all" });
   const itineraryById = useMemo(() => new Map(data.itinerary.map((item) => [item.id, item])), [data.itinerary]);
   const itineraryDates = useMemo(() => {
@@ -90,7 +91,6 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
-        action={canEdit ? <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4" aria-hidden="true" />Add place</Button> : null}
       />
       {canEdit ? (
         <PlaceForm
@@ -116,15 +116,22 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
           ))}
         </div>
         {/* Category filter chips */}
-        <div className="flex flex-wrap gap-2 items-center bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary px-2">Type</span>
-          <FilterChip active={filters.category === "all"} onClick={() => setFilters(c => ({ ...c, category: "all" }))}>All</FilterChip>
-          {placeCategories.map((category) => (
-            <FilterChip key={category} active={filters.category === category} onClick={() => setFilters(c => ({ ...c, category }))}
-            >
-              {formatCategory(category)}
-            </FilterChip>
-          ))}
+        <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
+          <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowTypeFilter(!showTypeFilter)}>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary">Type {filters.category !== "all" && <span className="text-primary">• 1 filter</span>}</span>
+            {showTypeFilter ? <ChevronUp className="h-3 w-3 text-clay-secondary" /> : <ChevronDown className="h-3 w-3 text-clay-secondary" />}
+          </button>
+          {showTypeFilter && (
+            <div className="flex flex-wrap gap-2 items-center mt-1">
+              <FilterChip active={filters.category === "all"} onClick={() => setFilters(c => ({ ...c, category: "all" }))}>All</FilterChip>
+              {placeCategories.map((category) => (
+                <FilterChip key={category} active={filters.category === category} onClick={() => setFilters(c => ({ ...c, category }))}
+                >
+                  {formatCategory(category)}
+                </FilterChip>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -152,15 +159,23 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
           icon={<MapPinned className="h-8 w-8" />}
           title="Add your first place" 
           body="Hotels, restaurants, attractions, pharmacies, and meeting points will appear here." 
+          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" aria-hidden="true" />Add</Button> : null}
         />
       ) : (
         <div className="space-y-4 mt-8">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
-              <Star className="h-4 w-4 text-primary" /> 
-              {filters.date !== "all" ? "Today's Route" : "Trip Stops"}
-            </h3>
-            <div className="h-px flex-1 bg-border/40 ml-2" />
+          <div className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2 flex-1">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2 shrink-0">
+                <Star className="h-4 w-4 text-primary" /> 
+                {filters.date !== "all" ? "Today's Route" : "Trip Stops"}
+              </h3>
+              <div className="h-px flex-1 bg-border/40 ml-2" />
+            </div>
+            {canEdit ? (
+              <Button onClick={() => setShowForm(true)} className="rounded-full h-8 px-3 text-xs">
+                <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Add
+              </Button>
+            ) : null}
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
             {filteredPlaces.map((place, idx) => (
@@ -344,11 +359,16 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
       <Card className="relative overflow-hidden group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6">
         <ActionMenu />
         <div className="flex gap-4 sm:gap-6">
-          <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[24px] shadow-clay-btn ${orbClass}`}>
-            {icon}
-            <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-clay-surface`}>
-              {listIndex}
+          <div className="shrink-0 flex flex-col items-center gap-3">
+            <div className={`relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[24px] shadow-clay-btn ${orbClass}`}>
+              {icon}
+              <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-clay-surface`}>
+                {listIndex}
+              </div>
             </div>
+            <Button variant="ghost" className="h-8 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15 w-full" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
+              <ExternalLink className="h-3 w-3 mr-1" aria-hidden="true" />Maps
+            </Button>
           </div>
 
           <div className="flex-1 min-w-0">
@@ -396,11 +416,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
               </p>
             ) : null}
             
-            <div className="mt-4 flex flex-wrap gap-2 pt-2">
-              <Button variant="ghost" className="h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
-                <ExternalLink className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Maps
-              </Button>
-            </div>
+            
             {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
           </div>
         </div>
