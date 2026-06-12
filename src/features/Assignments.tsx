@@ -363,7 +363,7 @@ function RoomRow({
       {/* Key card accent strip */}
       <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-400 to-purple-500" />
       
-      <div className="flex items-start justify-between gap-4 mt-2">
+      <div className="flex items-center justify-between gap-4 mt-2">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-400 to-indigo-600 shadow-clay-btn">
             <BedDouble className="h-6 w-6 text-white" />
@@ -431,6 +431,7 @@ function RoomAssignmentsSection({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedHotels, setExpandedHotels] = useState<Record<string, boolean>>({});
 
   async function handleSave(input: RoomAssignmentInput, id?: string) {
     setSaving(true);
@@ -516,49 +517,65 @@ function RoomAssignmentsSection({
       ) : null}
 
       {/* ── 3-level hierarchy ── */}
-      {grouped.map((hotel) => (
-        <div key={hotel.hotelName} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
-          {/* Level 1: Hotel name */}
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-indigo-100 shadow-clay-pressed">
-              <BedDouble className="h-5 w-5 text-indigo-700" />
-            </div>
-            <p className="font-black text-xl text-clay-primary">{hotel.hotelName}</p>
-          </div>
-
-          {hotel.dateRanges.map((dr) => (
-            <div key={dr.key} className="space-y-3 mt-4 pt-4 border-t border-border/40">
-              {/* Level 2: Date range */}
-              {dr.label ? (
-                <div className="flex items-center gap-2">
-                  <CalendarRange className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                    {dr.label}
-                  </span>
+      {grouped.map((hotel) => {
+        const isExpanded = expandedHotels[hotel.hotelName] !== false;
+        return (
+          <div key={hotel.hotelName} className="space-y-4 bg-clay-surface p-5 sm:p-6 rounded-[32px] shadow-clay-card">
+            {/* Level 1: Hotel name (Clickable to collapse/expand) */}
+            <div
+              onClick={() => setExpandedHotels((prev) => ({ ...prev, [hotel.hotelName]: !isExpanded }))}
+              className="flex items-center justify-between gap-3 cursor-pointer select-none group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-indigo-100 shadow-clay-pressed group-hover:scale-105 transition-transform">
+                  <BedDouble className="h-5 w-5 text-indigo-700" />
                 </div>
-              ) : null}
-
-              {/* Level 3: Rooms */}
-              <div className="grid gap-3 sm:grid-cols-2 pt-2">
-              {dr.rooms.map((room) => (
-                <div key={room.roomNumber} className="space-y-3">
-                  {room.assignments.map((ra) => (
-                    <RoomRow
-                      key={ra.id}
-                      ra={ra}
-                      data={data}
-                      canEdit={canEdit}
-                      onEdit={() => { setEditingId(ra.id); setAdding(false); }}
-                      onDelete={() => void handleDelete(ra.id)}
-                    />
-                  ))}
+                <div>
+                  <p className="font-black text-xl text-clay-primary">{hotel.hotelName}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mt-0.5">
+                    {hotel.dateRanges.length} date range{hotel.dateRanges.length > 1 ? "s" : ""}
+                  </p>
                 </div>
-              ))}
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-clay-recessed text-clay-secondary shadow-clay-pressed group-hover:text-clay-primary transition-all">
+                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
               </div>
             </div>
-          ))}
-        </div>
-      ))}
+
+            {isExpanded && hotel.dateRanges.map((dr) => (
+              <div key={dr.key} className="space-y-3 mt-4 pt-4 border-t border-border/40">
+                {/* Level 2: Date range */}
+                {dr.label ? (
+                  <div className="flex items-center gap-2">
+                    <CalendarRange className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                      {dr.label}
+                    </span>
+                  </div>
+                ) : null}
+
+                {/* Level 3: Rooms */}
+                <div className="grid gap-3 sm:grid-cols-2 pt-2">
+                  {dr.rooms.map((room) => (
+                    <div key={room.roomNumber} className="space-y-3">
+                      {room.assignments.map((ra) => (
+                        <RoomRow
+                          key={ra.id}
+                          ra={ra}
+                          data={data}
+                          canEdit={canEdit}
+                          onEdit={() => { setEditingId(ra.id); setAdding(false); }}
+                          onDelete={() => void handleDelete(ra.id)}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
