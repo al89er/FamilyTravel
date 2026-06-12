@@ -92,6 +92,59 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
+        action={
+          <div className="flex flex-row flex-wrap justify-end items-start gap-2">
+            {/* Day filter chips */}
+            <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
+              <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowDayFilter(!showDayFilter)}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
+                  Day 
+                  {!showDayFilter && (
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
+                      {filters.date === "all" ? "all" : formatDateLabel(filters.date, data.trip.dateFormat).split(',')[0]}
+                    </span>
+                  )}
+                </span>
+                {showDayFilter ? <ChevronUp className="h-3 w-3 text-clay-secondary" /> : <ChevronDown className="h-3 w-3 text-clay-secondary" />}
+              </button>
+              {showDayFilter && (
+                <div className="flex flex-wrap gap-2 items-center mt-1">
+                  <FilterChip active={filters.date === "all"} onClick={() => { setFilters(c => ({ ...c, date: "all" })); setShowDayFilter(false); }}>All</FilterChip>
+                  {itineraryDates.map((date) => (
+                    <FilterChip key={date} active={filters.date === date} onClick={() => { setFilters(c => ({ ...c, date })); setShowDayFilter(false); }}>
+                      {formatDateLabel(date, data.trip.dateFormat).split(',')[0]}
+                    </FilterChip>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Category filter chips */}
+            <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
+              <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowTypeFilter(!showTypeFilter)}>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
+                  Type 
+                  {!showTypeFilter && (
+                    <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
+                      {filters.category === "all" ? "all" : formatCategory(filters.category)}
+                    </span>
+                  )}
+                </span>
+                {showTypeFilter ? <ChevronUp className="h-3 w-3 text-clay-secondary" /> : <ChevronDown className="h-3 w-3 text-clay-secondary" />}
+              </button>
+              {showTypeFilter && (
+                <div className="flex flex-wrap gap-2 items-center mt-1">
+                  <FilterChip active={filters.category === "all"} onClick={() => { setFilters(c => ({ ...c, category: "all" })); setShowTypeFilter(false); }}>All</FilterChip>
+                  {placeCategories.map((category) => (
+                    <FilterChip key={category} active={filters.category === category} onClick={() => { setFilters(c => ({ ...c, category })); setShowTypeFilter(false); }}
+                    >
+                      {formatCategory(category)}
+                    </FilterChip>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        }
       />
       {canEdit ? (
         <PlaceForm
@@ -104,59 +157,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
           }}
         />
       ) : null}
-
-      <div className="flex flex-row flex-wrap justify-center items-start gap-4 mb-4">
-        {/* Day filter chips */}
-        <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
-          <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowDayFilter(!showDayFilter)}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
-              Day 
-              {!showDayFilter && (
-                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
-                  {filters.date === "all" ? "all" : formatDateLabel(filters.date, data.trip.dateFormat).split(',')[0]}
-                </span>
-              )}
-            </span>
-            {showDayFilter ? <ChevronUp className="h-3 w-3 text-clay-secondary" /> : <ChevronDown className="h-3 w-3 text-clay-secondary" />}
-          </button>
-          {showDayFilter && (
-            <div className="flex flex-wrap gap-2 items-center mt-1">
-              <FilterChip active={filters.date === "all"} onClick={() => { setFilters(c => ({ ...c, date: "all" })); setShowDayFilter(false); }}>All</FilterChip>
-              {itineraryDates.map((date) => (
-                <FilterChip key={date} active={filters.date === date} onClick={() => { setFilters(c => ({ ...c, date })); setShowDayFilter(false); }}>
-                  {formatDateLabel(date, data.trip.dateFormat).split(',')[0]}
-                </FilterChip>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* Category filter chips */}
-        <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
-          <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowTypeFilter(!showTypeFilter)}>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
-              Type 
-              {!showTypeFilter && (
-                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
-                  {filters.category === "all" ? "all" : formatCategory(filters.category)}
-                </span>
-              )}
-            </span>
-            {showTypeFilter ? <ChevronUp className="h-3 w-3 text-clay-secondary" /> : <ChevronDown className="h-3 w-3 text-clay-secondary" />}
-          </button>
-          {showTypeFilter && (
-            <div className="flex flex-wrap gap-2 items-center mt-1">
-              <FilterChip active={filters.category === "all"} onClick={() => { setFilters(c => ({ ...c, category: "all" })); setShowTypeFilter(false); }}>All</FilterChip>
-              {placeCategories.map((category) => (
-                <FilterChip key={category} active={filters.category === category} onClick={() => { setFilters(c => ({ ...c, category })); setShowTypeFilter(false); }}
-                >
-                  {formatCategory(category)}
-                </FilterChip>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
+      
       <Card className="overflow-hidden p-0 relative border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
         <div className="h-[360px] min-h-[320px] w-full sm:h-[440px] relative">
           <LeafletTripMap places={markerPlaces} routePlaces={routePlaces} dateFormat={data.trip.dateFormat} />
