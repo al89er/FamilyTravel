@@ -469,6 +469,12 @@ export async function deleteDocument(tripId: string, id: string, storagePath?: s
   }
 }
 
+export function getDocumentUrl(storagePath: string): string {
+  if (!supabase) return "";
+  const { data } = supabase.storage.from("trip-documents").getPublicUrl(storagePath);
+  return data.publicUrl;
+}
+
 export async function upsertEmergencyContact(tripId: string, input: EmergencyContactInput, id?: string) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data: userData, error: userError } = await supabase.auth.getUser();

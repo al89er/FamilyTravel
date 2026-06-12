@@ -1,7 +1,7 @@
-import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload, MoreVertical } from "lucide-react";
+import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload, MoreVertical, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
-import { deleteDocument, upsertDocument } from "../lib/supabase";
+import { deleteDocument, upsertDocument, getDocumentUrl } from "../lib/supabase";
 import type { AppData, DocumentCategory, DocumentInput, TravelDocument } from "../types";
 
 const documentCategories: DocumentCategory[] = ["flight_ticket", "hotel_booking", "passport", "insurance", "attraction_ticket", "other"];
@@ -24,6 +24,25 @@ const DOC_CATEGORY_STYLE: Record<string, string> = {
   attraction_ticket: "bg-gradient-to-br from-amber-400 to-orange-500",
   other: "bg-gradient-to-br from-slate-400 to-slate-600",
 };
+
+function isImageFile(fileName: string, fileType: string): boolean {
+  const fType = fileType.toLowerCase();
+  const fName = fileName.toLowerCase();
+  return (
+    fType.startsWith("image/") ||
+    fName.endsWith(".png") ||
+    fName.endsWith(".jpg") ||
+    fName.endsWith(".jpeg") ||
+    fName.endsWith(".webp") ||
+    fName.endsWith(".gif")
+  );
+}
+
+function isPdfFile(fileName: string, fileType: string): boolean {
+  const fType = fileType.toLowerCase();
+  const fName = fileName.toLowerCase();
+  return fType === "application/pdf" || fName.endsWith(".pdf");
+}
 
 export function Documents({ data, canEdit = false, onRefresh }: { data: AppData; canEdit?: boolean; onRefresh?: () => Promise<void> }) {
   const [showForm, setShowForm] = useState(false);
@@ -70,6 +89,7 @@ export function Documents({ data, canEdit = false, onRefresh }: { data: AppData;
 
 function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; document: TravelDocument; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -171,12 +191,44 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
                 <Badge tone="slate" className="shadow-sm">Shared</Badge>
               )}
             </div>
+
+            {document.storagePath && isImageFile(document.fileName, document.fileType) && (
+              <div className="mt-4 overflow-hidden rounded-[16px] border border-border/40 bg-clay-recessed shadow-clay-pressed max-h-48 flex items-center justify-center">
+                <img
+                  src={getDocumentUrl(document.storagePath)}
+                  alt={document.fileName}
+                  className="w-full h-full object-cover max-h-48 hover:scale-105 transition-all cursor-pointer"
+                  onClick={() => setViewerOpen(true)}
+                />
+              </div>
+            )}
+
+            {document.storagePath ? (
+              <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-border/40">
+                <Button
+                  variant="ghost"
+                  className="h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15"
+                  onClick={() => setViewerOpen(true)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> View File
+                </Button>
+              </div>
+            ) : null}
+
             {error ? <p className="mt-3 text-sm font-bold text-danger">{error}</p> : null}
           </div>
         </div>
       </Card>
       {canEdit && (
         <DocumentForm isOpen={editing} data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
+      )}
+      {viewerOpen && document.storagePath && (
+        <DocumentViewerModal
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          document={document}
+          url={getDocumentUrl(document.storagePath)}
+        />
       )}
     </>
   );
@@ -236,7 +288,18 @@ function DocumentForm({ isOpen, data, document, onSaved, onCancel }: { isOpen: b
           </select>
         </Field>
         <Field label="Upload file">
-          <input type="file" className={`${formInputClass} py-2`} onChange={(event) => update("file", event.target.files?.[0] ?? null)} />
+          <input
+            type="file"
+            className={`${formInputClass} py-2`}
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              update("file", file);
+              if (file) {
+                update("fileName", file.name);
+                update("fileType", file.type || "application/octet-stream");
+              }
+            }}
+          />
         </Field>
         <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed px-4 text-sm font-bold text-clay-primary hover:bg-primary/5 transition-colors mt-6">
           <input type="checkbox" className="h-4 w-4 accent-primary rounded" checked={form.isPrivate} onChange={(event) => update("isPrivate", event.target.checked)} />
@@ -248,6 +311,94 @@ function DocumentForm({ isOpen, data, document, onSaved, onCancel }: { isOpen: b
           <Button type="submit" disabled={busy}>Save</Button>
         </div>
       </form>
+    </Modal>
+  );
+}
+
+function DocumentViewerModal({
+  isOpen,
+  onClose,
+  document,
+  url,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  document: TravelDocument;
+  url: string;
+}) {
+  const isImage = isImageFile(document.fileName, document.fileType);
+  const isPdf = isPdfFile(document.fileName, document.fileType);
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={document.fileName}>
+      {isImage ? (
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative overflow-hidden rounded-[24px] bg-clay-recessed shadow-clay-pressed border border-border/40 p-2 max-h-[60vh] w-full flex items-center justify-center">
+            <img
+              src={url}
+              alt={document.fileName}
+              className="max-h-[55vh] object-contain rounded-[16px] w-full"
+            />
+          </div>
+          <div className="flex w-full justify-between items-center gap-2">
+            <span className="text-xs font-bold text-clay-secondary truncate max-w-[50%]">
+              {document.fileName}
+            </span>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
+            </a>
+          </div>
+        </div>
+      ) : isPdf ? (
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-full h-[60vh] rounded-[24px] overflow-hidden bg-clay-recessed shadow-clay-pressed border border-border/40">
+            <iframe
+              src={url}
+              title={document.fileName}
+              className="w-full h-full border-0"
+            />
+          </div>
+          <div className="flex w-full justify-between items-center gap-2">
+            <span className="text-xs font-bold text-clay-secondary truncate max-w-[50%]">
+              {document.fileName}
+            </span>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[12px] bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open PDF
+            </a>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-8 gap-4 rounded-[24px] bg-clay-recessed shadow-clay-pressed border border-border/40 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-clay-surface text-clay-secondary shadow-clay-card">
+            <FileText className="h-8 w-8 text-clay-secondary" />
+          </div>
+          <div>
+            <h4 className="font-black text-lg text-clay-primary">{document.fileName}</h4>
+            <p className="text-xs font-bold text-clay-secondary mt-1 uppercase tracking-wider">{document.fileType}</p>
+          </div>
+          <p className="text-sm font-medium text-clay-secondary max-w-xs leading-relaxed">
+            This file type cannot be previewed inline. Please open or download it to view.
+          </p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[16px] bg-primary text-white hover:bg-primary-dark text-sm font-bold transition-all shadow-clay-btn hover:scale-[1.02] active:scale-95"
+          >
+            <ExternalLink className="h-4 w-4" /> Open File
+          </a>
+        </div>
+      )}
     </Modal>
   );
 }
