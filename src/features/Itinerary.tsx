@@ -487,12 +487,29 @@ function ItineraryCard({
 
       if (item.endTime) return item.endTime;
       if (item.notes) {
-        const coLine = item.notes.split('\n').find(l => l.startsWith('Check-out: '));
+        const lines = item.notes.split('\n');
+        const ciLine = lines.find(l => l.startsWith('Check-in: '));
+        const coLine = lines.find(l => l.startsWith('Check-out: '));
+
         if (coLine) {
           const coVal = coLine.replace('Check-out: ', '').trim();
-          const lastSpace = coVal.lastIndexOf(' ');
-          if (lastSpace > -1) {
-            return coVal.substring(lastSpace + 1).trim();
+          const coLastSpace = coVal.lastIndexOf(' ');
+          
+          if (ciLine && coLastSpace > -1) {
+            const ciVal = ciLine.replace('Check-in: ', '').trim();
+            const ciLastSpace = ciVal.lastIndexOf(' ');
+            if (ciLastSpace > -1) {
+              const ciPrefix = ciVal.substring(0, ciLastSpace).trim();
+              const coPrefix = coVal.substring(0, coLastSpace).trim();
+              // If the dates before the time string differ, it's a multi-day stay
+              if (ciPrefix && coPrefix && ciPrefix !== coPrefix) {
+                return "—";
+              }
+            }
+          }
+
+          if (coLastSpace > -1) {
+            return coVal.substring(coLastSpace + 1).trim();
           }
         }
       }
