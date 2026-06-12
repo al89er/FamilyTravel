@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   BedDouble,
   CalendarRange,
@@ -143,13 +143,15 @@ function RoomForm({
   initial,
   onSave,
   onCancel,
-  saving
+  saving,
+  onFormReady
 }: {
   data: AppData;
   initial: RoomAssignmentInput;
   onSave: (input: RoomAssignmentInput) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
+  onFormReady?: (save: () => void, isValid: () => boolean) => void;
 }) {
   const [form, setForm] = useState<RoomAssignmentInput>(initial);
 
@@ -166,6 +168,17 @@ function RoomForm({
   }
 
   const isValid = form.hotelName.trim() !== "" && form.roomNumber.trim() !== "";
+
+  // Expose save trigger to parent
+  const formRef = useRef({ form, isValid });
+  formRef.current = { form, isValid };
+  useEffect(() => {
+    onFormReady?.(
+      () => void onSave(formRef.current.form),
+      () => formRef.current.isValid
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onFormReady]);
 
   return (
     <div className="space-y-4">
@@ -354,18 +367,6 @@ function RoomForm({
         />
       </Field>
 
-      <div className="flex gap-2 pt-2">
-        <Button
-          type="button"
-          onClick={() => void onSave(form)}
-          disabled={saving || !isValid}
-        >
-          {saving ? "Saving…" : "Save room"}
-        </Button>
-        <Button variant="ghost" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-      </div>
     </div>
   );
 }
@@ -552,9 +553,29 @@ function RoomAssignmentsSection({
   const editingRoom = editingId ? data.roomAssignments.find(r => r.id === editingId) : null;
   const showModal = adding || !!editingRoom;
 
+  const [roomSaveTrigger, setRoomSaveTrigger] = useState<{ save: () => void; isValid: () => boolean } | null>(null);
+
   return (
     <div className="space-y-6">
-      <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingRoom ? "Edit room" : "Add room"}>
+      <Modal
+        isOpen={showModal}
+        onClose={() => { setAdding(false); setEditingId(null); }}
+        title={editingRoom ? "Edit room" : "Add room"}
+        footer={
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => roomSaveTrigger?.save()}
+              disabled={saving || !roomSaveTrigger?.isValid()}
+            >
+              {saving ? "Saving…" : "Save room"}
+            </Button>
+            <Button variant="ghost" onClick={() => { setAdding(false); setEditingId(null); }} disabled={saving}>
+              Cancel
+            </Button>
+          </div>
+        }
+      >
         <RoomForm
           key={editingId ?? "new"}
           data={data}
@@ -569,6 +590,7 @@ function RoomAssignmentsSection({
           onSave={(input) => handleSave(input, editingId ?? undefined)}
           onCancel={() => { setAdding(false); setEditingId(null); }}
           saving={saving}
+          onFormReady={(save, isValid) => setRoomSaveTrigger({ save, isValid })}
         />
       </Modal>
 
@@ -682,16 +704,30 @@ function SeatForm({
   initial,
   onSave,
   onCancel,
-  saving
+  saving,
+  onFormReady
 }: {
   data: AppData;
   initial: FlightSeatAssignmentInput;
   onSave: (input: FlightSeatAssignmentInput) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
+  onFormReady?: (save: () => void, isValid: () => boolean) => void;
 }) {
   const [form, setForm] = useState<FlightSeatAssignmentInput>(initial);
   const flightItems = getFlightItems(data);
+  const isValid = !!form.flightLabel.trim() && !!form.guestId.trim() && !!form.seatNumber.trim();
+
+  // Expose save trigger to parent
+  const formRef = useRef({ form, isValid });
+  formRef.current = { form, isValid };
+  useEffect(() => {
+    onFormReady?.(
+      () => void onSave(formRef.current.form),
+      () => formRef.current.isValid
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onFormReady]);
 
   function selectMember(profileId: string) {
     const member = data.members.find((m) => m.profileId === profileId);
@@ -771,18 +807,6 @@ function SeatForm({
         />
       </Field>
 
-      <div className="flex gap-2 pt-2">
-        <Button
-          type="button"
-          onClick={() => void onSave(form)}
-          disabled={saving || !form.flightLabel.trim() || !form.guestId.trim() || !form.seatNumber.trim()}
-        >
-          {saving ? "Saving…" : "Save seat"}
-        </Button>
-        <Button variant="ghost" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-      </div>
     </div>
   );
 }
@@ -964,9 +988,29 @@ function FlightSeatsSection({
   const editingSeat = editingId ? data.flightSeatAssignments.find(s => s.id === editingId) : null;
   const showModal = adding || !!editingSeat;
 
+  const [seatSaveTrigger, setSeatSaveTrigger] = useState<{ save: () => void; isValid: () => boolean } | null>(null);
+
   return (
     <div className="space-y-6">
-      <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingSeat ? "Edit seat" : "Add seat"}>
+      <Modal
+        isOpen={showModal}
+        onClose={() => { setAdding(false); setEditingId(null); }}
+        title={editingSeat ? "Edit seat" : "Add seat"}
+        footer={
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={() => seatSaveTrigger?.save()}
+              disabled={saving || !seatSaveTrigger?.isValid()}
+            >
+              {saving ? "Saving…" : "Save seat"}
+            </Button>
+            <Button variant="ghost" onClick={() => { setAdding(false); setEditingId(null); }} disabled={saving}>
+              Cancel
+            </Button>
+          </div>
+        }
+      >
         <SeatForm
           key={editingId ?? "new"}
           data={data}
@@ -980,6 +1024,7 @@ function FlightSeatsSection({
           onSave={(input) => handleSave(input, editingId ?? undefined)}
           onCancel={() => { setAdding(false); setEditingId(null); }}
           saving={saving}
+          onFormReady={(save, isValid) => setSeatSaveTrigger({ save, isValid })}
         />
       </Modal>
 

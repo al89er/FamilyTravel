@@ -1,5 +1,5 @@
 import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight, Palmtree, Train, Bus, MoreVertical } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl, DayPickerChips } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
 import { AppData, FamilySession, ItineraryCategory, ItineraryItem, Trip, Visibility, VoteValue, ItineraryInput } from "../types";
@@ -803,8 +803,10 @@ function ItineraryForm({
     update("category", cat);
   }
 
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  const saveRef = useRef<() => void>(() => {});
+
+  async function save(event?: React.FormEvent) {
+    event?.preventDefault();
     
     let finalPayload = { ...form, sortOrder: Number(form.sortOrder || 0) };
     
@@ -930,11 +932,44 @@ function ItineraryForm({
     }
   };
 
+  saveRef.current = () => void save();
+
+  const footerButtons = (
+    <div className="flex items-center justify-between gap-2">
+      <div>
+        {step === 1 && (
+          <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+        )}
+        {step === 2 && (
+          <Button type="button" variant="ghost" onClick={() => setStep(1)}>← Back</Button>
+        )}
+        {step === 3 && (
+          <Button type="button" variant="ghost" onClick={() => setStep(2)}>← Back</Button>
+        )}
+      </div>
+      <div className="flex gap-2">
+        {step === 1 && (
+          <Button type="button" onClick={() => setStep(2)} disabled={!form.date}>Next →</Button>
+        )}
+        {step === 2 && (
+          <Button type="button" onClick={() => setStep(3)} disabled={!form.category}>Next →</Button>
+        )}
+        {step === 3 && (
+          <>
+            <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
+            <Button type="button" onClick={() => saveRef.current()} disabled={busy}>Save plan</Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onCancel}
       title={item ? "Editing trip plan item" : "Add to trip plan"}
+      footer={footerButtons}
     >
       <div className="mb-5">
         <div className="flex gap-2 text-sm text-muted font-medium">
@@ -948,7 +983,7 @@ function ItineraryForm({
 
       {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
 
-      <form onSubmit={save} className="space-y-6">
+      <form id="itinerary-form" onSubmit={save} className="space-y-6">
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in">
             <h4 className="font-semibold text-primary">Choose a day</h4>
@@ -975,11 +1010,7 @@ function ItineraryForm({
               <label className="mb-1 block text-sm font-semibold text-secondary">Or pick a specific date</label>
               <div className="flex items-center gap-2">
                 <input type="date" className={`${formInputClass} flex-1 max-w-xs`} value={form.date} onChange={(e) => update("date", e.target.value)} />
-                <Button type="button" onClick={() => setStep(2)}>Next</Button>
               </div>
-            </div>
-            <div className="flex justify-end border-t pt-4 border-border/50">
-              <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
             </div>
           </div>
         )}
@@ -988,7 +1019,6 @@ function ItineraryForm({
           <div className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-primary">What kind of plan?</h4>
-              <button type="button" onClick={() => setStep(1)} className="text-sm font-medium text-primary hover:underline">← Back</button>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {itineraryCategories.map((cat) => {
@@ -1024,7 +1054,6 @@ function ItineraryForm({
           <div className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-primary">The details</h4>
-              <button type="button" onClick={() => setStep(2)} className="text-sm font-medium text-primary hover:underline">← Back</button>
             </div>
             
             {form.category === "flight" ? (
@@ -1199,10 +1228,7 @@ function ItineraryForm({
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>
-              <Button type="submit" disabled={busy}>Save plan</Button>
-            </div>
+
           </div>
         )}
       </form>

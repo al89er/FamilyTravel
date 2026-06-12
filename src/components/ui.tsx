@@ -435,12 +435,14 @@ export function Modal({
   title,
   description,
   children,
+  footer,
 }: {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   description?: string;
   children: ReactNode;
+  footer?: ReactNode;
 }) {
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -488,7 +490,14 @@ export function Modal({
           </div>
 
           {/* Scrollable body */}
-          <div className="overflow-y-auto px-6 py-5">{children}</div>
+          <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+
+          {/* Sticky footer for action buttons */}
+          {footer && (
+            <div className="shrink-0 border-t border-border/30 bg-clay-surface px-6 py-4">
+              {footer}
+            </div>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
