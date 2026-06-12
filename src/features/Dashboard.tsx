@@ -80,7 +80,7 @@ export function Dashboard({
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-30"
-            style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+            style={{ backgroundImage: `url('${import.meta.env.BASE_URL}hero-bg.jpg')` }}
           />
 
           {/* Decorative colour blobs — behind text, low opacity */}
