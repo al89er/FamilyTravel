@@ -105,14 +105,14 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         />
       ) : null}
 
-      <div className="flex flex-col gap-4 mb-4">
+      <div className="flex flex-row flex-wrap justify-center items-start gap-4 mb-4">
         {/* Day filter chips */}
         <div className="flex flex-col gap-2 bg-clay-surface p-2.5 rounded-[24px] shadow-clay-card w-fit min-w-[120px]">
           <button type="button" className="flex items-center justify-between gap-2 px-2 focus:outline-none" onClick={() => setShowDayFilter(!showDayFilter)}>
             <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
               Day 
               {!showDayFilter && (
-                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full lowercase">
+                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
                   {filters.date === "all" ? "all" : formatDateLabel(filters.date, data.trip.dateFormat).split(',')[0]}
                 </span>
               )}
@@ -136,7 +136,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
             <span className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary flex items-center gap-2">
               Type 
               {!showTypeFilter && (
-                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full lowercase">
+                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full capitalize">
                   {filters.category === "all" ? "all" : formatCategory(filters.category)}
                 </span>
               )}
