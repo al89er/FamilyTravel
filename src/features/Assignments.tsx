@@ -179,15 +179,35 @@ function RoomForm({
               onChange={(e) => {
                 if (e.target.value !== "__custom__") {
                   const selectedName = e.target.value;
-                  const item = hotelItems.find(h => (h.locationName || h.title) === selectedName);
+                  const sortedHotels = [...hotelItems].sort((a, b) => a.date.localeCompare(b.date));
+                  const matchingItems = sortedHotels.filter(h => (h.locationName || h.title) === selectedName);
+                  const item = matchingItems[0];
+
+                  // Find checkout date from trip plan:
+                  // 1. If there's another item for the same hotel (e.g. explicitly added checkout item)
+                  // 2. Otherwise, use the date of the NEXT hotel in the itinerary
+                  let checkoutDate: string | null = null;
+                  if (matchingItems.length > 1 && matchingItems[matchingItems.length - 1].date !== item.date) {
+                    checkoutDate = matchingItems[matchingItems.length - 1].date;
+                  } else if (item) {
+                    const itemIndex = sortedHotels.findIndex(h => h.id === item.id);
+                    if (itemIndex !== -1 && itemIndex < sortedHotels.length - 1) {
+                      checkoutDate = sortedHotels[itemIndex + 1].date;
+                    }
+                  }
+
                   setForm((p) => {
                     const nextState = { ...p, hotelName: selectedName };
                     if (item?.date) {
                       if (!p.checkInDate) nextState.checkInDate = item.date;
                       if (!p.checkOutDate) {
-                        const checkIn = new Date(item.date);
-                        checkIn.setDate(checkIn.getDate() + 1);
-                        nextState.checkOutDate = checkIn.toISOString().split('T')[0];
+                        if (checkoutDate) {
+                          nextState.checkOutDate = checkoutDate;
+                        } else {
+                          const checkIn = new Date(item.date);
+                          checkIn.setDate(checkIn.getDate() + 1);
+                          nextState.checkOutDate = checkIn.toISOString().split('T')[0];
+                        }
                       }
                     }
                     return nextState;
