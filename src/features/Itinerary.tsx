@@ -1,6 +1,6 @@
 import { Clock, MapPin, MessageSquare, Pencil, Plus, Trash2, ThumbsUp, Plane, Car, Bed, Utensils, Ticket, ShoppingBag, Coffee, AlertCircle, Star, ChevronDown, ChevronUp, CalendarClock, ArrowRight, Palmtree, Train, Bus } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, CategoryBadge, EmptyState, ErrorState, Field, SectionHeader, categoryStyles, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl, DayPickerChips } from "../components/ui";
 import { addFamilyComment, castFamilyVote, deleteItineraryItem, upsertItineraryItem } from "../lib/supabase";
 import type { AppData, FamilySession, ItineraryCategory, ItineraryInput, ItineraryItem, Trip, Visibility, VoteValue } from "../types";
 
@@ -30,18 +30,17 @@ export function Itinerary({
         eyebrow="Your day-by-day travel timeline"
         action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add plan</Button> : null}
       />
-      {canEdit && showForm ? (
-        <div className="animate-in fade-in slide-in-from-top-4 mb-8">
-          <ItineraryForm
-            trip={data.trip}
-            items={data.itinerary}
-            onCancel={() => setShowForm(false)}
-            onSaved={async () => {
-              setShowForm(false);
-              await onRefresh?.();
-            }}
-          />
-        </div>
+      {canEdit ? (
+        <ItineraryForm
+          isOpen={showForm}
+          trip={data.trip}
+          items={data.itinerary}
+          onCancel={() => setShowForm(false)}
+          onSaved={async () => {
+            setShowForm(false);
+            await onRefresh?.();
+          }}
+        />
       ) : null}
       {Object.keys(itemsByDate).length === 0 ? (
         <EmptyState 
@@ -60,14 +59,14 @@ export function Itinerary({
             return (
               <div key={date} className="relative mt-8 first:mt-0">
                 <div className="sticky top-14 z-20 -mx-4 mb-6 sm:mx-0">
-                  <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-surface/95 px-4 py-4 sm:px-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border-b sm:border border-border/50 backdrop-blur-md relative overflow-hidden">
+                  <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-clay-surface px-4 py-4 sm:px-6 shadow-clay-card border-b sm:border border-border/50 relative overflow-hidden">
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/80" />
                     <div className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-[1.25rem] bg-primary/10 text-primary border border-primary/20 shadow-sm">
                       <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 opacity-80">Day</span>
                       <span className="text-xl font-black leading-none">{dayIndex + 1}</span>
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-primary text-lg sm:text-xl tracking-tight">{dayLabel}</h3>
+                      <h3 className="font-extrabold text-clay-primary text-lg sm:text-xl tracking-tight">{dayLabel}</h3>
                       <p className="text-xs font-bold text-secondary uppercase tracking-widest mt-1 flex items-center gap-1.5">
                         <CalendarClock className="h-3.5 w-3.5 opacity-70" />
                         {items.length} {items.length === 1 ? 'plan' : 'plans'}
@@ -123,10 +122,20 @@ function ItineraryRow({
 }) {
   const [editing, setEditing] = useState(false);
 
-  if (editing) {
-    return (
-      <div className="mb-4 animate-in fade-in">
+  return (
+    <>
+      <ItineraryCard 
+        item={item} 
+        data={data} 
+        canEdit={canEdit} 
+        familySession={familySession} 
+        onRefresh={onRefresh} 
+        onRefreshFamily={onRefreshFamily} 
+        onEdit={() => setEditing(true)} 
+      />
+      {canEdit && (
         <ItineraryForm
+          isOpen={editing}
           trip={data.trip}
           items={data.itinerary}
           item={item}
@@ -136,20 +145,8 @@ function ItineraryRow({
             await onRefresh?.();
           }}
         />
-      </div>
-    );
-  }
-
-  return (
-    <ItineraryCard 
-      item={item} 
-      data={data} 
-      canEdit={canEdit} 
-      familySession={familySession} 
-      onRefresh={onRefresh} 
-      onRefreshFamily={onRefreshFamily} 
-      onEdit={() => setEditing(true)} 
-    />
+      )}
+    </>
   );
 }
 
@@ -311,35 +308,48 @@ function ItineraryCard({
 
   if (item.category === "flight") {
     return (
-      <Card className="flex flex-col sm:flex-row overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ring-border/50 rounded-3xl bg-surface transition-all group relative">
-        <div className="bg-gradient-to-b from-sky-600 to-sky-800 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-30 mix-blend-overlay"></div>
+      <Card className="flex flex-col sm:flex-row overflow-hidden border-0 bg-clay-surface transition-all group relative p-0 shadow-clay-card">
+        {/* Saturated sky accent strip — white text is safe on this background */}
+        <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.4)_0%,transparent_60%)]"></div>
           <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" />
-          <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90">Boarding</span>
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90 drop-shadow-sm">Boarding</span>
           <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10" />
         </div>
-        
+
+        {/* Perforation notches — match canvas so they look punched out */}
         <div className="hidden sm:flex flex-col justify-between items-center w-4 -ml-2 -mr-2 z-10">
-           <div className="h-4 w-4 rounded-full bg-app -mt-2 shadow-inner border-b border-border/50"></div>
-           <div className="h-full w-px border-l-[3px] border-dashed border-border/60 my-2"></div>
-           <div className="h-4 w-4 rounded-full bg-app -mb-2 shadow-inner border-t border-border/50"></div>
+          <div className="h-4 w-4 rounded-full bg-clay-canvas -mt-2 border-b border-border/50"></div>
+          <div className="h-full w-px border-l-[3px] border-dashed border-border/60 my-2"></div>
+          <div className="h-4 w-4 rounded-full bg-clay-canvas -mb-2 border-t border-border/50"></div>
         </div>
 
+        {/* Ticket body — solid clay surface, all text must be dark */}
         <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-extrabold text-xl text-primary tracking-tight">{item.title}</h3>
-            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm">Ref: {item.bookingReference}</Badge>}
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h3 className="font-extrabold text-xl text-clay-primary tracking-tight leading-tight">{item.title}</h3>
+            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm shrink-0">Ref: {item.bookingReference}</Badge>}
           </div>
-          <div className="flex items-center gap-4 text-secondary mb-4 bg-sky-50/50 dark:bg-sky-950/20 p-3 rounded-2xl border border-sky-100 dark:border-sky-900/50 shadow-inner">
-            <div className="font-mono text-2xl font-black text-sky-700 dark:text-sky-400">{item.startTime}</div>
+          {/* Times — sky-700 (#0369a1) on white passes WCAG AA */}
+          <div className="flex items-center gap-4 mb-4 bg-sky-50 p-3 rounded-[18px] border border-sky-100">
+            <div className="font-mono text-2xl font-black text-sky-700">{item.startTime}</div>
             <div className="flex-1 flex items-center justify-center relative">
-              <div className="h-px w-full bg-sky-200 dark:bg-sky-800/50 absolute" />
-              <Plane className="h-4 w-4 text-sky-400 dark:text-sky-600 absolute rotate-90" />
+              <div className="h-px w-full bg-sky-200 absolute" />
+              <Plane className="h-4 w-4 text-sky-400 absolute rotate-90" />
             </div>
-            <div className="font-mono text-2xl font-black text-sky-700 dark:text-sky-400">{item.endTime || "—"}</div>
+            <div className="font-mono text-2xl font-black text-sky-700">{item.endTime || "—"}</div>
           </div>
-          {item.locationName && <p className="text-sm font-bold text-sky-800 dark:text-sky-300 flex items-center gap-2"><MapPin className="h-4 w-4 opacity-70" /> {item.locationName}</p>}
-          {item.notes && <p className="mt-4 rounded-2xl bg-muted/30 p-4 text-sm text-secondary border border-border/50 shadow-sm leading-relaxed">{item.notes}</p>}
+          {item.locationName && (
+            <p className="text-sm font-bold text-clay-secondary flex items-center gap-2 mb-1">
+              <MapPin className="h-4 w-4 opacity-60" />
+              {item.locationName}
+            </p>
+          )}
+          {item.notes && (
+            <p className="mt-3 rounded-[18px] bg-clay-recessed shadow-clay-pressed p-4 text-sm text-clay-secondary border border-border/30 leading-relaxed">
+              {item.notes}
+            </p>
+          )}
           <FamilyInteractions />
         </div>
       </Card>
@@ -348,7 +358,7 @@ function ItineraryCard({
 
   if (item.category === "hotel") {
     return (
-      <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ring-border/50 rounded-3xl bg-surface transition-all relative">
+      <Card className="flex flex-col overflow-hidden border-0 bg-clay-surface transition-all relative shadow-clay-card p-0">
         <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600" />
         <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
@@ -357,7 +367,7 @@ function ItineraryCard({
                 <Bed className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-extrabold text-xl text-primary tracking-tight">{item.title}</h3>
+                <h3 className="font-extrabold text-xl text-clay-primary tracking-tight">{item.title}</h3>
                 {item.locationName && <p className="text-sm font-bold text-secondary flex items-center gap-1.5 mt-1"><MapPin className="h-3.5 w-3.5 text-muted" /> {item.locationName}</p>}
               </div>
             </div>
@@ -392,7 +402,7 @@ function ItineraryCard({
   
   let ringClass = "ring-border/50";
   let bgClass = "bg-surface";
-  let accentClass = "text-primary";
+  let accentClass = "text-clay-primary";
   let badgeTone = "slate";
   let stripClass = "bg-border/50";
 
@@ -401,7 +411,7 @@ function ItineraryCard({
   else if (isTransport) { ringClass = "ring-cyan-200 dark:ring-cyan-900/60"; bgClass = "bg-gradient-to-br from-surface to-cyan-50/20 dark:to-cyan-950/10"; accentClass = "text-cyan-700 dark:text-cyan-500"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
 
   return (
-    <Card className={`relative flex flex-col sm:flex-row overflow-hidden shadow-md hover:shadow-lg border-0 ring-1 ${ringClass} rounded-3xl ${bgClass} transition-all`}>
+    <Card className={`relative flex flex-col sm:flex-row overflow-hidden border-0 shadow-clay-card p-0 transition-all bg-clay-surface`}>
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
       <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5">
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
@@ -428,12 +438,14 @@ const itineraryCategories: ItineraryCategory[] = ["flight", "transport", "hotel"
 const visibilityOptions: Visibility[] = ["shared", "planner_only", "private"];
 
 function ItineraryForm({
+  isOpen,
   trip,
   items,
   item,
   onSaved,
   onCancel
 }: {
+  isOpen: boolean;
   trip: Trip;
   items: ItineraryItem[];
   item?: ItineraryItem;
@@ -756,10 +768,13 @@ function ItineraryForm({
   };
 
   return (
-    <Card className="p-4 sm:p-6 shadow-soft border-border/50 rounded-3xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      title={item ? "Editing trip plan item" : "Add to trip plan"}
+    >
       <div className="mb-5">
-        <h3 className="text-lg font-bold text-primary">{item ? "Editing trip plan item" : "Add to trip plan"}</h3>
-        <div className="mt-2 flex gap-2 text-sm text-muted font-medium">
+        <div className="flex gap-2 text-sm text-muted font-medium">
           <span className={step >= 1 ? "font-bold text-primary" : ""}>1. Day</span>
           <span>→</span>
           <span className={step >= 2 ? "font-bold text-primary" : ""}>2. Type</span>
@@ -1005,9 +1020,11 @@ function ItineraryForm({
             {showOptional && (
               <div className="grid gap-4 sm:grid-cols-2 rounded-2xl bg-muted/50 p-4 animate-in fade-in">
                 <Field label="Visibility">
-                  <select className={formSelectClass} value={form.visibility} onChange={(e) => update("visibility", e.target.value as Visibility)}>
-                    {visibilityOptions.map(v => <option key={v} value={v}>{v.replace("_", " ")}</option>)}
-                  </select>
+                  <SegmentedControl
+                    options={visibilityOptions.map(v => ({ value: v, label: v.replace("_", " ") }))}
+                    value={form.visibility}
+                    onChange={(v) => update("visibility", v as Visibility)}
+                  />
                 </Field>
                 <Field label="Sort order">
                   <input type="number" className={formInputClass} value={form.sortOrder} onChange={(e) => update("sortOrder", parseInt(e.target.value) || 0)} />
@@ -1022,6 +1039,6 @@ function ItineraryForm({
           </div>
         )}
       </form>
-    </Card>
+    </Modal>
   );
 }

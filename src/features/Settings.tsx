@@ -1,6 +1,6 @@
 import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
 import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled, updateTrip } from "../lib/supabase";
 import type { AccessMode, AppData, Role, ShareLink, TripInput, TripMember, FamilySession } from "../types";
@@ -25,9 +25,9 @@ export function Settings({
   if (accessMode === "family") {
     return (
       <div className="space-y-5">
-        <SectionHeader title="Trip Settings" eyebrow="Family mode" />
+        <SectionHeader title="Trip Control Centre" eyebrow="Family mode" />
         
-        <Card className="p-4 sm:p-5">
+    <Card className="p-6 border-0">
           <h2 className="text-lg font-semibold text-primary">Your Family Session</h2>
           <div className="mt-4 space-y-3">
             <div className="flex justify-between border-b border-border pb-2">
@@ -41,7 +41,7 @@ export function Settings({
           </div>
         </Card>
 
-        <Card className="p-4 sm:p-5">
+    <Card className="p-6 border-0">
           <h2 className="text-lg font-semibold text-primary">Permissions Granted</h2>
           <p className="mt-1 text-sm text-secondary">Your access level is controlled by the trip organizer via the share link configuration.</p>
           <div className="mt-4 space-y-2">
@@ -80,10 +80,10 @@ export function Settings({
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Trip Settings" eyebrow={`Current role: ${role}`} />
+      <SectionHeader title="Trip Control Centre" eyebrow={`Current role: ${role}`} />
       
       {onLeave ? (
-        <Card className="mb-5 overflow-hidden border border-primary/25">
+        <Card className="mb-5 overflow-hidden border-0 bg-surface-solid">
           <div className="flex items-center gap-3 bg-primary/8 px-5 py-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
               {data.currentUser.displayName.slice(0, 2).toUpperCase()}
@@ -120,26 +120,30 @@ function ThemeSettings() {
   ];
 
   return (
-    <Card className="p-4 sm:p-5">
-      <p className="text-xs font-bold uppercase tracking-wider text-muted mb-4">Appearance</p>
-      <div className="grid grid-cols-3 gap-3">
+      <Card className="p-6 border-0 bg-clay-surface shadow-clay-card">
+      <div className="mb-4">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-clay-secondary">Appearance</p>
+        <p className="mt-1 text-sm text-clay-secondary">Dark mode will be re-enabled after the light theme is finalized.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-3 opacity-50 pointer-events-none">
         {options.map(({ key, label, icon: Icon, color }) => {
           const active = theme === key;
           return (
             <button
               key={key}
               type="button"
+              disabled
               onClick={() => setTheme(key)}
-              className={`flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 p-4 transition-all ${
+              className={`flex flex-col items-center justify-center gap-3 rounded-[20px] border-2 p-4 transition-all shadow-sm ${
                 active
                   ? "border-primary bg-primary/10"
-                  : "border-border bg-surface hover:border-primary/30 hover:bg-muted"
+                  : "border-border/50 bg-clay-surface"
               }`}
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? "bg-primary/15" : "bg-muted"}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${active ? "bg-primary/15" : "bg-clay-recessed"}`}>
                 <Icon className={`h-5 w-5 ${active ? "text-primary" : color}`} />
               </div>
-              <span className={`text-sm font-semibold ${active ? "text-primary" : "text-secondary"}`}>{label}</span>
+              <span className={`text-sm font-semibold ${active ? "text-primary" : "text-clay-secondary"}`}>{label}</span>
             </button>
           );
         })}
@@ -197,40 +201,54 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
   }
 
   return (
-    <Card className="p-4">
+    <>
+    <Card className="p-6 border-0 bg-clay-surface">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-semibold text-primary">Trip overview</h3>
-        <Button variant="ghost" onClick={() => setEditing((value) => !value)}>{editing ? "Cancel" : "Edit"}</Button>
+        <Button variant="ghost" onClick={() => setEditing(true)}>Edit</Button>
       </div>
-      {error ? <div className="mt-4"><ErrorState message={error} /></div> : null}
       {status ? <p className="mt-4 rounded-lg bg-primary/10 p-3 text-sm text-primary">{status}</p> : null}
-      {editing ? (
-        <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={save}>
-          <Field label="Trip title"><input className={formInputClass} value={form.title} onChange={(event) => update("title", event.target.value)} /></Field>
-          <Field label="Destination"><input className={formInputClass} value={form.destination} onChange={(event) => update("destination", event.target.value)} /></Field>
-          <Field label="Start date"><input type="date" className={formInputClass} value={form.startDate} onChange={(event) => update("startDate", event.target.value)} /></Field>
-          <Field label="End date"><input type="date" className={formInputClass} value={form.endDate} onChange={(event) => update("endDate", event.target.value)} /></Field>
-          <Field label="Timezone"><input className={formInputClass} value={form.timezone} onChange={(event) => update("timezone", event.target.value)} /></Field>
-          <Field label="Currency"><input className={formInputClass} value={form.currency} onChange={(event) => update("currency", event.target.value)} maxLength={3} /></Field>
-          <Field label="Date format"><input className={formInputClass} value={form.dateFormat} onChange={(event) => update("dateFormat", event.target.value)} /></Field>
-          <Field label="Estimated budget"><input type="number" min="0" step="0.01" className={formInputClass} value={form.estimatedBudget} onChange={(event) => update("estimatedBudget", Number(event.target.value))} /></Field>
-          <Field label="Default visibility"><select className={formSelectClass} value={form.defaultVisibility} onChange={(event) => update("defaultVisibility", event.target.value as TripInput["defaultVisibility"])}><option value="shared">shared</option><option value="planner_only">planner_only</option><option value="private">private</option></select></Field>
-          <Field label="Hotel/accommodation summary"><textarea className={formTextareaClass} value={form.hotelInfo} onChange={(event) => update("hotelInfo", event.target.value)} /></Field>
-          <Field label="Emergency summary"><textarea className={formTextareaClass} value={form.emergencySummary} onChange={(event) => update("emergencySummary", event.target.value)} /></Field>
-          <div className="flex gap-2 md:col-span-2">
-            <Button type="submit" disabled={busy}>Save</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
-          </div>
-        </form>
-      ) : (
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Currency"><input className={formInputClass} readOnly value={data.trip.currency} /></Field>
-          <Field label="Timezone"><input className={formInputClass} readOnly value={data.trip.timezone} /></Field>
-          <Field label="Date format"><input className={formInputClass} readOnly value={data.trip.dateFormat} /></Field>
-          <Field label="Default visibility"><input className={formInputClass} readOnly value={data.trip.defaultVisibility} /></Field>
-        </div>
-      )}
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <Field label="Currency"><input className={formInputClass} readOnly value={data.trip.currency} /></Field>
+        <Field label="Timezone"><input className={formInputClass} readOnly value={data.trip.timezone} /></Field>
+        <Field label="Date format"><input className={formInputClass} readOnly value={data.trip.dateFormat} /></Field>
+        <Field label="Default visibility"><input className={formInputClass} readOnly value={data.trip.defaultVisibility} /></Field>
+      </div>
     </Card>
+
+    <Modal isOpen={editing} onClose={() => setEditing(false)} title="Edit Trip Overview">
+      {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
+      <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
+        <Field label="Trip title"><input className={formInputClass} value={form.title} onChange={(event) => update("title", event.target.value)} /></Field>
+        <Field label="Destination"><input className={formInputClass} value={form.destination} onChange={(event) => update("destination", event.target.value)} /></Field>
+        <Field label="Start date"><input type="date" className={formInputClass} value={form.startDate} onChange={(event) => update("startDate", event.target.value)} /></Field>
+        <Field label="End date"><input type="date" className={formInputClass} value={form.endDate} onChange={(event) => update("endDate", event.target.value)} /></Field>
+        <Field label="Timezone"><input className={formInputClass} value={form.timezone} onChange={(event) => update("timezone", event.target.value)} /></Field>
+        <Field label="Currency"><input className={formInputClass} value={form.currency} onChange={(event) => update("currency", event.target.value)} maxLength={3} /></Field>
+        <Field label="Date format"><input className={formInputClass} value={form.dateFormat} onChange={(event) => update("dateFormat", event.target.value)} /></Field>
+        <Field label="Estimated budget"><input type="number" min="0" step="0.01" className={formInputClass} value={form.estimatedBudget} onChange={(event) => update("estimatedBudget", Number(event.target.value))} /></Field>
+        <div className="md:col-span-2">
+          <Field label="Default visibility">
+            <OptionChips
+              options={[{ value: "shared", label: "Shared" }, { value: "planner_only", label: "Planner Only" }, { value: "private", label: "Private" }]}
+              value={form.defaultVisibility}
+              onChange={(v) => update("defaultVisibility", v as TripInput["defaultVisibility"])}
+            />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Hotel/accommodation summary"><textarea className={formTextareaClass} value={form.hotelInfo} onChange={(event) => update("hotelInfo", event.target.value)} /></Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Emergency summary"><textarea className={formTextareaClass} value={form.emergencySummary} onChange={(event) => update("emergencySummary", event.target.value)} /></Field>
+        </div>
+        <div className="flex gap-2 md:col-span-2 mt-2">
+          <Button type="submit" disabled={busy}>Save changes</Button>
+          <Button variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
+        </div>
+      </form>
+    </Modal>
+    </>
   );
 }
 
@@ -243,6 +261,7 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const owner = data.members.find((member) => member.role === "owner");
   const organizers = useMemo(() => data.members.filter((member) => member.role === "organizer"), [data.members]);
@@ -293,13 +312,14 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
       setDisplayName("");
       setUsername("");
       setTemporaryPassword("");
+      setAdding(false);
       return result;
     }, `Organizer created. Share username "${cleanUsername}" and the temporary password securely.`);
   }
 
   if (role !== "owner") {
     return (
-      <Card className="p-4">
+      <Card className="p-6 border-0 bg-clay-surface">
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-muted" aria-hidden="true" />
           <h3 className="font-semibold text-primary">Organizers</h3>
@@ -310,35 +330,38 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2">
-        <Shield className="h-5 w-5 text-primary" aria-hidden="true" />
-        <h3 className="font-semibold text-primary">Organizers</h3>
+    <Card className="p-6 border-0 bg-clay-surface">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" aria-hidden="true" />
+          <h3 className="font-semibold text-primary">Organizers</h3>
+        </div>
+        <Button onClick={() => setAdding(true)}><UserPlus className="h-4 w-4" aria-hidden="true" /> Add organizer</Button>
       </div>
       <p className="mt-2 text-sm text-secondary">
         Owner: {owner?.profile.displayName ?? "Not set"}. Organizers can manage planning data for this trip, but cannot delete or transfer trips.
       </p>
 
-      {error ? <div className="mt-4"><ErrorState message={error} /></div> : null}
       {status ? <p className="mt-4 rounded-lg bg-primary/10 p-3 text-sm text-primary">{status}</p> : null}
 
-      <form className="mt-5 grid gap-3 md:grid-cols-3" onSubmit={addOrganizer}>
-        <Field label="Display name">
-          <input className={formInputClass} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-        </Field>
-        <Field label="Username">
-          <input className={formInputClass} value={username} onChange={(event) => setUsername(event.target.value)} />
-        </Field>
-        <Field label="Temporary password">
-          <input className={formInputClass} type="password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} />
-        </Field>
-        <div className="md:col-span-3">
-          <Button type="submit" disabled={busy}>
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            Add organizer
-          </Button>
-        </div>
-      </form>
+      <Modal isOpen={adding} onClose={() => setAdding(false)} title="Add Organizer">
+        {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
+        <form className="grid gap-3" onSubmit={addOrganizer}>
+          <Field label="Display name">
+            <input className={formInputClass} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          </Field>
+          <Field label="Username">
+            <input className={formInputClass} value={username} onChange={(event) => setUsername(event.target.value)} />
+          </Field>
+          <Field label="Temporary password">
+            <input className={formInputClass} type="password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} />
+          </Field>
+          <div className="flex gap-2 mt-2">
+            <Button type="submit" disabled={busy}>Add organizer</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="mt-5 space-y-3">
         {organizers.map((member) => (
@@ -355,74 +378,75 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
         ))}
       </div>
 
-      {selectedOrganizer ? (
-        <div className="mt-5 rounded-lg border border-border bg-muted p-4">
-          <p className="font-semibold text-primary">Manage {selectedOrganizer.profile.displayName}</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <Modal isOpen={!!selectedOrganizer} onClose={() => setSelectedUserId("")} title={`Manage ${selectedOrganizer?.profile.displayName}`}>
+        {selectedOrganizer ? (
+          <div className="grid gap-3">
+            {error ? <div className="mb-2"><ErrorState message={error} /></div> : null}
             <Field label="New display name">
               <input className={formInputClass} value={newDisplayName} onChange={(event) => setNewDisplayName(event.target.value)} />
             </Field>
             <Field label="Temporary password">
               <input className={formInputClass} type="password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} />
             </Field>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              variant="ghost"
-              disabled={busy}
-              onClick={() =>
-                void run(
-                  () => manageOrganizer({ action: "updateDisplayName", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, displayName: newDisplayName }),
-                  "Organizer display name updated."
-                )
-              }
-            >
-              Update name
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={busy}
-              onClick={() =>
-                void run(
-                  () => manageOrganizer({ action: "resetPassword", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, temporaryPassword }),
-                  "Temporary password set. Organizer must change password on next login."
-                )
-              }
-            >
-              <KeyRound className="h-4 w-4" aria-hidden="true" />
-              Reset password
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                if (window.confirm("Transfer ownership to this organizer? You will become an organizer.")) {
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() =>
                   void run(
-                    () => manageOrganizer({ action: "transferOwnership", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
-                    "Ownership transferred."
-                  );
+                    () => manageOrganizer({ action: "updateDisplayName", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, displayName: newDisplayName }),
+                    "Organizer display name updated."
+                  ).then(() => setSelectedUserId(""))
                 }
-              }}
-            >
-              Transfer ownership
-            </Button>
-            <Button
-              variant="ghost"
-              disabled={busy}
-              onClick={() => {
-                if (window.confirm("Remove this organizer from the trip?")) {
+              >
+                Update name
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() =>
                   void run(
-                    () => manageOrganizer({ action: "removeOrganizer", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
-                    "Organizer removed."
-                  );
+                    () => manageOrganizer({ action: "resetPassword", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, temporaryPassword }),
+                    "Temporary password set. Organizer must change password on next login."
+                  ).then(() => setSelectedUserId(""))
                 }
-              }}
-            >
-              Remove organizer
-            </Button>
+              >
+                <KeyRound className="h-4 w-4" aria-hidden="true" />
+                Reset password
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  if (window.confirm("Transfer ownership to this organizer? You will become an organizer.")) {
+                    void run(
+                      () => manageOrganizer({ action: "transferOwnership", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
+                      "Ownership transferred."
+                    ).then(() => setSelectedUserId(""));
+                  }
+                }}
+              >
+                Transfer ownership
+              </Button>
+              <Button
+                variant="ghost"
+                disabled={busy}
+                className="text-danger hover:text-danger hover:bg-danger/10"
+                onClick={() => {
+                  if (window.confirm("Remove this organizer from the trip?")) {
+                    void run(
+                      () => manageOrganizer({ action: "removeOrganizer", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
+                      "Organizer removed."
+                    ).then(() => setSelectedUserId(""));
+                  }
+                }}
+              >
+                Remove organizer
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : <div />}
+      </Modal>
     </Card>
   );
 }
@@ -443,8 +467,8 @@ function OrganizerRow({
     <button
       type="button"
       onClick={onSelect}
-      className={`flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-xl border-2 p-3.5 text-left transition-all ${
-        selected ? "border-primary bg-primary/8" : "border-border bg-surface hover:border-primary/25 hover:bg-muted"
+      className={`flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-2xl border-2 p-4 text-left transition-all shadow-sm ${
+        selected ? "border-primary bg-primary/8" : "border-border/50 bg-surface hover:border-primary/25 hover:bg-muted"
       }`}
     >
       <div>
@@ -466,6 +490,7 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     if (role !== "owner") return;
@@ -503,6 +528,7 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
       setLinks((current) => [link, ...current]);
       setStatus(`Share link created: ${familyUrl(token)}`);
       setLabel("Family share link");
+      setAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create share link.");
     } finally {
@@ -527,7 +553,7 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
 
   if (role !== "owner") {
     return (
-      <Card className="p-4">
+      <Card className="p-6 border-0 bg-clay-surface">
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-muted" aria-hidden="true" />
           <h3 className="font-semibold text-primary">Family share links</h3>
@@ -538,16 +564,18 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2">
-        <Link2 className="h-5 w-5 text-primary" aria-hidden="true" />
-        <h3 className="font-semibold text-primary">Family share links</h3>
+    <Card className="p-6 border-0 bg-clay-surface">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Link2 className="h-5 w-5 text-primary" aria-hidden="true" />
+          <h3 className="font-semibold text-primary">Family share links</h3>
+        </div>
+        <Button onClick={() => setAdding(true)}>Create link</Button>
       </div>
       <p className="mt-2 text-sm text-secondary">
         Share links let family members open a shared view without Supabase Auth. Tokens are generated once and stored hashed.
       </p>
 
-      {error ? <div className="mt-4"><ErrorState message={error} /></div> : null}
       {status ? (
         <div className="mt-4 rounded-lg bg-primary/10 p-3 text-sm text-primary">
           <p className="break-all">{status}</p>
@@ -560,35 +588,42 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
         </div>
       ) : null}
 
-      <form className="mt-5 space-y-4" onSubmit={onCreate}>
-        <Field label="Label">
-          <input className={formInputClass} value={label} onChange={(event) => setLabel(event.target.value)} />
-        </Field>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-            <input type="checkbox" checked={allowComments} onChange={(event) => setAllowComments(event.target.checked)} />
-            Comments
-          </label>
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-            <input type="checkbox" checked={allowVotes} onChange={(event) => setAllowVotes(event.target.checked)} />
-            Votes
-          </label>
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-            <input type="checkbox" checked={allowPackingChecks} onChange={(event) => setAllowPackingChecks(event.target.checked)} />
-            Packing checks
-          </label>
-        </div>
-        <Button type="submit" disabled={busy}>Create share link</Button>
-      </form>
+      <Modal isOpen={adding} onClose={() => setAdding(false)} title="Create Share Link">
+        {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
+        <form className="space-y-4" onSubmit={onCreate}>
+          <Field label="Label">
+            <input className={formInputClass} value={label} onChange={(event) => setLabel(event.target.value)} />
+          </Field>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+              <input type="checkbox" checked={allowComments} onChange={(event) => setAllowComments(event.target.checked)} />
+              Comments
+            </label>
+            <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+              <input type="checkbox" checked={allowVotes} onChange={(event) => setAllowVotes(event.target.checked)} />
+              Votes
+            </label>
+            <label className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+              <input type="checkbox" checked={allowPackingChecks} onChange={(event) => setAllowPackingChecks(event.target.checked)} />
+              Packing checks
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={busy}>Create link</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </form>
+      </Modal>
 
       <div className="mt-5 space-y-3">
         {links.length === 0 ? <EmptyState title="No share links" body="Create a family share link when you are ready to invite relatives." /> : null}
         {links.map((link) => (
-          <div key={link.id} className={`rounded-xl border-2 p-4 transition-all ${link.isEnabled ? "border-border bg-surface" : "border-border/50 bg-muted opacity-75"}`}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <div key={link.id} className={`relative overflow-hidden rounded-3xl border-2 transition-all shadow-sm ${link.isEnabled ? "border-border/50 bg-surface" : "border-border/20 bg-muted/50 opacity-75"}`}>
+            {link.isEnabled && <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20" />}
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 p-5">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-primary">{link.label}</p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="font-bold text-lg text-primary">{link.label}</p>
                   <Badge tone={link.isEnabled ? "brand" : "red"}>{link.isEnabled ? "Active" : "Revoked"}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted">
@@ -600,10 +635,12 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
                   <p className="mt-2 text-xs text-muted">Full token hidden. Revoke and recreate if you need a new URL.</p>
                 )}
               </div>
-              <Button variant="ghost" disabled={busy} onClick={() => void toggleLink(link, !link.isEnabled)}>
-                <Ban className="h-4 w-4" aria-hidden="true" />
-                {link.isEnabled ? "Revoke" : "Reactivate"}
-              </Button>
+              <div className="shrink-0 w-full sm:w-auto border-t sm:border-t-0 sm:border-l border-dashed border-border/50 pt-4 sm:pt-0 sm:pl-5 flex items-center">
+                <Button variant={link.isEnabled ? "ghost" : "secondary"} disabled={busy} onClick={() => void toggleLink(link, !link.isEnabled)} className={link.isEnabled ? "text-danger hover:text-danger hover:bg-danger/10" : ""}>
+                  <Ban className="h-4 w-4" aria-hidden="true" />
+                  {link.isEnabled ? "Revoke pass" : "Reactivate"}
+                </Button>
+              </div>
             </div>
           </div>
         ))}

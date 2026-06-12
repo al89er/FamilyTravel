@@ -1,6 +1,6 @@
 import { AlertTriangle, HeartPulse, Pencil, Phone, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal } from "../components/ui";
 import { deleteEmergencyContact, deletePlace, upsertEmergencyContact, upsertInsurance, upsertMedicalNote, upsertPlace } from "../lib/supabase";
 import type { AppData, EmergencyContact, EmergencyContactInput, InsuranceInput, MedicalNoteInput, Place, PlaceInput, Profile } from "../types";
 
@@ -15,16 +15,16 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
 
       {/* Emergency summary banner */}
       {data.trip.emergencySummary ? (
-        <div className="flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/8 p-4">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden="true" />
-          <p className="text-sm leading-relaxed text-danger font-medium">{data.trip.emergencySummary}</p>
+        <div className="flex items-start gap-3 rounded-3xl border border-danger/25 bg-danger/10 p-5 shadow-sm">
+          <AlertTriangle className="mt-0.5 h-6 w-6 shrink-0 text-danger drop-shadow-sm" aria-hidden="true" />
+          <p className="text-sm leading-relaxed text-danger font-bold">{data.trip.emergencySummary}</p>
         </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <InsuranceCard data={data} canEdit={canEdit} onRefresh={onRefresh} />
 
-        <Card className="p-4">
+        <Card className="p-6 border-0">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 dark:bg-rose-950">
               <HeartPulse className="h-4 w-4 text-rose-600 dark:text-rose-400" aria-hidden="true" />
@@ -39,7 +39,7 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
         </Card>
       </div>
 
-      <Card className="p-4">
+      <Card className="p-6 border-0">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950">
@@ -49,7 +49,7 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
           </div>
           {canEdit ? <Button onClick={() => setShowContactForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add contact</Button> : null}
         </div>
-        {canEdit && showContactForm ? <EmergencyContactForm tripId={data.trip.id} onCancel={() => setShowContactForm(false)} onSaved={async () => { setShowContactForm(false); await onRefresh?.(); }} /> : null}
+        {canEdit ? <EmergencyContactForm isOpen={showContactForm} tripId={data.trip.id} onCancel={() => setShowContactForm(false)} onSaved={async () => { setShowContactForm(false); await onRefresh?.(); }} /> : null}
         {data.emergencyContacts.length === 0 ? (
           <EmptyState
             icon={<Phone className="h-8 w-8" />}
@@ -65,7 +65,7 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
         </div>
       </Card>
 
-      <Card className="p-4">
+      <Card className="p-6 border-0">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950">
@@ -75,7 +75,7 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
           </div>
           {canEdit ? <Button onClick={() => setShowHospitalForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add hospital</Button> : null}
         </div>
-        {canEdit && showHospitalForm ? <HospitalForm tripId={data.trip.id} onCancel={() => setShowHospitalForm(false)} onSaved={async () => { setShowHospitalForm(false); await onRefresh?.(); }} /> : null}
+        {canEdit ? <HospitalForm isOpen={showHospitalForm} tripId={data.trip.id} onCancel={() => setShowHospitalForm(false)} onSaved={async () => { setShowHospitalForm(false); await onRefresh?.(); }} /> : null}
         {hospitals.length === 0 ? (
           <EmptyState
             icon={<HeartPulse className="h-8 w-8" />}
@@ -96,11 +96,10 @@ export function Emergency({ data, canEdit = false, onRefresh }: { data: AppData;
 
 function InsuranceCard({ data, canEdit, onRefresh }: { data: AppData; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
-  if (editing) {
-    return <InsuranceForm data={data} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
   return (
-    <Card className="p-4">
+    <>
+      <Card className="p-6 border-0 relative overflow-hidden bg-clay-surface">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950">
@@ -117,12 +116,14 @@ function InsuranceCard({ data, canEdit, onRefresh }: { data: AppData; canEdit: b
         {data.insurance.notes ? <div className="pt-2"><p className="text-xs text-muted">{data.insurance.notes}</p></div> : null}
       </dl>
     </Card>
+    {canEdit && <InsuranceForm isOpen={editing} data={data} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />}
+    </>
   );
 }
 
-function InsuranceForm({ data, onSaved, onCancel }: { data: AppData; onSaved: () => Promise<void>; onCancel: () => void }) {
+function InsuranceForm({ isOpen, data, onSaved, onCancel }: { isOpen: boolean; data: AppData; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<InsuranceInput>({ provider: data.insurance.provider, policyNumber: data.insurance.policyNumber, emergencyPhone: data.insurance.emergencyPhone, notes: data.insurance.notes });
-  return <SimpleForm onCancel={onCancel} onSave={async () => { await upsertInsurance(data.trip.id, form, data.insurance.id); await onSaved(); }}>
+  return <SimpleForm isOpen={isOpen} title="Travel Insurance" onCancel={onCancel} onSave={async () => { await upsertInsurance(data.trip.id, form, data.insurance.id); await onSaved(); }}>
     <Field label="Provider"><input className={formInputClass} value={form.provider} onChange={(e) => setForm({ ...form, provider: e.target.value })} /></Field>
     <Field label="Policy number"><input className={formInputClass} value={form.policyNumber} onChange={(e) => setForm({ ...form, policyNumber: e.target.value })} /></Field>
     <Field label="Emergency phone"><input className={formInputClass} value={form.emergencyPhone} onChange={(e) => setForm({ ...form, emergencyPhone: e.target.value })} /></Field>
@@ -132,13 +133,11 @@ function InsuranceForm({ data, onSaved, onCancel }: { data: AppData; onSaved: ()
 
 function MedicalNoteCard({ tripId, profile, role, canEdit, onRefresh }: { tripId: string; profile: Profile; role: string; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
-  if (editing) {
-    return <MedicalNoteForm tripId={tripId} profile={profile} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
   const initials = profile.displayName.slice(0, 2).toUpperCase();
   const hasMedicalInfo = profile.allergies || profile.medications || profile.medicalNotes;
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3">
+    <>
+    <div className="flex items-start gap-3 rounded-2xl border border-border/50 bg-surface p-4 shadow-sm">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
         {initials}
       </div>
@@ -157,12 +156,14 @@ function MedicalNoteCard({ tripId, profile, role, canEdit, onRefresh }: { tripId
         </p>
       </div>
     </div>
+    {canEdit && <MedicalNoteForm isOpen={editing} tripId={tripId} profile={profile} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />}
+    </>
   );
 }
 
-function MedicalNoteForm({ tripId, profile, onSaved, onCancel }: { tripId: string; profile: Profile; onSaved: () => Promise<void>; onCancel: () => void }) {
+function MedicalNoteForm({ isOpen, tripId, profile, onSaved, onCancel }: { isOpen: boolean; tripId: string; profile: Profile; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<MedicalNoteInput>({ profileId: profile.id, allergies: profile.allergies, medications: profile.medications, medicalNotes: profile.medicalNotes, visibleToOwner: true });
-  return <SimpleForm onCancel={onCancel} onSave={async () => { await upsertMedicalNote(tripId, form); await onSaved(); }}>
+  return <SimpleForm isOpen={isOpen} title={`Medical Notes for ${profile.displayName}`} onCancel={onCancel} onSave={async () => { await upsertMedicalNote(tripId, form); await onSaved(); }}>
     <Field label="Allergies"><input className={formInputClass} value={form.allergies ?? ""} onChange={(e) => setForm({ ...form, allergies: e.target.value })} /></Field>
     <Field label="Medications"><input className={formInputClass} value={form.medications ?? ""} onChange={(e) => setForm({ ...form, medications: e.target.value })} /></Field>
     <Field label="Medical notes"><textarea className={formTextareaClass} value={form.medicalNotes ?? ""} onChange={(e) => setForm({ ...form, medicalNotes: e.target.value })} /></Field>
@@ -173,9 +174,9 @@ function MedicalNoteForm({ tripId, profile, onSaved, onCancel }: { tripId: strin
 function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId: string; contact: EmergencyContact; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (editing) return <EmergencyContactForm tripId={tripId} contact={contact} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <>
+    <div className="rounded-3xl border border-border/50 bg-surface p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950">
           <Phone className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
@@ -190,12 +191,14 @@ function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId:
         </div>
       </div>
     </div>
+    {canEdit && <EmergencyContactForm isOpen={editing} tripId={tripId} contact={contact} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />}
+    </>
   );
 }
 
-function EmergencyContactForm({ tripId, contact, onSaved, onCancel }: { tripId: string; contact?: EmergencyContact; onSaved: () => Promise<void>; onCancel: () => void }) {
+function EmergencyContactForm({ isOpen, tripId, contact, onSaved, onCancel }: { isOpen: boolean; tripId: string; contact?: EmergencyContact; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<EmergencyContactInput>({ name: contact?.name ?? "", relationship: contact?.relationship ?? "", phone: contact?.phone ?? "", notes: contact?.notes });
-  return <SimpleForm onCancel={onCancel} onSave={async () => { await upsertEmergencyContact(tripId, form, contact?.id); await onSaved(); }}>
+  return <SimpleForm isOpen={isOpen} title={contact ? "Edit Contact" : "Add Contact"} onCancel={onCancel} onSave={async () => { await upsertEmergencyContact(tripId, form, contact?.id); await onSaved(); }}>
     <Field label="Name"><input className={formInputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
     <Field label="Relationship"><input className={formInputClass} value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })} /></Field>
     <Field label="Phone"><input className={formInputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
@@ -206,9 +209,10 @@ function EmergencyContactForm({ tripId, contact, onSaved, onCancel }: { tripId: 
 function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEdit: boolean; onRefresh?: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (editing) return <HospitalForm tripId={hospital.tripId} hospital={hospital} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
   return (
-    <Card className="p-4 border-l-4 border-l-danger">
+    <>
+    <Card className="relative overflow-hidden p-6 border-0 bg-clay-surface hover:shadow-lg transition-shadow">
+      <div className="absolute left-0 top-0 bottom-0 w-2 bg-danger/80" />
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950">
           <HeartPulse className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
@@ -227,12 +231,14 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
         </div>
       </div>
     </Card>
+    {canEdit && <HospitalForm isOpen={editing} tripId={hospital.tripId} hospital={hospital} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />}
+    </>
   );
 }
 
-function HospitalForm({ tripId, hospital, onSaved, onCancel }: { tripId: string; hospital?: Place; onSaved: () => Promise<void>; onCancel: () => void }) {
+function HospitalForm({ isOpen, tripId, hospital, onSaved, onCancel }: { isOpen: boolean; tripId: string; hospital?: Place; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<PlaceInput>({ name: hospital?.name ?? "", category: "hospital", address: hospital?.address ?? "", latitude: hospital?.latitude, longitude: hospital?.longitude, visibility: hospital?.visibility ?? "shared", notes: hospital?.notes });
-  return <SimpleForm onCancel={onCancel} onSave={async () => { await upsertPlace(tripId, form, hospital?.id); await onSaved(); }}>
+  return <SimpleForm isOpen={isOpen} title={hospital ? "Edit Hospital" : "Add Hospital"} onCancel={onCancel} onSave={async () => { await upsertPlace(tripId, form, hospital?.id); await onSaved(); }}>
     <Field label="Hospital name"><input className={formInputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
     <Field label="Address"><input className={formInputClass} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></Field>
     <Field label="Latitude"><input type="number" step="0.0000001" className={formInputClass} value={form.latitude ?? ""} onChange={(e) => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : undefined })} /></Field>
@@ -241,7 +247,7 @@ function HospitalForm({ tripId, hospital, onSaved, onCancel }: { tripId: string;
   </SimpleForm>;
 }
 
-function SimpleForm({ children, onSave, onCancel }: { children: ReactNode; onSave: () => Promise<void>; onCancel: () => void }) {
+function SimpleForm({ isOpen, title, children, onSave, onCancel }: { isOpen: boolean; title: string; children: ReactNode; onSave: () => Promise<void>; onCancel: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function submit(event: FormEvent) {
@@ -256,5 +262,5 @@ function SimpleForm({ children, onSave, onCancel }: { children: ReactNode; onSav
       setBusy(false);
     }
   }
-  return <Card className="p-4"><form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>{children}{error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}<div className="flex gap-2 md:col-span-2"><Button type="submit" disabled={busy}>Save</Button><Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button></div></form></Card>;
+  return <Modal isOpen={isOpen} onClose={onCancel} title={title}><form className="grid gap-3 md:grid-cols-2" onSubmit={submit}>{children}{error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}<div className="flex gap-2 md:col-span-2"><Button type="submit" disabled={busy}>Save</Button><Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button></div></form></Modal>;
 }

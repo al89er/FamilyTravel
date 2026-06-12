@@ -15,20 +15,16 @@ export function useTheme() {
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      root.classList.add(systemTheme);
-      
       const listener = (e: MediaQueryListEvent) => {
-        root.classList.remove("light", "dark");
-        root.classList.add(e.matches ? "dark" : "light");
+        // Frozen: ignore OS theme changes
       };
-      
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       mediaQuery.addEventListener("change", listener);
       return () => mediaQuery.removeEventListener("change", listener);
-    } else {
-      root.classList.add(theme);
     }
+    
+    // Forced Light Mode (Dark mode frozen during redesign)
+    root.classList.add("light");
   }, [theme]);
 
   return { theme, setTheme };

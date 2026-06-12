@@ -1,6 +1,6 @@
 import { CheckCircle2, Circle, Luggage, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, MouseEvent } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, SegmentedControl } from "../components/ui";
 import { deletePackingItem, setFamilyPackingCheck, togglePackingItemCheck, upsertPackingItem } from "../lib/supabase";
 import type { AppData, FamilySession, PackingInput, PackingItem } from "../types";
 
@@ -32,26 +32,27 @@ export function Packing({
 
       {/* Progress bar */}
       {total > 0 ? (
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-sm mb-2">
-            <span className="font-semibold text-primary">Your packing progress</span>
+        <Card className="relative overflow-hidden p-6 border-0">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+          <div className="flex items-center justify-between text-sm mb-3 mt-1">
+            <span className="font-bold text-primary tracking-wide">Packing progress</span>
             <span className="font-bold tabular-nums text-primary">{pct}%</span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
+          <div className="h-3 w-full rounded-full bg-muted overflow-hidden ring-1 ring-inset ring-border/50">
             <div
-              className={`h-2.5 rounded-full transition-all ${pct >= 100 ? "bg-success" : pct >= 60 ? "bg-primary" : "bg-warning"}`}
+              className={`h-full rounded-full transition-all duration-500 ease-out ${pct >= 100 ? "bg-success" : pct >= 60 ? "bg-emerald-500" : "bg-primary"}`}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-2 text-xs text-muted">{checkedCount} of {total} items checked</p>
+          <p className="mt-3 text-[11px] font-bold uppercase tracking-widest text-muted">{checkedCount} of {total} items packed</p>
         </Card>
       ) : null}
 
-      {canEdit && showForm ? <PackingForm data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
+      {canEdit ? <PackingForm isOpen={showForm} data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
 
       {data.packing.length === 0 ? (
         <EmptyState
-          icon={<Luggage className="h-8 w-8" />}
+          icon={<Luggage className="h-10 w-10 opacity-80 text-muted" />}
           title="No packing items"
           body="Create shared and personal packing lists with per-person checklist status."
           action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first item</Button> : null}
@@ -140,12 +141,10 @@ function PackingCard({
     }
   }
 
-  if (editing) {
-    return <PackingForm data={data} item={item} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
-
   return (
-    <Card className={`p-4 flex items-start gap-3 text-left transition-all ${checked ? "opacity-70" : ""}`}>
+    <>
+      <Card className={`relative overflow-hidden border-0 p-4 sm:p-5 flex items-start gap-4 text-left transition-all group hover:shadow-lg ${checked ? "opacity-80 bg-success/10 shadow-clay-pressed" : "bg-clay-surface"}`}>
+      {/* Check button */}
       <button
         type="button"
         disabled={!canToggle || busy}
@@ -154,9 +153,9 @@ function PackingCard({
         aria-label={checked ? "Uncheck packing item" : "Check packing item"}
       >
         {checked ? (
-          <CheckCircle2 className="h-5 w-5 text-success" aria-hidden="true" />
+          <CheckCircle2 className="h-6 w-6 text-success drop-shadow-sm" aria-hidden="true" />
         ) : (
-          <Circle className="h-5 w-5 text-muted" aria-hidden="true" />
+          <Circle className="h-6 w-6 text-muted hover:text-primary transition-colors" aria-hidden="true" />
         )}
       </button>
 
@@ -165,38 +164,43 @@ function PackingCard({
           onClick={canToggle && !busy ? () => void toggleCheck() : undefined}
           className={canToggle && !busy ? "cursor-pointer select-none" : ""}
         >
-          <h3 className={`font-semibold ${checked ? "line-through text-muted" : "text-primary"}`}>{item.name}</h3>
-          <p className="text-sm text-secondary mt-0.5">
-            {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.category}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Badge tone={item.isShared ? "brand" : "zinc"}>{item.isShared ? "Shared" : "Personal"}</Badge>
+          <h3 className={`font-bold text-lg leading-tight ${checked ? "line-through text-success/80" : "text-primary"}`}>{item.name}</h3>
+          
+          <div className="mt-3 flex flex-wrap gap-2 items-center">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${checked ? "bg-success/10 text-success ring-success/20" : "bg-muted text-secondary ring-border/60"}`}>
+              {item.quantity > 1 ? `${item.quantity}× ` : ""}{item.category}
+            </span>
+            <Badge tone={item.isShared ? "brand" : "zinc"} className="text-[10px] shadow-sm">{item.isShared ? "Shared" : "Personal"}</Badge>
             {assigned ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-secondary ring-1 ring-border/60">
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 ring-1 ring-slate-200/60 dark:bg-slate-900/40 dark:text-slate-300 dark:ring-slate-800">
                 {assigned}
               </span>
             ) : null}
-            {item.checkedBy.length > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-medium text-success ring-1 ring-success/20">
-                {item.checkedBy.length} checked
+            {item.checkedBy.length > 0 && item.isShared ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-success ring-1 ring-success/20">
+                {item.checkedBy.length} packed
               </span>
             ) : null}
           </div>
           {item.notes ? <p className="mt-2 text-sm text-secondary">{item.notes}</p> : null}
         </div>
         {canEdit ? (
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-3">
             <Button variant="ghost" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setEditing(true); }}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
             <Button variant="ghost" disabled={busy} onClick={(e: MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); void remove(); }}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
           </div>
         ) : null}
         {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
       </div>
-    </Card>
+      </Card>
+      {canEdit && (
+        <PackingForm isOpen={editing} data={data} item={item} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
+      )}
+    </>
   );
 }
 
-function PackingForm({ data, item, onSaved, onCancel }: { data: AppData; item?: PackingItem; onSaved: () => Promise<void>; onCancel: () => void }) {
+function PackingForm({ isOpen, data, item, onSaved, onCancel }: { isOpen: boolean; data: AppData; item?: PackingItem; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<PackingInput>({
     name: item?.name ?? "",
     category: item?.category ?? "General",
@@ -231,29 +235,30 @@ function PackingForm({ data, item, onSaved, onCancel }: { data: AppData; item?: 
   }
 
   return (
-    <Card className="p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
-          <Package className="h-4 w-4 text-primary" aria-hidden="true" />
-        </div>
-        <h3 className="font-semibold text-primary">{item ? "Edit item" : "Add packing item"}</h3>
-      </div>
+    <Modal isOpen={isOpen} onClose={onCancel} title={item ? "Edit item" : "Add packing item"}>
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
         <Field label="Name"><input className={formInputClass} value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="e.g. Sunscreen" /></Field>
         <Field label="Category"><input className={formInputClass} value={form.category} onChange={(event) => update("category", event.target.value)} placeholder="e.g. Toiletries" /></Field>
         <Field label="Quantity"><input type="number" min="1" className={formInputClass} value={form.quantity} onChange={(event) => update("quantity", Number(event.target.value))} /></Field>
         <Field label="Assigned to"><select className={formSelectClass} value={form.assignedTo ?? ""} onChange={(event) => update("assignedTo", event.target.value || undefined)}><option value="">Nobody</option>{data.members.map((member) => <option key={member.profileId} value={member.profileId}>{member.profile.displayName}</option>)}</select></Field>
-        <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-surface px-3 text-sm font-medium text-primary hover:bg-muted transition-colors">
-          <input type="checkbox" checked={form.isShared} onChange={(event) => update("isShared", event.target.checked)} />
-          Shared with family
-        </label>
-        <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
+        <div className="md:col-span-2">
+          <Field label="Item type">
+            <SegmentedControl
+              options={[{ value: "true", label: "Shared item" }, { value: "false", label: "Personal item" }]}
+              value={form.isShared ? "true" : "false"}
+              onChange={(v) => update("isShared", v === "true")}
+            />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field>
+        </div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
         <div className="flex gap-2 md:col-span-2">
           <Button type="submit" disabled={busy}>Save item</Button>
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
       </form>
-    </Card>
+    </Modal>
   );
 }

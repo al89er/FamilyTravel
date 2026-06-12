@@ -1,6 +1,6 @@
 import { DollarSign, Pencil, Plus, ReceiptText, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal } from "../components/ui";
 import { deleteExpense, upsertExpense } from "../lib/supabase";
 import type { AppData, Expense, ExpenseInput } from "../types";
 
@@ -38,27 +38,28 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Expense Tracker" eyebrow="Actual vs estimated" action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add expense</Button> : null} />
-      {canEdit && showForm ? <ExpenseForm data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
+      <SectionHeader title="Expense Tracker" eyebrow="Actual vs estimated" action={canEdit ? <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4" aria-hidden="true" />Add expense</Button> : null} />
+      {canEdit ? <ExpenseForm isOpen={showForm} data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
 
       {/* Summary strip */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="relative overflow-hidden p-5">
+        <Card className="relative overflow-hidden p-6 border-0">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
           <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-primary/10" />
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+          <div className="flex h-10 w-10 mt-1 items-center justify-center rounded-2xl bg-primary/10">
             <DollarSign className="h-5 w-5 text-primary" aria-hidden="true" />
           </div>
-          <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-muted">Total spent</p>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-widest text-muted">Total spent</p>
           <p className="mt-1 text-2xl font-bold text-primary tabular-nums">{data.trip.currency} {total.toLocaleString()}</p>
         </Card>
 
-        <Card className="p-5 sm:col-span-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted">By category</p>
+        <Card className="p-6 sm:col-span-2 border-0">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted">By category</p>
           <div className="mt-3 space-y-2.5">
             {Object.entries(byCategory).map(([category, amount]) => (
               <div key={category}>
                 <div className="flex items-center justify-between text-sm">
-                  <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${expenseCategoryClass(category)}`}>{category}</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${expenseCategoryClass(category)}`}>{category}</span>
                   <span className="font-semibold tabular-nums text-primary">{data.trip.currency} {amount.toLocaleString()}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -76,10 +77,10 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
 
       {/* Who owes whom */}
       {balance.length > 0 ? (
-        <Card className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10">
-              <TrendingUp className="h-4 w-4 text-primary" aria-hidden="true" />
+        <Card className="p-6 border-0">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
+              <TrendingUp className="h-5 w-5 text-primary" aria-hidden="true" />
             </div>
             <h3 className="font-semibold text-primary">Settlement</h3>
           </div>
@@ -89,7 +90,7 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
               return (
                 <div
                   key={line}
-                  className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium ${owes ? "bg-danger/8 text-danger ring-1 ring-danger/20" : "bg-success/8 text-success ring-1 ring-success/20"}`}
+                  className={`flex items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-semibold ${owes ? "bg-danger/8 text-danger ring-1 ring-danger/20" : "bg-success/8 text-success ring-1 ring-success/20"}`}
                 >
                   {owes
                     ? <TrendingDown className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -105,7 +106,7 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
 
       {data.expenses.length === 0 ? (
         <EmptyState
-          icon={<ReceiptText className="h-8 w-8" />}
+          icon={<ReceiptText className="h-10 w-10 opacity-80" />}
           title="No expenses yet"
           body="Add receipts, notes, split members, and categories as spending happens."
           action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first expense</Button> : null}
@@ -141,20 +142,17 @@ function ExpenseCard({ data, expense, canEdit, onRefresh }: { data: AppData; exp
     }
   }
 
-  if (editing) {
-    return <ExpenseForm data={data} expense={expense} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
-
   return (
-    <Card className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+    <>
+      <Card className="p-5 border-0 hover:shadow-lg transition-shadow bg-clay-surface">
+        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted ring-1 ring-border/50">
             <ReceiptText className="h-5 w-5 text-secondary" aria-hidden="true" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${expenseCategoryClass(expense.category)}`}>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${expenseCategoryClass(expense.category)}`}>
                 {expense.category}
               </span>
             </div>
@@ -177,12 +175,16 @@ function ExpenseCard({ data, expense, canEdit, onRefresh }: { data: AppData; exp
             <p className="mt-0.5 text-xs text-muted">÷ {expense.splitBetween.length} people</p>
           )}
         </div>
-      </div>
-    </Card>
+        </div>
+      </Card>
+      {canEdit && (
+        <ExpenseForm isOpen={editing} data={data} expense={expense} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
+      )}
+    </>
   );
 }
 
-function ExpenseForm({ data, expense, onSaved, onCancel }: { data: AppData; expense?: Expense; onSaved: () => Promise<void>; onCancel: () => void }) {
+function ExpenseForm({ isOpen, data, expense, onSaved, onCancel }: { isOpen: boolean; data: AppData; expense?: Expense; onSaved: () => Promise<void>; onCancel: () => void }) {
   const defaultMember = data.members[0]?.profileId ?? data.currentUser.id;
   const [form, setForm] = useState<ExpenseInput>({
     amount: expense?.amount ?? 0,
@@ -228,7 +230,7 @@ function ExpenseForm({ data, expense, onSaved, onCancel }: { data: AppData; expe
   }
 
   return (
-    <Card className="p-4">
+    <Modal isOpen={isOpen} onClose={onCancel} title={expense ? "Edit Expense" : "Add Expense"}>
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
         <Field label="Category"><input className={formInputClass} value={form.category} onChange={(event) => update("category", event.target.value)} placeholder="e.g. Food, Transport, Hotel" /></Field>
         <Field label="Amount"><input type="number" min="0" step="0.01" className={formInputClass} value={form.amount} onChange={(event) => update("amount", Number(event.target.value))} /></Field>
@@ -253,7 +255,7 @@ function ExpenseForm({ data, expense, onSaved, onCancel }: { data: AppData; expe
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
       </form>
-    </Card>
+    </Modal>
   );
 }
 

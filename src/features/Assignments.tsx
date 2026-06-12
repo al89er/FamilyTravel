@@ -29,7 +29,8 @@ import {
   SectionHeader,
   formInputClass,
   formSelectClass,
-  formTextareaClass
+  formTextareaClass,
+  Modal
 } from "../components/ui";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -300,13 +301,19 @@ function RoomRow({
   onDelete: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-4 py-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950">
-            <BedDouble className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+    <div className="relative overflow-hidden rounded-[32px] border-0 bg-clay-surface px-5 py-4 shadow-clay-card transition-shadow hover:shadow-lg group">
+      {/* Key card accent strip */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500" />
+      
+      <div className="flex items-start justify-between gap-2 mt-1">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800/50">
+            <BedDouble className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <span className="font-mono text-base font-bold text-primary">#{ra.roomNumber}</span>
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted block mb-0.5">Room</span>
+            <span className="font-mono text-xl font-bold text-primary leading-none">{ra.roomNumber}</span>
+          </div>
         </div>
         {canEdit ? (
           <div className="flex gap-1 shrink-0">
@@ -332,11 +339,11 @@ function RoomRow({
 
       {/* Guest chips */}
       {ra.guestIds.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5 pl-10">
+        <div className="mt-4 flex flex-wrap gap-2">
           {ra.guestIds.map((gid) => (
             <span
               key={gid}
-              className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:ring-indigo-800"
+              className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm ring-1 ring-indigo-200/50 dark:bg-indigo-900/20 dark:text-indigo-300 dark:ring-indigo-800/50"
             >
               {memberDisplayName(gid, data)}
             </span>
@@ -347,7 +354,9 @@ function RoomRow({
       )}
 
       {ra.notes ? (
-        <p className="mt-1.5 pl-10 text-xs text-muted">{ra.notes}</p>
+        <div className="mt-3 rounded-xl bg-muted/50 p-3">
+          <p className="text-xs text-secondary leading-relaxed">{ra.notes}</p>
+        </div>
       ) : null}
     </div>
   );
@@ -402,12 +411,33 @@ function RoomAssignmentsSection({
 
   const grouped = groupRoomAssignments(data.roomAssignments);
 
+  const editingRoom = editingId ? data.roomAssignments.find(r => r.id === editingId) : null;
+  const showModal = adding || !!editingRoom;
+
   return (
     <div className="space-y-4">
+      <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingRoom ? "Edit room" : "Add room"}>
+        <RoomForm
+          key={editingId ?? "new"}
+          data={data}
+          initial={editingRoom ? {
+            hotelName: editingRoom.hotelName,
+            checkInDate: editingRoom.checkInDate ?? "",
+            checkOutDate: editingRoom.checkOutDate ?? "",
+            roomNumber: editingRoom.roomNumber,
+            guestIds: editingRoom.guestIds,
+            notes: editingRoom.notes ?? ""
+          } : emptyRoom()}
+          onSave={(input) => handleSave(input, editingId ?? undefined)}
+          onCancel={() => { setAdding(false); setEditingId(null); }}
+          saving={saving}
+        />
+      </Modal>
+
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-primary">Room Assignments</h3>
-          <p className="text-xs text-muted mt-0.5">Who is staying in which room</p>
+          <h3 className="font-semibold text-primary">Room keys</h3>
+          <p className="text-xs text-muted mt-0.5">Who sleeps where</p>
         </div>
         {canEdit ? (
           <Button onClick={() => { setAdding(true); setEditingId(null); }}>
@@ -418,24 +448,11 @@ function RoomAssignmentsSection({
 
       {error ? <ErrorState message={error} /> : null}
 
-      {adding ? (
-        <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-4">
-          <p className="text-sm font-semibold text-primary">New room assignment</p>
-          <RoomForm
-            data={data}
-            initial={emptyRoom()}
-            onSave={(input) => handleSave(input)}
-            onCancel={() => setAdding(false)}
-            saving={saving}
-          />
-        </div>
-      ) : null}
-
       {grouped.length === 0 && !adding ? (
         <EmptyState
           title="No room assignments yet"
-          body="Add room assignments to let everyone know where they're sleeping."
-          icon={<BedDouble className="h-10 w-10" />}
+          body="Add room assignments once rooms are confirmed."
+          icon={<BedDouble className="h-10 w-10 opacity-80" />}
           action={
             canEdit ? (
               <Button onClick={() => setAdding(true)}>
@@ -471,36 +488,17 @@ function RoomAssignmentsSection({
 
               {/* Level 3: Rooms */}
               {dr.rooms.map((room) => (
-                <div key={room.roomNumber} className="space-y-2">
-                  {room.assignments.map((ra) =>
-                    editingId === ra.id ? (
-                      <div key={ra.id} className="rounded-2xl border border-border bg-muted/30 p-4">
-                        <RoomForm
-                          data={data}
-                          initial={{
-                            hotelName: ra.hotelName,
-                            checkInDate: ra.checkInDate ?? "",
-                            checkOutDate: ra.checkOutDate ?? "",
-                            roomNumber: ra.roomNumber,
-                            guestIds: ra.guestIds,
-                            notes: ra.notes ?? ""
-                          }}
-                          onSave={(input) => handleSave(input, ra.id)}
-                          onCancel={() => setEditingId(null)}
-                          saving={saving}
-                        />
-                      </div>
-                    ) : (
-                      <RoomRow
-                        key={ra.id}
-                        ra={ra}
-                        data={data}
-                        canEdit={canEdit}
-                        onEdit={() => { setEditingId(ra.id); setAdding(false); }}
-                        onDelete={() => void handleDelete(ra.id)}
-                      />
-                    )
-                  )}
+                <div key={room.roomNumber} className="space-y-3 mt-1">
+                  {room.assignments.map((ra) => (
+                    <RoomRow
+                      key={ra.id}
+                      ra={ra}
+                      data={data}
+                      canEdit={canEdit}
+                      onEdit={() => { setEditingId(ra.id); setAdding(false); }}
+                      onDelete={() => void handleDelete(ra.id)}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -647,20 +645,33 @@ function SeatCard({
   onDelete: () => void;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-surface p-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-950">
-        <PlaneTakeoff className="h-5 w-5 text-sky-600 dark:text-sky-400" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-semibold text-primary">{seat.guestName}</p>
-            <p className="text-sm text-secondary">
-              Seat <span className="font-mono font-bold text-primary">{seat.seatNumber}</span>
-            </p>
+    <div className="relative flex flex-col overflow-hidden rounded-[32px] border-0 bg-clay-surface shadow-clay-card transition-shadow hover:shadow-lg group">
+      {/* Boarding pass accent strip */}
+      <div className="w-2 shrink-0 bg-gradient-to-b from-sky-400 to-indigo-500" />
+      
+      <div className="flex flex-1 flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-4">
+        {/* Left side: Icon & Passenger */}
+        <div className="flex items-center gap-3 min-w-[140px]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/30 ring-1 ring-sky-200 dark:ring-sky-800/50">
+            <PlaneTakeoff className="h-5 w-5 text-sky-600 dark:text-sky-400" />
           </div>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Passenger</p>
+            <p className="font-bold text-primary leading-tight">{seat.guestName}</p>
+          </div>
+        </div>
+
+        {/* Right side: Seat number & Actions */}
+        <div className="flex flex-1 w-full items-center justify-between border-t border-dashed border-border/50 sm:border-t-0 sm:border-l-2 sm:pl-5 pt-3 sm:pt-0 gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-0.5">Seat No</p>
+            <span className="inline-flex items-center justify-center rounded-lg bg-clay-recessed border border-border/50 shadow-sm px-3 py-1 font-mono text-xl font-bold text-clay-primary">
+              {seat.seatNumber}
+            </span>
+          </div>
+
           {canEdit ? (
-            <div className="flex gap-1 shrink-0">
+            <div className="flex gap-1 shrink-0 bg-recessed shadow-clay-pressed p-1 rounded-xl">
               <button
                 type="button"
                 onClick={onEdit}
@@ -680,10 +691,14 @@ function SeatCard({
             </div>
           ) : null}
         </div>
-        {seat.notes ? (
-          <p className="mt-1.5 text-xs text-muted">{seat.notes}</p>
-        ) : null}
       </div>
+      
+      {/* Notes placed as a perforated tear-off area on the bottom if exists */}
+      {seat.notes ? (
+        <div className="w-full bg-muted/30 border-t border-dashed border-border/50 px-5 py-3">
+          <p className="text-xs font-medium text-secondary">{seat.notes}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -743,12 +758,32 @@ function FlightSeatsSection({
     return acc;
   }, {});
 
+  const editingSeat = editingId ? data.flightSeatAssignments.find(s => s.id === editingId) : null;
+  const showModal = adding || !!editingSeat;
+
   return (
     <div className="space-y-4">
+      <Modal isOpen={showModal} onClose={() => { setAdding(false); setEditingId(null); }} title={editingSeat ? "Edit seat" : "Add seat"}>
+        <SeatForm
+          key={editingId ?? "new"}
+          data={data}
+          initial={editingSeat ? {
+            flightLabel: editingSeat.flightLabel,
+            guestId: editingSeat.guestId,
+            guestName: editingSeat.guestName,
+            seatNumber: editingSeat.seatNumber,
+            notes: editingSeat.notes ?? ""
+          } : emptySeat()}
+          onSave={(input) => handleSave(input, editingId ?? undefined)}
+          onCancel={() => { setAdding(false); setEditingId(null); }}
+          saving={saving}
+        />
+      </Modal>
+
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-primary">Seat Assignments</h3>
-          <p className="text-xs text-muted mt-0.5">Who sits where on each flight</p>
+          <h3 className="font-semibold text-primary">Flight seats</h3>
+          <p className="text-xs text-muted mt-0.5">Seat numbers for everyone</p>
         </div>
         {canEdit ? (
           <Button onClick={() => { setAdding(true); setEditingId(null); }}>
@@ -759,24 +794,11 @@ function FlightSeatsSection({
 
       {error ? <ErrorState message={error} /> : null}
 
-      {adding ? (
-        <div className="rounded-2xl border border-border bg-muted/30 p-4 space-y-4">
-          <p className="text-sm font-semibold text-primary">New seat assignment</p>
-          <SeatForm
-            data={data}
-            initial={emptySeat()}
-            onSave={(input) => handleSave(input)}
-            onCancel={() => setAdding(false)}
-            saving={saving}
-          />
-        </div>
-      ) : null}
-
       {Object.keys(byFlight).length === 0 && !adding ? (
         <EmptyState
           title="No seat assignments yet"
-          body="Add seat numbers to help everyone find their seats at the airport."
-          icon={<PlaneTakeoff className="h-10 w-10" />}
+          body="Add flight seats after check-in opens."
+          icon={<PlaneTakeoff className="h-10 w-10 opacity-80" />}
           action={
             canEdit ? (
               <Button onClick={() => setAdding(true)}>
@@ -805,33 +827,15 @@ function FlightSeatsSection({
                 ) : null}
               </div>
             </div>
-            {seats.map((seat) =>
-              editingId === seat.id ? (
-                <div key={seat.id} className="rounded-2xl border border-border bg-muted/30 p-4">
-                  <SeatForm
-                    data={data}
-                    initial={{
-                      flightLabel: seat.flightLabel,
-                      guestId: seat.guestId,
-                      guestName: seat.guestName,
-                      seatNumber: seat.seatNumber,
-                      notes: seat.notes ?? ""
-                    }}
-                    onSave={(input) => handleSave(input, seat.id)}
-                    onCancel={() => setEditingId(null)}
-                    saving={saving}
-                  />
-                </div>
-              ) : (
-                <SeatCard
-                  key={seat.id}
-                  seat={seat}
-                  canEdit={canEdit}
-                  onEdit={() => { setEditingId(seat.id); setAdding(false); }}
-                  onDelete={() => void handleDelete(seat.id)}
-                />
-              )
-            )}
+            {seats.map((seat) => (
+              <SeatCard
+                key={seat.id}
+                seat={seat}
+                canEdit={canEdit}
+                onEdit={() => { setEditingId(seat.id); setAdding(false); }}
+                onDelete={() => void handleDelete(seat.id)}
+              />
+            ))}
           </div>
         );
       })}

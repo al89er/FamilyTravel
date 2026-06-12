@@ -27,7 +27,7 @@ export default defineConfig({
         description:
           "Plan family trips, itineraries, rooms, seats, documents, expenses, and emergency details.",
         theme_color: "#0f766e",
-        background_color: "#f3f6fb",
+        background_color: "#fdfbf7",
         display: "standalone",
         start_url: base,
         scope: base,
@@ -72,5 +72,14 @@ export default defineConfig({
         ]
       }
     })
-  ]
+  ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "lucide-react"]
+        }
+      }
+    }
+  }
 });

@@ -111,7 +111,7 @@ export function AccessStatusCard({
   const detail = accessMode === "family" ? familySession?.displayName : data.currentUser.displayName;
 
   return (
-    <Card className="p-4">
+    <Card className="p-6 border-0 bg-clay-surface">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ function AdminAccessCard({
   }
 
   return (
-    <Card className="p-4">
+    <Card className="p-6 border-0 bg-clay-surface">
       <h2 className="text-lg font-semibold text-primary">Owner / Organizer sign in</h2>
       <p className="mt-1 text-sm text-secondary">Use the username and password managed in Supabase Auth.</p>
       {!hasSupabaseConfig ? (
@@ -301,7 +301,7 @@ function FamilyAccessCard({
   }
 
   return (
-    <Card className="p-4">
+    <Card className="p-6 border-0 bg-clay-surface">
       <h2 className="text-lg font-semibold text-primary">Family trip access</h2>
       <p className="mt-1 text-sm text-secondary">No account needed. Use your name and the family share token.</p>
       <form className="mt-4 space-y-3" onSubmit={onFamilySubmit}>
@@ -336,7 +336,7 @@ function FamilyAccessCard({
 
 function TripSelector({ trips, onSelectTrip }: { trips: TripSummary[]; onSelectTrip: (tripId: string) => Promise<void> }) {
   return (
-    <Card className="p-4">
+    <Card className="p-6 border-0 bg-clay-surface">
       <h2 className="text-lg font-semibold text-primary">My Trips</h2>
       <p className="mt-1 text-sm text-secondary">Choose which trip to open.</p>
       <div className="mt-4 space-y-2">
@@ -348,7 +348,7 @@ function TripSelector({ trips, onSelectTrip }: { trips: TripSummary[]; onSelectT
               key={trip.id}
               type="button"
               onClick={() => void onSelectTrip(trip.id)}
-              className="flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 text-left hover:border-primary/20 hover:bg-primary/5 transition-colors"
+              className="flex min-h-16 w-full flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-4 text-left hover:border-primary/20 hover:bg-primary/5 transition-all shadow-sm"
             >
               <span>
                 <span className="block font-medium text-primary">{trip.title}</span>
@@ -426,7 +426,7 @@ function CreateTripCard({
   }
 
   return (
-    <Card className="p-4">
+    <Card className="p-6 border-0 bg-clay-surface">
       <div className="flex items-center gap-2">
         <CalendarPlus className="h-5 w-5 text-primary" aria-hidden="true" />
         <h2 className="text-lg font-semibold text-primary">Create a new trip</h2>

@@ -1,6 +1,6 @@
 import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { deleteDocument, upsertDocument } from "../lib/supabase";
 import type { AppData, DocumentCategory, DocumentInput, TravelDocument } from "../types";
 
@@ -40,10 +40,10 @@ export function Documents({ data, canEdit = false, onRefresh }: { data: AppData;
           </Button>
         ) : null}
       />
-      {canEdit && showForm ? <DocumentForm data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
+      {canEdit ? <DocumentForm isOpen={showForm} data={data} onCancel={() => setShowForm(false)} onSaved={async () => { setShowForm(false); await onRefresh?.(); }} /> : null}
 
       {/* Security notice */}
-      <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/8 p-4">
+      <div className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning/8 p-4">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
         <p className="text-sm leading-relaxed text-warning">
           Sensitive documents should be protected. Store only what the family needs, mark private files carefully, and keep RLS policies enabled.
@@ -52,10 +52,10 @@ export function Documents({ data, canEdit = false, onRefresh }: { data: AppData;
 
       {data.documents.length === 0 ? (
         <EmptyState
-          icon={<FileText className="h-8 w-8" />}
+          icon={<FileText className="h-8 w-8 opacity-80" />}
           title="No documents uploaded"
           body="Upload PDFs or images for tickets, bookings, passports, insurance, and attraction passes."
-          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add your first document</Button> : null}
+          action={canEdit ? <Button variant="secondary" onClick={() => setShowForm(true)}>Add to travel wallet</Button> : null}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
@@ -87,37 +87,39 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
     }
   }
 
-  if (editing) {
-    return <DocumentForm data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
-
-  const iconStyle = DOC_CATEGORY_STYLE[document.category] ?? DOC_CATEGORY_STYLE.other;
+  const styleClass = DOC_CATEGORY_STYLE[document.category] ?? DOC_CATEGORY_STYLE.other;
 
   return (
-    <Card className="p-4">
-      <div className="flex items-start gap-3">
+    <>
+      <Card className="relative p-5 overflow-hidden border-0 bg-clay-surface group hover:shadow-lg transition-shadow">
+      {/* Document wallet subtle top border */}
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600" />
+      
+      <div className="flex flex-col sm:flex-row items-start gap-4">
         {/* Category icon */}
-        <div className={`shrink-0 flex h-10 w-10 items-center justify-center rounded-xl ${iconStyle}`}>
+        <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl ring-1 ring-border/20 shadow-sm ${styleClass}`}>
           {document.isPrivate
-            ? <FileLock2 className="h-5 w-5" aria-hidden="true" />
+            ? <FileLock2 className="h-6 w-6" aria-hidden="true" />
             : <DocumentCategoryIcon category={document.category} />
           }
         </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="break-words font-semibold text-primary">{document.fileName}</h3>
-          <p className="mt-0.5 text-xs text-muted">{document.fileType}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${iconStyle} ring-current/20`}>
+        <div className="min-w-0 flex-1 w-full">
+          <h3 className="break-words font-bold text-lg text-primary leading-tight">{document.fileName}</h3>
+          <p className="mt-0.5 text-xs font-mono text-muted truncate">{document.fileType}</p>
+          
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm ring-1 ${styleClass} ring-current/20`}>
               {document.category.replace(/_/g, " ")}
             </span>
             {document.isPrivate ? (
-              <Badge tone="red">Private</Badge>
+              <Badge tone="red" className="shadow-sm">Private</Badge>
             ) : (
-              <Badge tone="slate">Shared</Badge>
+              <Badge tone="slate" className="shadow-sm">Shared</Badge>
             )}
           </div>
+
           {canEdit ? (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border/50 pt-4">
               <Button variant="ghost" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-4 w-4" aria-hidden="true" />Edit</Button>
               <Button variant="ghost" disabled={busy} onClick={() => void remove()}><Trash2 className="h-4 w-4" aria-hidden="true" />Delete</Button>
             </div>
@@ -125,11 +127,15 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
           {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
         </div>
       </div>
-    </Card>
+      </Card>
+      {canEdit && (
+        <DocumentForm isOpen={editing} data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
+      )}
+    </>
   );
 }
 
-function DocumentForm({ data, document, onSaved, onCancel }: { data: AppData; document?: TravelDocument; onSaved: () => Promise<void>; onCancel: () => void }) {
+function DocumentForm({ isOpen, data, document, onSaved, onCancel }: { isOpen: boolean; data: AppData; document?: TravelDocument; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<DocumentInput>({
     fileName: document?.fileName ?? "",
     fileType: document?.fileType ?? "application/pdf",
@@ -164,15 +170,19 @@ function DocumentForm({ data, document, onSaved, onCancel }: { data: AppData; do
   }
 
   return (
-    <Card className="p-4">
+    <Modal isOpen={isOpen} onClose={onCancel} title={document ? "Edit Document" : "Upload Document"}>
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
         <Field label="File name"><input className={formInputClass} value={form.fileName} onChange={(event) => update("fileName", event.target.value)} /></Field>
         <Field label="File type"><input className={formInputClass} value={form.fileType} onChange={(event) => update("fileType", event.target.value)} /></Field>
-        <Field label="Category">
-          <select className={formSelectClass} value={form.category} onChange={(event) => update("category", event.target.value as DocumentCategory)}>
-            {documentCategories.map((category) => <option key={category} value={category}>{category.replace(/_/g, " ")}</option>)}
-          </select>
-        </Field>
+        <div className="md:col-span-2">
+          <Field label="Category">
+            <OptionChips
+              options={documentCategories.map((category) => ({ value: category, label: category.replace(/_/g, " ") }))}
+              value={form.category}
+              onChange={(v) => update("category", v)}
+            />
+          </Field>
+        </div>
         <Field label="Linked itinerary item">
           <select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}>
             <option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
@@ -191,6 +201,6 @@ function DocumentForm({ data, document, onSaved, onCancel }: { data: AppData; do
           <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
         </div>
       </form>
-    </Card>
+    </Modal>
   );
 }

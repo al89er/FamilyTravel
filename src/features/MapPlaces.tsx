@@ -2,7 +2,7 @@ import L from "leaflet";
 import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, Cross, HeartPulse } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl } from "../components/ui";
 import { deletePlace, upsertPlace } from "../lib/supabase";
 import type { AppData, ItineraryItem, Place, PlaceCategory, PlaceInput, Visibility } from "../types";
 
@@ -81,19 +81,18 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
-        action={canEdit ? <Button onClick={() => setShowForm((value) => !value)}><Plus className="h-4 w-4" aria-hidden="true" />Add place</Button> : null}
+        action={canEdit ? <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4" aria-hidden="true" />Add place</Button> : null}
       />
-      {canEdit && showForm ? (
-        <div className="animate-in fade-in slide-in-from-top-4 mb-8">
-          <PlaceForm
-            data={data}
-            onCancel={() => setShowForm(false)}
-            onSaved={async () => {
-              setShowForm(false);
-              await onRefresh?.();
-            }}
-          />
-        </div>
+      {canEdit ? (
+        <PlaceForm
+          isOpen={showForm}
+          data={data}
+          onCancel={() => setShowForm(false)}
+          onSaved={async () => {
+            setShowForm(false);
+            await onRefresh?.();
+          }}
+        />
       ) : null}
 
       <div className="flex flex-col gap-4 mb-4">
@@ -120,7 +119,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
         </div>
       </div>
 
-      <Card className="overflow-hidden rounded-3xl shadow-soft border border-border/50 bg-surface">
+      <Card className="overflow-hidden p-0 relative border-0">
         <div className="h-[360px] min-h-[320px] w-full sm:h-[440px] relative">
           <LeafletTripMap places={markerPlaces} routePlaces={routePlaces} dateFormat={data.trip.dateFormat} />
         </div>
@@ -249,9 +248,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
     }
   }
 
-  if (editing) {
-    return <PlaceForm data={data} place={place} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />;
-  }
+
 
   const isHospital = place.category === "hospital";
   const isPharmacy = place.category === "pharmacy";
@@ -275,52 +272,66 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
   else if (isMeeting) { icon = <Users className="h-8 w-8" />; colorClass = "bg-primary/10 text-primary"; badgeTone = "slate"; bubbleClass = "bg-primary"; }
 
   return (
-    <Card className="relative overflow-hidden shadow-sm border border-border/50 rounded-3xl p-4 sm:p-5 group hover:shadow-md transition-all bg-surface">
-      <div className="flex gap-4 sm:gap-5">
-        <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[1.25rem] transition-colors ring-1 ring-border/20 shadow-sm ${colorClass}`}>
-          {icon}
-          
-          <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
-            {listIndex}
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h3 className="font-bold text-lg text-primary truncate">{place.name}</h3>
-            <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
-            {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
-          </div>
-          <p className="mt-1 text-sm font-medium text-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
-          {itineraryItem ? <p className="mt-1.5 text-xs font-bold text-muted uppercase tracking-wider">{formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}</p> : null}
-          {place.latitude != null && place.longitude != null ? (
-            null // don't show raw coords unless needed, clean UI
-          ) : (
-            <div className="mt-2.5 flex items-center gap-1.5 rounded-xl bg-warning/10 px-3 py-2 ring-1 ring-warning/20">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
-              <p className="text-[11px] font-bold uppercase tracking-wider text-warning">No coordinates — list only</p>
+    <>
+      <Card className="relative overflow-hidden group hover:shadow-lg transition-all border-0 bg-clay-surface">
+        <div className="flex gap-4 sm:gap-5">
+          <div className={`relative shrink-0 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[1.25rem] transition-colors ring-1 ring-border/20 shadow-sm ${colorClass}`}>
+            {icon}
+            
+            <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-surface`}>
+              {listIndex}
             </div>
-          )}
-          {place.notes ? <p className="mt-3 text-sm text-secondary bg-muted/40 p-3 rounded-xl border border-border/40">{place.notes}</p> : null}
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-3">
-            <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
-              <ExternalLink className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Maps
-            </Button>
-            {canEdit ? (
-              <>
-                <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-secondary hover:bg-muted" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
-                <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger hover:bg-danger/10" disabled={busy} onClick={() => void remove()}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
-              </>
-            ) : null}
           </div>
-          {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h3 className="font-bold text-lg text-primary truncate">{place.name}</h3>
+              <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
+              {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
+            </div>
+            <p className="mt-1 text-sm font-medium text-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
+            {itineraryItem ? <p className="mt-1.5 text-xs font-bold text-muted uppercase tracking-wider">{formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}</p> : null}
+            {place.latitude != null && place.longitude != null ? (
+              null // don't show raw coords unless needed, clean UI
+            ) : (
+              <div className="mt-2.5 flex items-center gap-1.5 rounded-xl bg-warning/10 px-3 py-2 ring-1 ring-warning/20">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-warning">No coordinates — list only</p>
+              </div>
+            )}
+            {place.notes ? <p className="mt-3 text-sm text-secondary bg-muted/40 p-3 rounded-xl border border-border/40">{place.notes}</p> : null}
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border/40 pt-3">
+              <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
+                <ExternalLink className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Maps
+              </Button>
+              {canEdit ? (
+                <>
+                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-secondary hover:bg-muted" disabled={busy} onClick={() => setEditing(true)}><Pencil className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Edit</Button>
+                  <Button variant="ghost" className="h-8 text-[11px] font-bold uppercase tracking-wider text-danger hover:bg-danger/10" disabled={busy} onClick={() => void remove()}><Trash2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />Delete</Button>
+                </>
+              ) : null}
+            </div>
+            {error ? <p className="mt-2 text-sm text-danger">{error}</p> : null}
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+      {canEdit && (
+        <PlaceForm
+          isOpen={editing}
+          data={data}
+          place={place}
+          onCancel={() => setEditing(false)}
+          onSaved={async () => {
+            setEditing(false);
+            await onRefresh?.();
+          }}
+        />
+      )}
+    </>
   );
 }
 
-function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: Place; onSaved: () => Promise<void>; onCancel: () => void }) {
+function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean; data: AppData; place?: Place; onSaved: () => Promise<void>; onCancel: () => void }) {
   const [form, setForm] = useState<PlaceInput>({
     name: place?.name ?? "",
     category: place?.category ?? "custom",
@@ -429,8 +440,7 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
   }
 
   return (
-    <Card className="p-4 sm:p-6 rounded-3xl shadow-soft border-border/50 bg-surface">
-      <h3 className="font-bold text-lg text-primary mb-4">{place ? "Edit Destination" : "Add a Place"}</h3>
+    <Modal isOpen={isOpen} onClose={onCancel} title={place ? "Edit Destination" : "Add a Place"}>
       <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
         <div className="space-y-2 md:col-span-2">
           <Field label="Search place">
@@ -461,9 +471,32 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
           ) : null}
         </div>
         <Field label="Name *"><input className={formInputClass} value={form.name} onChange={(event) => update("name", event.target.value)} required /></Field>
-        <Field label="Category"><select className={formSelectClass} value={form.category} onChange={(event) => update("category", event.target.value as PlaceCategory)}>{placeCategories.map((category) => <option key={category} value={category}>{formatCategory(category)}</option>)}</select></Field>
-        <Field label="Visibility"><select className={formSelectClass} value={form.visibility} onChange={(event) => update("visibility", event.target.value as Visibility)}>{visibilityOptions.map((visibility) => <option key={visibility} value={visibility}>{visibility.replace("_", " ")}</option>)}</select></Field>
-        <Field label="Linked itinerary item"><select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}><option value="">None</option>{data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.date} - {item.title}</option>)}</select></Field>
+        <div className="md:col-span-2">
+          <Field label="Category">
+            <OptionChips
+              options={placeCategories.map(c => ({ value: c, label: formatCategory(c) }))}
+              value={form.category}
+              onChange={(v) => update("category", v)}
+            />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Visibility">
+            <SegmentedControl
+              options={visibilityOptions.map(v => ({ value: v, label: v.replace("_", " ") }))}
+              value={form.visibility}
+              onChange={(v) => update("visibility", v)}
+            />
+          </Field>
+        </div>
+        <div className="md:col-span-2">
+          <Field label="Linked itinerary item">
+            <select className={formSelectClass} value={form.itineraryItemId ?? ""} onChange={(event) => update("itineraryItemId", event.target.value || undefined)}>
+              <option value="">None</option>
+              {data.itinerary.map((item) => <option key={item.id} value={item.id}>{item.date} - {item.title}</option>)}
+            </select>
+          </Field>
+        </div>
         <div className="md:col-span-2"><Field label="Address"><input className={formInputClass} value={form.address} onChange={(event) => update("address", event.target.value)} /></Field></div>
         <div className="grid grid-cols-2 gap-4 md:col-span-2">
           <Field label="Latitude"><input type="number" min="-90" max="90" step="0.0000001" className={formInputClass} value={form.latitude ?? ""} onChange={(event) => update("latitude", event.target.value ? Number(event.target.value) : undefined)} /></Field>
@@ -476,7 +509,7 @@ function PlaceForm({ data, place, onSaved, onCancel }: { data: AppData; place?: 
           <Button type="submit" disabled={busy}>Save destination</Button>
         </div>
       </form>
-    </Card>
+    </Modal>
   );
 }
 
