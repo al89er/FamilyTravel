@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, HeartPulse, MoreVertical } from "lucide-react";
+import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, HeartPulse, MoreVertical, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl } from "../components/ui";
@@ -250,6 +250,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
 
   const ActionMenu = () => {
     if (!canEdit) return null;
@@ -356,7 +357,26 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
               <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
               {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
             </div>
-            <p className="mt-1 text-sm font-medium text-clay-secondary line-clamp-2 leading-relaxed">{place.address || "No address saved"}</p>
+            {place.address ? (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setShowAddress(!showAddress); }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-secondary hover:text-clay-primary transition-all active:scale-95 focus:outline-none bg-clay-recessed shadow-clay-pressed py-1.5 px-3 rounded-[12px]"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{showAddress ? "Hide Address" : "Show Address"}</span>
+                  {showAddress ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </button>
+                {showAddress && (
+                  <p className="mt-2 text-sm font-medium text-clay-secondary leading-relaxed bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px] transition-all break-words">
+                    {place.address}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-xs font-bold text-clay-secondary/60 uppercase tracking-wider italic">No address saved</p>
+            )}
             {itineraryItem ? (
               <p className="mt-1.5 text-xs font-bold text-primary uppercase tracking-wider">
                 {formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}
