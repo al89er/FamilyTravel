@@ -158,13 +158,15 @@ export function SectionHeader({
   title,
   action,
   eyebrow,
+  className,
 }: {
   title: string;
   action?: ReactNode;
   eyebrow?: string;
+  className?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className={`flex items-center justify-between gap-4 ${className ?? ""}`}>
       <div>
         {eyebrow ? (
           <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary opacity-80">

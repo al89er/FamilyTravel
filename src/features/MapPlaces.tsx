@@ -92,6 +92,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
       <SectionHeader
         title="Explore"
         eyebrow="Interactive map and destination guide"
+        className="relative z-50"
         action={
           <div className="flex flex-row flex-wrap justify-end items-start gap-2 relative z-50">
             {/* Day filter chips */}
