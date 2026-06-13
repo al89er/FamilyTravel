@@ -1,5 +1,5 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2, CheckCircle2, Circle, Download, Share2 } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
 import { Card, Button, EmptyState, LoadingState, Modal } from "../components/ui";
@@ -142,28 +142,125 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
 }
 
 function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
-  const [removeCandidate, setRemoveCandidate] = useState<any>(null);
+  const [itemsToRemove, setItemsToRemove] = useState<any[]>([]);
   const [removing, setRemoving] = useState(false);
+  
+  const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  // Sync selected IDs if items are removed
+  useEffect(() => {
+    const currentIds = new Set(mediaItems.map((m: any) => m.id));
+    let changed = false;
+    const nextSet = new Set<string>();
+    for (const id of selectedMediaIds) {
+      if (currentIds.has(id)) {
+        nextSet.add(id);
+      } else {
+        changed = true;
+      }
+    }
+    if (changed) {
+      setSelectedMediaIds(nextSet);
+      if (nextSet.size === 0 && isSelectionMode) {
+        setIsSelectionMode(false);
+      }
+    }
+  }, [mediaItems, selectedMediaIds, isSelectionMode]);
+
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedMediaIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        if (next.size === 0) setIsSelectionMode(false);
+      } else {
+        next.add(id);
+        setIsSelectionMode(true);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = () => {
+    if (selectedMediaIds.size === mediaItems.length) {
+      setSelectedMediaIds(new Set());
+      setIsSelectionMode(false);
+    } else {
+      setSelectedMediaIds(new Set(mediaItems.map((m: any) => m.id)));
+      setIsSelectionMode(true);
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedMediaIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+
+  const handleTouchStart = (id: string) => {
+    longPressTriggered.current = false;
+    touchTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      if (!isSelectionMode) {
+        if ("vibrate" in navigator) navigator.vibrate(50);
+        setSelectedMediaIds(prev => {
+          const next = new Set(prev);
+          next.add(id);
+          return next;
+        });
+        setIsSelectionMode(true);
+      }
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimer.current) clearTimeout(touchTimer.current);
+  };
+
+  const handleClick = (e: React.MouseEvent, id: string, index: number) => {
+    if (longPressTriggered.current) return;
+    if (isSelectionMode) {
+      toggleSelection(id);
+    } else {
+      onImageClick?.(index);
+    }
+  };
 
   async function handleConfirmRemove() {
-    if (!removeCandidate) return;
+    if (itemsToRemove.length === 0) return;
     setRemoving(true);
     try {
-      await onRemoveMediaItem(removeCandidate.id);
-      setRemoveCandidate(null);
+      await Promise.all(itemsToRemove.map(item => onRemoveMediaItem(item.id)));
+      setItemsToRemove([]);
+      clearSelection();
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : "Failed to remove photo.");
+      alert(error instanceof Error ? error.message : "Failed to remove photo(s).");
     } finally {
       setRemoving(false);
     }
   }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center px-4 lg:px-0">
-        <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary/70">
-          {mediaItems.length} Photo{mediaItems.length !== 1 && "s"}
-        </p>
+        <div className="flex items-center gap-2">
+          {isSelectionMode ? (
+            <Button variant="secondary" onClick={handleSelectAll} className="text-[11px] py-1.5 px-3">
+              {selectedMediaIds.size === mediaItems.length ? "Deselect All" : "Select All"}
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => setIsSelectionMode(true)} className="text-[11px] py-1.5 px-3">
+              Select
+            </Button>
+          )}
+          <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary/70 ml-2">
+            {mediaItems.length} Photo{mediaItems.length !== 1 && "s"}
+          </p>
+        </div>
         {canUploadPhotos && (
           <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="text-[11px] py-1.5 px-3">
             <RefreshCw className={`h-3 w-3 mr-1.5 ${actionLoading ? "animate-spin" : ""}`} />
@@ -183,12 +280,35 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
             }
           }
 
+          const isSelected = selectedMediaIds.has(item.id);
+
           return (
             <div 
               key={item.id} 
-              className="group relative bg-clay-recessed rounded-[20px] shadow-clay-pressed overflow-hidden aspect-square flex flex-col cursor-pointer"
-              onClick={() => onImageClick?.(index)}
+              className={`group relative bg-clay-recessed rounded-[20px] shadow-clay-pressed overflow-hidden aspect-square flex flex-col cursor-pointer transition-transform ${isSelected ? 'scale-[0.96] ring-2 ring-indigo-500' : ''}`}
+              onTouchStart={() => handleTouchStart(item.id)}
+              onTouchEnd={handleTouchEnd}
+              onTouchMove={handleTouchEnd}
+              onClick={(e) => handleClick(e, item.id, index)}
             >
+              {/* Checkbox Overlay */}
+              <div className={`absolute top-2 left-2 z-10 transition-opacity ${isSelectionMode || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelection(item.id);
+                  }}
+                  className="p-1 rounded-full drop-shadow-md text-white/90 hover:scale-110 transition-transform"
+                  aria-label="Select photo"
+                >
+                  {isSelected ? (
+                    <CheckCircle2 className="h-6 w-6 text-indigo-500 fill-white" />
+                  ) : (
+                    <Circle className="h-6 w-6 text-white/70" />
+                  )}
+                </button>
+              </div>
               {hasValidThumbnail ? (
                 <img 
                   src={`${item.cachedBaseUrl}=w400-h400-c`} 
@@ -201,12 +321,15 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
                 </div>
               )}
               
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                {isOwner && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 pointer-events-none">
+                {isOwner && !isSelectionMode && (
                   <button
                     type="button"
-                    onClick={() => setRemoveCandidate(item)}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all shadow-clay-card"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setItemsToRemove([item]);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all shadow-clay-card pointer-events-auto"
                     aria-label="Remove from trip gallery"
                     title="Remove from trip gallery"
                   >
@@ -238,19 +361,55 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
         })}
       </div>
 
+      {/* Batch Action Bar */}
+      {isSelectionMode && (
+        <div className="fixed bottom-0 inset-x-0 z-[100] p-4 bg-clay-surface border-t border-border/20 shadow-clay-card flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-4 animate-in slide-in-from-bottom-full pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-3">
+              <button onClick={clearSelection} className="p-2 rounded-full bg-clay-recessed hover:bg-clay-surface shadow-clay-pressed transition-colors">
+                <X className="h-5 w-5 text-clay-secondary" />
+              </button>
+              <span className="font-bold text-clay-primary">{selectedMediaIds.size} Selected</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto w-full sm:w-auto px-1 pb-1">
+            <Button variant="secondary" onClick={() => alert("Batch download coming in future phase")} className="px-3 py-2 text-sm whitespace-nowrap">
+              <Download className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Download</span>
+            </Button>
+            <Button variant="secondary" onClick={() => alert("WhatsApp sharing coming in future phase")} className="px-3 py-2 text-sm whitespace-nowrap">
+              <Share2 className="h-4 w-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Share</span>
+            </Button>
+            {isOwner && (
+              <Button 
+                variant="primary" 
+                onClick={() => setItemsToRemove(mediaItems.filter((m: any) => selectedMediaIds.has(m.id)))} 
+                className="px-3 py-2 text-sm bg-red-500 hover:bg-red-600 text-white border-0 whitespace-nowrap" 
+                disabled={selectedMediaIds.size === 0}
+              >
+                <Trash2 className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Remove</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <Modal
-        isOpen={!!removeCandidate}
-        onClose={() => setRemoveCandidate(null)}
-        title="Remove photo from trip gallery?"
+        isOpen={itemsToRemove.length > 0}
+        onClose={() => setItemsToRemove([])}
+        title={`Remove ${itemsToRemove.length} photo${itemsToRemove.length !== 1 ? 's' : ''}?`}
       >
         <div className="p-6">
           <p className="text-sm font-medium text-clay-secondary mb-8">
-            This will hide the photo from the shared trip gallery. It will remain in Google Photos and can be managed manually there.
+            This will hide the selected photo(s) from the shared trip gallery. They will remain in Google Photos and can be managed manually there.
           </p>
           <div className="flex justify-end gap-3">
             <Button
               variant="secondary"
-              onClick={() => setRemoveCandidate(null)}
+              onClick={() => setItemsToRemove([])}
               disabled={removing}
             >
               Cancel
@@ -259,7 +418,7 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
               variant="primary"
               onClick={handleConfirmRemove}
               disabled={removing}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 hover:bg-red-600 text-white border-0"
             >
               {removing ? "Removing..." : "Remove"}
             </Button>
