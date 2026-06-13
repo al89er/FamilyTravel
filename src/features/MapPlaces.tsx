@@ -203,7 +203,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-4 lg:grid-cols-1">
+          <div className="grid grid-cols-1 gap-4">
             {filteredPlaces.map((place, idx) => (
               <PlaceCard key={place.id} data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} listIndex={idx + 1} />
             ))}
