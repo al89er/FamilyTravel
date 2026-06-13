@@ -28,7 +28,8 @@ import type {
   TripGalleryMediaItemInput,
   TripGalleryAlbumStatus,
   TripGalleryVisibility,
-  TripGalleryMediaType
+  TripGalleryMediaType,
+  GooglePhotosConnectionStatus
 } from "../types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -758,6 +759,49 @@ export async function deleteTripGalleryMediaItem(tripId: string, mediaItemId: st
     .eq("trip_id", tripId);
 
   if (error) throw error;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Google Photos Edge Functions
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function startGooglePhotosOAuth(tripId: string): Promise<string> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("google-photos-oauth-start", {
+    body: { tripId }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data.authUrl;
+}
+
+export async function getGooglePhotosConnectionStatus(tripId: string): Promise<GooglePhotosConnectionStatus> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("google-photos-connection-status", {
+    body: { tripId }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data as GooglePhotosConnectionStatus;
+}
+
+export async function disconnectGooglePhotos(tripId: string): Promise<void> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("google-photos-disconnect", {
+    body: { tripId }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+}
+
+export async function createGooglePhotosAlbum(tripId: string, title?: string): Promise<{ googleAlbumId: string, albumUrl: string }> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("google-photos-create-album", {
+    body: { tripId, title }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
 
 export async function loadFamilyTrip(displayName: string, shareToken: string): Promise<{ data: AppData; session: FamilySession }> {

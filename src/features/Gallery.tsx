@@ -1,26 +1,37 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Server, Database } from "lucide-react";
+import { Images, ExternalLink, Settings as SettingsIcon, Server, Database, Cloud } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AppData, TripGalleryAlbum, TripGalleryMediaItem } from "../types";
+import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
 import { Card, Button, EmptyState, LoadingState } from "../components/ui";
-import { getTripGalleryAlbum, listTripGalleryMediaItems } from "../lib/supabase";
+import { 
+  getTripGalleryAlbum, 
+  listTripGalleryMediaItems,
+  getGooglePhotosConnectionStatus,
+  startGooglePhotosOAuth,
+  disconnectGooglePhotos,
+  createGooglePhotosAlbum
+} from "../lib/supabase";
 
 export function Gallery({ data, openView }: { data: AppData; openView: (view: AppView) => void }) {
   const url = data.trip.googlePhotosAlbumUrl;
   const [album, setAlbum] = useState<TripGalleryAlbum | null>(null);
   const [mediaItems, setMediaItems] = useState<TripGalleryMediaItem[]>([]);
+  const [connection, setConnection] = useState<GooglePhotosConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const [albumData, mediaData] = await Promise.all([
+        const [albumData, mediaData, connData] = await Promise.all([
           getTripGalleryAlbum(data.trip.id),
-          listTripGalleryMediaItems(data.trip.id)
+          listTripGalleryMediaItems(data.trip.id),
+          getGooglePhotosConnectionStatus(data.trip.id).catch(() => null)
         ]);
         setAlbum(albumData);
         setMediaItems(mediaData);
+        setConnection(connData);
       } catch (e) {
         console.error("Failed to load gallery metadata", e);
       } finally {
@@ -29,6 +40,47 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
     }
     void loadData();
   }, [data.trip.id]);
+
+  async function handleConnect() {
+    setActionLoading(true);
+    try {
+      const authUrl = await startGooglePhotosOAuth(data.trip.id);
+      window.location.href = authUrl;
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : "Failed to start Google Photos connection.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    if (!window.confirm("Are you sure you want to disconnect Google Photos?")) return;
+    setActionLoading(true);
+    try {
+      await disconnectGooglePhotos(data.trip.id);
+      setConnection({ connected: false, hasRefreshToken: false });
+    } catch (e) {
+      console.error(e);
+      alert("Failed to disconnect.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleCreateAlbum() {
+    setActionLoading(true);
+    try {
+      const res = await createGooglePhotosAlbum(data.trip.id);
+      setAlbum(prev => prev ? { ...prev, googleAlbumId: res.googleAlbumId, albumUrl: res.albumUrl || prev.albumUrl, status: "api_ready" } : null);
+      alert("App album created successfully!");
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : "Failed to create album.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   return (
     <div className="space-y-6 pb-24">
@@ -87,6 +139,66 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
         </Card>
       )}
 
+      {/* Google Photos Connection Section */}
+      <div className="flex items-center gap-3 mb-6 px-4 lg:px-0 mt-8">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-blue-400 to-blue-500 shadow-clay-card text-white shrink-0">
+          <Cloud className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-xl font-extrabold tracking-tight text-clay-primary">Google Photos Connection</h2>
+          <p className="text-sm font-bold text-clay-secondary">App integration</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <LoadingState />
+      ) : (
+        <Card className="p-6 sm:p-8 border-0 bg-clay-surface shadow-clay-card rounded-[32px] mx-4 lg:mx-0">
+          {!connection?.connected ? (
+            <div className="text-center">
+              <p className="text-base font-bold text-clay-primary mb-2">Google Photos not connected</p>
+              <p className="text-sm text-clay-secondary mb-6">Connect your account to allow the app to manage photos for this trip.</p>
+              <Button onClick={handleConnect} disabled={actionLoading}>
+                {actionLoading ? "Connecting..." : "Connect Google Photos"}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center border-b border-border/40 pb-3">
+                <span className="text-sm text-clay-secondary">Status</span>
+                <span className="text-sm font-bold text-green-600">Connected</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-border/40 pb-3">
+                <span className="text-sm text-clay-secondary">Account</span>
+                <span className="text-sm font-semibold text-clay-primary">{connection.googleAccountEmail || "Unknown"}</span>
+              </div>
+
+              {!album?.googleAlbumId ? (
+                <div className="pt-4 flex flex-col items-center">
+                  <p className="text-sm font-bold text-clay-secondary mb-4 text-center">Connection ready. Create an app album to start syncing photos.</p>
+                  <Button onClick={handleCreateAlbum} disabled={actionLoading}>
+                    {actionLoading ? "Creating..." : "Create app album"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="pt-4 flex flex-col items-center">
+                  <p className="text-base font-bold text-clay-primary mb-1">App album ready</p>
+                  <p className="text-sm text-clay-secondary mb-4">{album.title}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary/70">Ready for future in-app uploads</p>
+                </div>
+              )}
+
+              <div className="pt-6 mt-6 border-t border-border/40 flex justify-center">
+                <Button variant="danger" onClick={handleDisconnect} disabled={actionLoading}>
+                  {actionLoading ? "Disconnecting..." : "Disconnect"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Sync Preparation Section */}
       <div className="flex items-center gap-3 mb-6 px-4 lg:px-0 mt-8">
         <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-gray-400 to-gray-500 shadow-clay-card text-white shrink-0">
           <Database className="h-6 w-6" />

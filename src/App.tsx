@@ -1,5 +1,6 @@
 import { AccessGate, AccessStatusCard } from "./features/AuthPanel";
 import { Assignments } from "./features/Assignments";
+import { useEffect } from "react";
 import { Dashboard } from "./features/Dashboard";
 import { Documents } from "./features/Documents";
 import { Emergency } from "./features/Emergency";
@@ -40,6 +41,25 @@ export default function App() {
   } = useAppState();
 
   useTheme(); // Initialize theme on app load
+
+  // Check for googlePhotos OAuth return
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const gPhotos = url.searchParams.get("googlePhotos");
+    const msg = url.searchParams.get("msg");
+
+    if (gPhotos) {
+      url.searchParams.delete("googlePhotos");
+      url.searchParams.delete("msg");
+      window.history.replaceState({}, "", url.toString());
+
+      if (gPhotos === "connected") {
+        alert("Google Photos connected successfully!");
+      } else if (gPhotos === "error") {
+        alert(`Google Photos connection failed: ${msg || "Unknown error"}`);
+      }
+    }
+  }, []);
 
   function handleSetActiveView(view: string) {
     if (!isValidAppView(view)) return;

@@ -323,3 +323,13 @@ export interface TripGalleryMediaItem {
 
 export type TripGalleryAlbumInput = Omit<TripGalleryAlbum, "id" | "tripId" | "createdAt" | "updatedAt">;
 export type TripGalleryMediaItemInput = Omit<TripGalleryMediaItem, "id" | "tripId" | "createdAt" | "updatedAt">;
+
+export interface GooglePhotosConnectionStatus {
+  connected: boolean;
+  googleAccountEmail?: string;
+  scopes?: string[];
+  status?: string;
+  expiresAt?: string;
+  hasRefreshToken: boolean;
+}
+
