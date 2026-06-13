@@ -449,10 +449,10 @@ function RoomRow({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+    <div className="relative rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
       <ActionMenu />
       {/* Key card accent strip */}
-      <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-indigo-400 to-purple-500" />
+      <div className="absolute top-0 left-0 right-0 h-2 rounded-t-[28px] bg-gradient-to-r from-indigo-400 to-purple-500" />
       
       <div className="flex items-center justify-between gap-4 mt-2">
         <div className="flex items-center gap-4">
@@ -902,10 +902,10 @@ function SeatCard({
   };
 
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+    <div className="relative flex flex-col rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
       <ActionMenu />
       {/* Boarding pass accent strip */}
-      <div className="absolute top-0 left-0 bottom-0 w-2.5 bg-gradient-to-b from-sky-400 to-blue-500" />
+      <div className="absolute top-0 left-0 bottom-0 w-2.5 rounded-l-[28px] bg-gradient-to-b from-sky-400 to-blue-500" />
       
       <div className="flex items-center justify-between p-5 pl-8 sm:p-6 pr-14 relative mt-1.5">
         {/* Left side: Icon & Passenger */}
@@ -941,7 +941,7 @@ function SeatCard({
         </div>
       ) : null}
       {expanded && seat.notes && (
-        <div className="w-full bg-clay-recessed shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-dashed border-border/50 px-6 py-4">
+        <div className="w-full rounded-b-[28px] bg-clay-recessed shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border-t border-dashed border-border/50 px-6 py-4">
           <p className="text-xs font-bold text-clay-secondary">{seat.notes}</p>
         </div>
       )}
