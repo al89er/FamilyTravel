@@ -281,3 +281,45 @@ export interface MedicalNoteInput {
   medicalNotes?: string;
   visibleToOwner: boolean;
 }
+
+export type TripGalleryAlbumStatus = "external_link" | "api_ready" | "syncing" | "active" | "disabled";
+export type TripGalleryVisibility = "owner_only" | "shared_later";
+export type TripGalleryMediaType = "photo" | "video" | "unknown";
+
+export interface TripGalleryAlbum {
+  id: string;
+  tripId: string;
+  provider: string;
+  googleAlbumId?: string;
+  albumUrl?: string;
+  title?: string;
+  status: TripGalleryAlbumStatus;
+  visibility: TripGalleryVisibility;
+  createdByProfileId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TripGalleryMediaItem {
+  id: string;
+  tripId: string;
+  albumId?: string;
+  provider: string;
+  googleMediaItemId?: string;
+  filename?: string;
+  mimeType?: string;
+  mediaType: TripGalleryMediaType;
+  caption?: string;
+  description?: string;
+  googleProductUrl?: string;
+  cachedBaseUrl?: string;
+  cachedBaseUrlExpiresAt?: string;
+  uploadedByProfileId?: string;
+  uploadedByName?: string;
+  takenAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TripGalleryAlbumInput = Omit<TripGalleryAlbum, "id" | "tripId" | "createdAt" | "updatedAt">;
+export type TripGalleryMediaItemInput = Omit<TripGalleryMediaItem, "id" | "tripId" | "createdAt" | "updatedAt">;

@@ -20,7 +20,15 @@ import type {
   ShareLink,
   TripInput,
   TripSummary,
-  VoteValue
+  VoteValue,
+  Vote,
+  TripGalleryAlbum,
+  TripGalleryAlbumInput,
+  TripGalleryMediaItem,
+  TripGalleryMediaItemInput,
+  TripGalleryAlbumStatus,
+  TripGalleryVisibility,
+  TripGalleryMediaType
 } from "../types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -594,6 +602,162 @@ export async function setShareLinkEnabled(tripId: string, shareLinkId: string, i
 
   if (error) throw error;
   return shareLinkToShareLink(asRecord(data));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trip Gallery Metadata (Owner-Only)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getTripGalleryAlbum(tripId: string): Promise<TripGalleryAlbum | null> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("trip_gallery_albums")
+    .select("*")
+    .eq("trip_id", tripId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to load trip gallery album:", error);
+    return null;
+  }
+  if (!data) return null;
+
+  return {
+    id: asString(data.id),
+    tripId: asString(data.trip_id),
+    provider: asString(data.provider),
+    googleAlbumId: optionalString(data.google_album_id),
+    albumUrl: optionalString(data.album_url),
+    title: optionalString(data.title),
+    status: data.status as TripGalleryAlbumStatus,
+    visibility: data.visibility as TripGalleryVisibility,
+    createdByProfileId: optionalString(data.created_by_profile_id),
+    createdAt: asString(data.created_at),
+    updatedAt: asString(data.updated_at)
+  };
+}
+
+export async function upsertTripGalleryAlbum(tripId: string, input: TripGalleryAlbumInput): Promise<TripGalleryAlbum> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("trip_gallery_albums")
+    .upsert({
+      trip_id: tripId,
+      provider: input.provider,
+      google_album_id: input.googleAlbumId,
+      album_url: input.albumUrl,
+      title: input.title,
+      status: input.status,
+      visibility: input.visibility,
+      created_by_profile_id: input.createdByProfileId
+    }, { onConflict: "trip_id, provider" })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    id: asString(data.id),
+    tripId: asString(data.trip_id),
+    provider: asString(data.provider),
+    googleAlbumId: optionalString(data.google_album_id),
+    albumUrl: optionalString(data.album_url),
+    title: optionalString(data.title),
+    status: data.status as TripGalleryAlbumStatus,
+    visibility: data.visibility as TripGalleryVisibility,
+    createdByProfileId: optionalString(data.created_by_profile_id),
+    createdAt: asString(data.created_at),
+    updatedAt: asString(data.updated_at)
+  };
+}
+
+export async function listTripGalleryMediaItems(tripId: string): Promise<TripGalleryMediaItem[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("trip_gallery_media_items")
+    .select("*")
+    .eq("trip_id", tripId)
+    .order("taken_at", { ascending: false });
+
+  if (error) throw error;
+  
+  return data.map(item => ({
+    id: asString(item.id),
+    tripId: asString(item.trip_id),
+    albumId: optionalString(item.album_id),
+    provider: asString(item.provider),
+    googleMediaItemId: optionalString(item.google_media_item_id),
+    filename: optionalString(item.filename),
+    mimeType: optionalString(item.mime_type),
+    mediaType: item.media_type as TripGalleryMediaType,
+    caption: optionalString(item.caption),
+    description: optionalString(item.description),
+    googleProductUrl: optionalString(item.google_product_url),
+    cachedBaseUrl: optionalString(item.cached_base_url),
+    cachedBaseUrlExpiresAt: optionalString(item.cached_base_url_expires_at),
+    uploadedByProfileId: optionalString(item.uploaded_by_profile_id),
+    uploadedByName: optionalString(item.uploaded_by_name),
+    takenAt: optionalString(item.taken_at),
+    createdAt: asString(item.created_at),
+    updatedAt: asString(item.updated_at)
+  }));
+}
+
+export async function upsertTripGalleryMediaItem(tripId: string, input: TripGalleryMediaItemInput): Promise<TripGalleryMediaItem> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("trip_gallery_media_items")
+    .upsert({
+      trip_id: tripId,
+      album_id: input.albumId,
+      provider: input.provider,
+      google_media_item_id: input.googleMediaItemId,
+      filename: input.filename,
+      mime_type: input.mimeType,
+      media_type: input.mediaType,
+      caption: input.caption,
+      description: input.description,
+      google_product_url: input.googleProductUrl,
+      cached_base_url: input.cachedBaseUrl,
+      cached_base_url_expires_at: input.cachedBaseUrlExpiresAt,
+      uploaded_by_profile_id: input.uploadedByProfileId,
+      uploaded_by_name: input.uploadedByName,
+      taken_at: input.takenAt
+    }, { onConflict: "provider, google_media_item_id" })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return {
+    id: asString(data.id),
+    tripId: asString(data.trip_id),
+    albumId: optionalString(data.album_id),
+    provider: asString(data.provider),
+    googleMediaItemId: optionalString(data.google_media_item_id),
+    filename: optionalString(data.filename),
+    mimeType: optionalString(data.mime_type),
+    mediaType: data.media_type as TripGalleryMediaType,
+    caption: optionalString(data.caption),
+    description: optionalString(data.description),
+    googleProductUrl: optionalString(data.google_product_url),
+    cachedBaseUrl: optionalString(data.cached_base_url),
+    cachedBaseUrlExpiresAt: optionalString(data.cached_base_url_expires_at),
+    uploadedByProfileId: optionalString(data.uploaded_by_profile_id),
+    uploadedByName: optionalString(data.uploaded_by_name),
+    takenAt: optionalString(data.taken_at),
+    createdAt: asString(data.created_at),
+    updatedAt: asString(data.updated_at)
+  };
+}
+
+export async function deleteTripGalleryMediaItem(tripId: string, mediaItemId: string): Promise<void> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase
+    .from("trip_gallery_media_items")
+    .delete()
+    .eq("id", mediaItemId)
+    .eq("trip_id", tripId);
+
+  if (error) throw error;
 }
 
 export async function loadFamilyTrip(displayName: string, shareToken: string): Promise<{ data: AppData; session: FamilySession }> {
