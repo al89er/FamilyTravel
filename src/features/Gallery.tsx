@@ -1,4 +1,4 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Server, Database, Cloud, UploadCloud, X, FileImage } from "lucide-react";
+import { Images, ExternalLink, Settings as SettingsIcon, Server, Database, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
@@ -10,7 +10,8 @@ import {
   startGooglePhotosOAuth,
   disconnectGooglePhotos,
   createGooglePhotosAlbum,
-  uploadGooglePhotosMedia
+  uploadGooglePhotosMedia,
+  refreshGooglePhotosMedia
 } from "../lib/supabase";
 
 export function Gallery({ data, openView }: { data: AppData; openView: (view: AppView) => void }) {
@@ -36,11 +37,49 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
         listTripGalleryMediaItems(data.trip.id),
         getGooglePhotosConnectionStatus(data.trip.id).catch(() => null)
       ]);
+      
+      let finalMediaData = mediaData;
+      
+      // Auto-refresh logic
+      if (mediaData.length > 0) {
+        const now = Date.now();
+        const needsRefresh = mediaData.some(m => {
+          if (!m.cachedBaseUrl) return true;
+          if (!m.cachedBaseUrlExpiresAt) return true;
+          const expires = new Date(m.cachedBaseUrlExpiresAt).getTime();
+          return expires < now + 5 * 60 * 1000;
+        });
+
+        if (needsRefresh) {
+          try {
+            await refreshGooglePhotosMedia(data.trip.id);
+            finalMediaData = await listTripGalleryMediaItems(data.trip.id);
+          } catch (e) {
+            console.error("Failed auto refresh thumbnails", e);
+          }
+        }
+      }
+
       setAlbum(albumData);
-      setMediaItems(mediaData);
+      setMediaItems(finalMediaData);
       setConnection(connData);
     } catch (e) {
       console.error("Failed to load gallery metadata", e);
+    }
+  }
+
+  async function handleManualRefresh() {
+    setActionLoading(true);
+    try {
+      await refreshGooglePhotosMedia(data.trip.id);
+      const finalMediaData = await listTripGalleryMediaItems(data.trip.id);
+      setMediaItems(finalMediaData);
+      alert("Thumbnails updated.");
+    } catch (e) {
+      console.error(e);
+      alert("Could not refresh thumbnails. Open in Google Photos still works.");
+    } finally {
+      setActionLoading(false);
     }
   }
 
@@ -256,6 +295,87 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             </div>
           )}
         </Card>
+      )}
+
+      {/* In-App Gallery Viewer Section */}
+      {isOwner && (
+        <>
+          <div className="flex items-center gap-3 mb-6 px-4 lg:px-0 mt-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-fuchsia-400 to-pink-500 shadow-clay-card text-white shrink-0">
+              <ImageIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-extrabold tracking-tight text-clay-primary">Gallery</h2>
+              <p className="text-sm font-bold text-clay-secondary">View uploaded photos</p>
+            </div>
+            <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading || mediaItems.length === 0} className="shrink-0 text-xs py-2 px-3">
+              <RefreshCw className={`h-4 w-4 mr-2 ${actionLoading ? "animate-spin" : ""}`} />
+              {actionLoading ? "Refreshing..." : "Refresh Thumbnails"}
+            </Button>
+          </div>
+
+          <Card className="p-6 sm:p-8 border-0 bg-clay-surface shadow-clay-card rounded-[32px] mx-4 lg:mx-0">
+            {mediaItems.length === 0 ? (
+              <div className="text-center py-6">
+                <ImageIcon className="h-10 w-10 text-clay-secondary/30 mx-auto mb-3" />
+                <p className="text-base font-bold text-clay-primary mb-1">No app-uploaded photos yet</p>
+                <p className="text-sm text-clay-secondary">Upload photos below and they will appear here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {mediaItems.map(item => {
+                  const now = Date.now();
+                  let hasValidThumbnail = false;
+                  if (item.cachedBaseUrl && item.cachedBaseUrlExpiresAt) {
+                    const expires = new Date(item.cachedBaseUrlExpiresAt).getTime();
+                    if (expires > now) {
+                      hasValidThumbnail = true;
+                    }
+                  }
+
+                  return (
+                    <div key={item.id} className="group relative bg-clay-recessed rounded-[20px] shadow-clay-pressed overflow-hidden aspect-square flex flex-col">
+                      {hasValidThumbnail ? (
+                        <img 
+                          src={`${item.cachedBaseUrl}=w400-h400-c`} 
+                          alt={item.caption || item.filename || "Trip photo"} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex-1 flex items-center justify-center bg-clay-surface/50">
+                          <ImageIcon className="h-8 w-8 text-clay-secondary/40" />
+                        </div>
+                      )}
+                      
+                      {/* Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                        <p className="text-[10px] text-white/80 font-bold truncate">
+                          {item.caption || item.filename || "Media Item"}
+                        </p>
+                        {item.takenAt && (
+                          <p className="text-[9px] text-white/60">
+                            {new Date(item.takenAt).toLocaleDateString()}
+                          </p>
+                        )}
+                        {item.googleProductUrl && (
+                          <a 
+                            href={item.googleProductUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-indigo-300 hover:text-indigo-200"
+                          >
+                            Open in Google Photos
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        </>
       )}
 
       {/* Upload Section */}

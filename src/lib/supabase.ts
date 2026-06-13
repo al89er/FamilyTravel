@@ -804,6 +804,16 @@ export async function createGooglePhotosAlbum(tripId: string, title?: string): P
   return data;
 }
 
+export async function refreshGooglePhotosMedia(tripId: string, mediaItemIds?: string[]) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("google-photos-refresh-media", {
+    body: { tripId, mediaItemIds }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
 export async function uploadGooglePhotosMedia(tripId: string, files: File[], caption?: string): Promise<{ successCount: number, failedCount: number, uploadedItems: any[], errors: string[] }> {
   if (!supabase) throw new Error("Supabase is not configured.");
   
