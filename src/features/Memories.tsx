@@ -243,11 +243,6 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                         <div>
                           <h3 className="text-xl font-black text-clay-primary">Day {day.dayNumber}</h3>
                           <p className="text-sm font-bold text-clay-secondary mt-0.5">{fmtDateLong(day.dateStr)}</p>
-                          {day.itinerarySummary && (
-                            <p className="text-xs font-semibold text-primary mt-2">
-                              {day.itinerarySummary}
-                            </p>
-                          )}
                         </div>
                         
                         {isOwner || accessMode === "organizer" ? (
@@ -265,6 +260,12 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                           </button>
                         ) : null}
                       </div>
+
+                      {day.itinerarySummary && (
+                        <p className="text-xs font-semibold text-primary mt-2">
+                          {day.itinerarySummary}
+                        </p>
+                      )}
                       
                       {day.note?.note && (
                         <div className="mt-4 p-4 rounded-[16px] bg-clay-surface shadow-clay-pressed border border-border/50">
