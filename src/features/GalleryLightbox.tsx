@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight, Trash2, ImageOff, Loader2, Download } from "lucide-react";
 import { Modal, Button } from "../components/ui";
 import { downloadTripGalleryMediaItem } from "../lib/supabase";
@@ -118,8 +119,8 @@ export function GalleryLightbox({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-sm">
       {/* Top Bar */}
       <div 
         className="absolute top-0 inset-x-0 p-4 pt-[max(1rem,env(safe-area-inset-top))] flex justify-between items-start sm:items-center z-10 bg-gradient-to-b from-black/80 via-black/40 to-transparent pb-12 pointer-events-none"
@@ -262,6 +263,7 @@ export function GalleryLightbox({
           </div>
         </div>
       </Modal>
-    </div>
+    </div>,
+    document.body
   );
 }
