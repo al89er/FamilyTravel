@@ -21,12 +21,12 @@ const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "dashboard",   label: "Home",              icon: Home       },
   { id: "itinerary",   label: "Plan",              icon: CalendarDays },
   { id: "map",         label: "Explore",           icon: Map        },
-  { id: "assignments", label: "Rooms & Seats",     icon: BedDouble  },
+  { id: "gallery",     label: "Gallery",           icon: Images     },
   { id: "expenses",    label: "Money",             icon: ReceiptText },
   { id: "documents",   label: "Docs",              icon: FileText   },
   { id: "packing",     label: "Packing",           icon: Luggage    },
   { id: "emergency",   label: "Safety",            icon: ShieldAlert },
-  { id: "gallery",     label: "Gallery",           icon: Images     },
+  { id: "assignments", label: "Rooms & Seats",     icon: BedDouble  },
   { id: "settings",    label: "Trip Settings",     icon: Settings   },
 ];
 
