@@ -21,6 +21,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const isOwner = data.members.find(m => m.userId === data.currentUser.id)?.role === "owner";
+
   // Upload state
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [caption, setCaption] = useState("");
@@ -256,14 +258,102 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
         </Card>
       )}
 
-      {/* Sync Preparation Section */}
+      {/* Upload Section */}
+      {isOwner && (
+        <>
+          <div className="flex items-center gap-3 mb-6 px-4 lg:px-0 mt-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-green-400 to-emerald-500 shadow-clay-card text-white shrink-0">
+              <UploadCloud className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold tracking-tight text-clay-primary">Upload to Google Photos</h2>
+              <p className="text-sm font-bold text-clay-secondary">Upload selected images into your app-created trip album.</p>
+            </div>
+          </div>
+
+          <Card className="p-6 sm:p-8 border-0 bg-clay-surface shadow-clay-card rounded-[32px] mx-4 lg:mx-0">
+            {!connection?.connected ? (
+              <div className="text-center py-4 text-clay-secondary font-bold">
+                Connect Google Photos first.
+              </div>
+            ) : !album || !album.googleAlbumId ? (
+              <div className="text-center py-4 text-clay-secondary font-bold">
+                Create an app album before uploading.
+              </div>
+            ) : !["api_ready", "active"].includes(album.status) ? (
+              <div className="text-center py-4 text-clay-secondary font-bold">
+                Album is not ready yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    disabled={uploading || selectedFiles.length >= 10}
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading || selectedFiles.length >= 10}
+                    className="w-full justify-center"
+                  >
+                    <UploadCloud className="mr-2 h-4 w-4" />
+                    Select Photos (Max 10)
+                  </Button>
+                </div>
+
+                {selectedFiles.length > 0 && (
+                  <div className="bg-clay-recessed rounded-[16px] p-4 shadow-clay-pressed space-y-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-bold text-clay-primary">{selectedFiles.length} file(s) selected</span>
+                      <button onClick={() => setSelectedFiles([])} className="text-xs text-clay-secondary hover:text-red-500 font-bold uppercase tracking-wider" disabled={uploading}>Clear All</button>
+                    </div>
+                    <ul className="space-y-2 max-h-32 overflow-y-auto pr-2">
+                      {selectedFiles.map((f, i) => (
+                        <li key={i} className="flex justify-between items-center text-sm text-clay-secondary bg-clay-surface p-2 rounded-lg shadow-sm">
+                          <span className="truncate max-w-[200px]">{f.name}</span>
+                          <button onClick={() => removeFile(i)} disabled={uploading} className="p-1 hover:bg-clay-recessed rounded-full transition-colors"><X className="h-3 w-3 text-red-500" /></button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="pt-2">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-clay-secondary mb-2 ml-1">Optional Caption</label>
+                      <input
+                        type="text"
+                        value={caption}
+                        onChange={(e) => setCaption(e.target.value)}
+                        placeholder="Add a description for these photos..."
+                        disabled={uploading}
+                        className="w-full rounded-[16px] border-0 bg-clay-surface px-4 py-3 text-sm font-medium text-clay-primary shadow-clay-pressed placeholder:text-clay-secondary/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                      />
+                    </div>
+
+                    <div className="pt-4 flex justify-end">
+                      <Button onClick={handleUpload} disabled={uploading || selectedFiles.length === 0} className="w-full sm:w-auto">
+                        {uploading ? "Uploading to Google Photos..." : "Upload Photos"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+
+      {/* Gallery Metadata Section */}
       <div className="flex items-center gap-3 mb-6 px-4 lg:px-0 mt-8">
         <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-gray-400 to-gray-500 shadow-clay-card text-white shrink-0">
           <Database className="h-6 w-6" />
         </div>
         <div>
-          <h2 className="text-xl font-extrabold tracking-tight text-clay-primary">Sync preparation</h2>
-          <p className="text-sm font-bold text-clay-secondary">Gallery metadata</p>
+          <h2 className="text-xl font-extrabold tracking-tight text-clay-primary">Gallery Metadata</h2>
+          <p className="text-sm font-bold text-clay-secondary">Items synced to the app</p>
         </div>
       </div>
 
@@ -279,12 +369,6 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
               </span>
             </div>
             <div className="flex justify-between items-center border-b border-border/40 pb-3">
-              <span className="text-sm text-clay-secondary">API album ID</span>
-              <span className="text-sm font-mono text-clay-secondary/80">
-                {album?.googleAlbumId || "Not connected yet"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center border-b border-border/40 pb-3">
               <span className="text-sm text-clay-secondary">Stored media items</span>
               <span className="text-sm font-bold text-clay-primary">
                 {mediaItems.length}
@@ -292,10 +376,6 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             </div>
           </div>
           
-          <p className="text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 text-center mb-8">
-            Phase 2 prepares the app for future in-app uploads. No photos are uploaded through the app yet.
-          </p>
-
           {mediaItems.length === 0 ? (
             <div className="bg-clay-recessed rounded-[24px] p-6 text-center shadow-clay-pressed mt-4">
               <div className="flex justify-center mb-3">
@@ -307,12 +387,29 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
               {mediaItems.map(item => (
-                <div key={item.id} className="aspect-square bg-clay-recessed rounded-[16px] shadow-clay-pressed flex items-center justify-center p-4">
-                  <span className="text-xs text-clay-secondary break-all text-center">
+                <div key={item.id} className="aspect-square bg-clay-recessed rounded-[16px] shadow-clay-pressed flex flex-col items-center justify-center p-4 relative group overflow-hidden">
+                  <FileImage className="h-8 w-8 text-clay-secondary/50 mb-2" />
+                  <span className="text-xs text-clay-secondary break-all text-center px-2 w-full truncate">
                     {item.filename || "Media Item"}
                   </span>
+                  {item.googleProductUrl && (
+                    <div className="absolute inset-0 bg-clay-surface/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a href={item.googleProductUrl} target="_blank" rel="noopener noreferrer" className="p-2 bg-indigo-500 rounded-full text-white shadow-clay-btn hover:scale-110 transition-transform">
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {isOwner && (
+            <div className="mt-8 pt-6 border-t border-border/50 text-[10px] text-clay-secondary/50 font-mono flex gap-3 flex-wrap">
+              <span>connected: {connection?.connected ? "yes" : "no"}</span>
+              <span>appAlbum: {album ? "yes" : "no"}</span>
+              <span>status: {album?.status || "none"}</span>
+              <span>googleAlbumId: {album?.googleAlbumId ? "yes" : "no"}</span>
             </div>
           )}
         </Card>
