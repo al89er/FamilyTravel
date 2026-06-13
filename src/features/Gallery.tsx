@@ -484,7 +484,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
 
       {/* Batch Action Bar */}
       {isSelectionMode && (
-        <div className="fixed bottom-0 inset-x-0 z-[100] p-4 bg-clay-surface border-t border-border/20 shadow-clay-card flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-4 animate-in slide-in-from-bottom-full pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="fixed bottom-0 inset-x-0 z-[1040] p-4 bg-clay-surface border-t border-border/20 shadow-clay-card flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-4 animate-in slide-in-from-bottom-full pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-3">
               <button onClick={clearSelection} className="p-2 rounded-full bg-clay-recessed hover:bg-clay-surface shadow-clay-pressed transition-colors">
