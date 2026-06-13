@@ -49,9 +49,12 @@ serve(async (req) => {
       return json({ message: "No media items to refresh", successCount: 0, failedCount: 0 });
     }
 
-    // Chunk into 50s
     const chunkSize = 50;
-    let successCount = 0;
+    let requestedCount = items.length;
+    let googleResultCount = 0;
+    let refreshedCount = 0;
+    let missingBaseUrlCount = 0;
+    let failedCount = 0;
     const errors: string[] = [];
 
     for (let i = 0; i < items.length; i += chunkSize) {
@@ -74,21 +77,33 @@ serve(async (req) => {
       }
 
       const resData = await response.json();
-      // resData.mediaItemResults[] contains { mediaItem: { id, baseUrl, ... }, status: { code, message } }
+      const results = resData.mediaItemResults || [];
+      googleResultCount += results.length;
       
       const updates = [];
 
-      for (const result of (resData.mediaItemResults || [])) {
-        if (!result.mediaItem) continue;
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
+        
+        console.log(`Item ${i + j}: hasMediaItem=${!!result.mediaItem}, hasBaseUrl=${!!result.mediaItem?.baseUrl}, statusCode=${result.status?.code}, statusMessage=${result.status?.message}`);
+
+        if (!result.mediaItem) {
+          failedCount++;
+          continue;
+        }
 
         const gItem = result.mediaItem;
         const dbItem = chunk.find(ci => ci.google_media_item_id === gItem.id);
         if (!dbItem) continue;
 
-        const updateData: any = {
-          cached_base_url: gItem.baseUrl,
-          cached_base_url_expires_at: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
-        };
+        const updateData: any = {};
+
+        if (gItem.baseUrl) {
+          updateData.cached_base_url = gItem.baseUrl;
+          updateData.cached_base_url_expires_at = new Date(Date.now() + 55 * 60 * 1000).toISOString();
+        } else {
+          missingBaseUrlCount++;
+        }
 
         if (gItem.productUrl) updateData.google_product_url = gItem.productUrl;
         if (gItem.filename) updateData.filename = gItem.filename;
@@ -97,21 +112,28 @@ serve(async (req) => {
           updateData.taken_at = gItem.mediaMetadata.creationTime;
         }
 
-        updates.push(adminClient
-          .from("trip_gallery_media_items")
-          .update(updateData)
-          .eq("id", dbItem.id)
-        );
+        if (Object.keys(updateData).length > 0) {
+          updates.push(adminClient
+            .from("trip_gallery_media_items")
+            .update(updateData)
+            .eq("id", dbItem.id)
+          );
+          if (gItem.baseUrl) {
+            refreshedCount++;
+          }
+        }
       }
 
       await Promise.all(updates);
-      successCount += updates.length;
     }
 
     return json({ 
       message: "Refresh complete",
-      successCount,
-      failedCount: items.length - successCount,
+      requestedCount,
+      googleResultCount,
+      refreshedCount,
+      failedCount,
+      missingBaseUrlCount,
       errors: errors.length > 0 ? errors : undefined
     });
 
