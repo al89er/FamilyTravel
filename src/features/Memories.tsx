@@ -239,7 +239,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                 return (
                   <Card key={day.dateStr} className="overflow-hidden border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
                     <div className="px-5 py-4 border-b border-border/40 bg-clay-canvas/50">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <h3 className="text-xl font-black text-clay-primary">Day {day.dayNumber}</h3>
                           <p className="text-sm font-bold text-clay-secondary mt-0.5">{fmtDateLong(day.dateStr)}</p>
@@ -256,7 +256,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                               setEditingNoteDay(day);
                               setEditingNoteText(day.note?.note || "");
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-clay-surface text-clay-secondary hover:text-primary hover:bg-primary/5 transition-colors shadow-clay-pressed"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-clay-surface text-clay-secondary hover:text-primary hover:bg-primary/5 transition-colors shadow-clay-pressed whitespace-nowrap shrink-0"
                           >
                             {day.note?.note ? <Edit3 className="w-3.5 h-3.5" /> : <PlusCircle className="w-3.5 h-3.5" />}
                             <span className="text-xs font-bold uppercase tracking-wide">
