@@ -503,15 +503,13 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
               </div>
             ) : (
               <>
-                {("share" in navigator) && (
-                  <Button variant="secondary" onClick={() => handleBatchExport(false)} className="px-3 py-2 text-sm whitespace-nowrap" disabled={selectedMediaIds.size === 0}>
-                    <Share2 className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Share selected</span>
-                  </Button>
-                )}
+                <Button variant="secondary" onClick={() => handleBatchExport(false)} className="px-3 py-2 text-sm whitespace-nowrap" disabled={selectedMediaIds.size === 0}>
+                  <Share2 className="h-4 w-4 mr-1.5" />
+                  <span>Share</span>
+                </Button>
                 <Button variant="secondary" onClick={() => handleBatchExport(true)} className="px-3 py-2 text-sm whitespace-nowrap" disabled={selectedMediaIds.size === 0}>
-                  <Download className="h-4 w-4 sm:mr-1.5" />
-                  <span className="hidden sm:inline">{"share" in navigator ? "Download ZIP" : "Download selected"}</span>
+                  <Download className="h-4 w-4 mr-1.5" />
+                  <span>ZIP</span>
                 </Button>
                 {isOwner && (
               <Button 
@@ -520,8 +518,8 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
                 className="px-3 py-2 text-sm bg-red-500 hover:bg-red-600 text-white border-0 whitespace-nowrap" 
                 disabled={selectedMediaIds.size === 0}
               >
-                <Trash2 className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Remove</span>
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                <span>Remove</span>
               </Button>
             )}
             </>
