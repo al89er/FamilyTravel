@@ -164,10 +164,10 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
 
   return (
     <>
-      <Card className="relative p-5 sm:p-6 overflow-hidden border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group">
+      <Card className="relative p-5 sm:p-6 border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group">
         <ActionMenu />
         {/* Document wallet subtle top border */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-slate-200 to-slate-300" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-[32px] bg-gradient-to-r from-slate-200 to-slate-300" />
         
         <div className="flex flex-col sm:flex-row items-start gap-4">
           {/* Category icon */}

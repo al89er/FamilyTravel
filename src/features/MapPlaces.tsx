@@ -382,7 +382,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
 
   return (
     <>
-      <Card className="relative overflow-hidden group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6">
+      <Card className="relative group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6">
         <ActionMenu />
         <div className="flex gap-4 sm:gap-6">
           <div className="shrink-0 flex flex-col items-center gap-3">

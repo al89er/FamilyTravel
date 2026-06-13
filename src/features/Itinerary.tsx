@@ -421,9 +421,9 @@ function ItineraryCard({
 
   if (item.category === "flight") {
     return (
-      <Card className="flex flex-col sm:flex-row overflow-hidden border-0 bg-clay-surface transition-all group relative p-0 shadow-clay-card">
+      <Card className="flex flex-col sm:flex-row border-0 bg-clay-surface transition-all group relative p-0 shadow-clay-card">
         {/* Saturated sky accent strip — white text is safe on this background */}
-        <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
+        <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden rounded-t-[32px] sm:rounded-tr-none sm:rounded-l-[32px]">
           <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.4)_0%,transparent_60%)]"></div>
           <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" />
           <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90 drop-shadow-sm">Boarding</span>
@@ -517,8 +517,8 @@ function ItineraryCard({
     };
 
     return (
-      <Card className="flex flex-col overflow-hidden border-0 bg-clay-surface transition-all relative shadow-clay-card p-0">
-        <div className="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-indigo-500 to-purple-600" />
+      <Card className="flex flex-col border-0 bg-clay-surface transition-all relative shadow-clay-card p-0">
+        <div className="absolute top-0 left-0 w-full h-2.5 rounded-t-[32px] bg-gradient-to-r from-indigo-500 to-purple-600" />
         <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7 relative">
           <ActionMenu />
           <div className="flex flex-wrap items-start justify-between gap-4 mb-4 pr-8">
@@ -571,8 +571,8 @@ function ItineraryCard({
   else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
 
   return (
-    <Card className={`relative flex flex-col sm:flex-row overflow-hidden border-0 shadow-clay-card p-0 transition-all bg-clay-surface`}>
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
+    <Card className={`relative flex flex-col sm:flex-row border-0 shadow-clay-card p-0 transition-all bg-clay-surface`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-[32px] ${stripClass}`} />
       <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5 relative">
         <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">

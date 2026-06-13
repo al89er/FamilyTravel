@@ -332,9 +332,9 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
 
   return (
     <>
-    <Card className="relative overflow-hidden p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all">
+    <Card className="relative p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all">
       <ActionMenu />
-      <div className="absolute left-0 top-0 bottom-0 w-2.5 bg-red-500" />
+      <div className="absolute left-0 top-0 bottom-0 w-2.5 rounded-l-[28px] bg-red-500" />
       <div className="flex items-start gap-4 pl-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-red-100 shadow-clay-pressed">
           <HeartPulse className="h-6 w-6 text-red-600" aria-hidden="true" />

@@ -196,7 +196,7 @@ function PackingCard({
 
   return (
     <>
-      <Card className={`relative overflow-hidden border-0 p-5 sm:p-6 flex items-start gap-4 text-left transition-all rounded-[28px] group hover:-translate-y-1 hover:shadow-clay-hover ${checked ? "bg-clay-recessed shadow-clay-pressed opacity-90" : "bg-clay-surface shadow-clay-card"}`}>
+      <Card className={`relative border-0 p-5 sm:p-6 flex items-start gap-4 text-left transition-all rounded-[28px] group hover:-translate-y-1 hover:shadow-clay-hover ${checked ? "bg-clay-recessed shadow-clay-pressed opacity-90" : "bg-clay-surface shadow-clay-card"}`}>
         <ActionMenu />
         {/* Check button */}
         <button
