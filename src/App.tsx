@@ -139,9 +139,7 @@ export default function App() {
           {activeView === "packing" ? <Packing data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "emergency" ? <Emergency data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
           {activeView === "assignments" ? <Assignments data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
-          {activeView === "gallery" ? (
-            accessMode === "owner" ? <Gallery data={data} openView={handleSetActiveView} /> : <Dashboard data={data} openView={handleSetActiveView} canEdit={canEdit} />
-          ) : null}
+          {activeView === "gallery" ? <Gallery data={data} openView={handleSetActiveView} /> : null}
           {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} familySession={familySession} onRefresh={refreshCurrentTrip} onLeave={leaveSession} /> : null}
         </>
       ) : null}

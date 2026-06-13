@@ -269,10 +269,11 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   // Role resolution
   const userRole = data.members.find(m => m.userId === data.currentUser.id)?.role;
   const isOwner = userRole === "owner";
+  const isOrganizer = userRole === "organizer";
   
   // Phase 6 Prep
-  const canViewGallery = isOwner; 
-  const canUploadPhotos = isOwner; 
+  const canViewGallery = true; 
+  const canUploadPhotos = isOwner || isOrganizer; 
   const canManageGoogleConnection = isOwner;
   const canSeeAdvancedSettings = isOwner;
 

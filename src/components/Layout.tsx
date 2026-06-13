@@ -56,7 +56,6 @@ export function Layout({
   }
 
   const visibleNavItems = navItems.filter((item) => {
-    if (item.id === "gallery" && accessMode !== "owner") return false;
     return true;
   });
 

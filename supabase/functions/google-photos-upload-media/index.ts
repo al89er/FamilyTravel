@@ -1,4 +1,4 @@
-import { corsHeaders, json, requireOwner, refreshGoogleTokenIfNeeded } from "../shared/index.ts";
+import { corsHeaders, json, requireOrganizerOrOwner, refreshGoogleTokenIfNeeded, getTripOwnerId } from "../shared/index.ts";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif"];
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
@@ -25,13 +25,15 @@ Deno.serve(async (req) => {
 
     const caption = formData.get("caption")?.toString() || "";
 
-    const { actor, adminClient } = await requireOwner(req, tripId);
+    const { actor, adminClient } = await requireOrganizerOrOwner(req, tripId);
 
-    // 1. Verify Google Connection
+    const ownerUserId = await getTripOwnerId(adminClient, tripId);
+
+    // 1. Verify Google Connection (using owner's connection)
     const { data: connection, error: connError } = await adminClient
       .from("google_photos_connections")
       .select("*")
-      .eq("owner_user_id", actor.id)
+      .eq("owner_user_id", ownerUserId)
       .eq("provider", "google_photos")
       .maybeSingle();
 

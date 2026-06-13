@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.3.0/mod.ts";
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
-import { corsHeaders, json, requireOwner, refreshGoogleTokenIfNeeded } from "../shared/index.ts";
+import { corsHeaders, json, requireOrganizerOrOwner, refreshGoogleTokenIfNeeded, getTripOwnerId } from "../shared/index.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,12 +14,14 @@ serve(async (req) => {
       return json({ error: "tripId is required" }, 400);
     }
 
-    const { actor, adminClient } = await requireOwner(req, tripId);
+    const { actor, adminClient } = await requireOrganizerOrOwner(req, tripId);
+    
+    const ownerUserId = await getTripOwnerId(adminClient, tripId);
 
     const { data: connection, error: connError } = await adminClient
       .from("google_photos_connections")
       .select("*")
-      .eq("owner_user_id", actor.id)
+      .eq("owner_user_id", ownerUserId)
       .eq("status", "connected")
       .maybeSingle();
 
