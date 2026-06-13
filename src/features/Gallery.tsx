@@ -381,11 +381,11 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
       <div className="flex justify-between items-center px-4 lg:px-0">
         <div className="flex items-center gap-2">
           {isSelectionMode ? (
-            <Button variant="secondary" onClick={handleSelectAll} className="text-[11px] py-1.5 px-3">
+            <Button variant="secondary" onClick={handleSelectAll} className="text-[11px] py-1.5 px-3 whitespace-nowrap">
               {selectedMediaIds.size === mediaItems.length ? "Deselect All" : "Select All"}
             </Button>
           ) : (
-            <Button variant="secondary" onClick={() => setIsSelectionMode(true)} className="text-[11px] py-1.5 px-3">
+            <Button variant="secondary" onClick={() => setIsSelectionMode(true)} className="text-[11px] py-1.5 px-3 whitespace-nowrap">
               Select
             </Button>
           )}
@@ -394,9 +394,8 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
           </p>
         </div>
         {canUploadPhotos && (
-          <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="text-[11px] py-1.5 px-3">
-            <RefreshCw className={`h-3 w-3 mr-1.5 ${actionLoading ? "animate-spin" : ""}`} />
-            Refresh
+          <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="p-2" aria-label="Refresh">
+            <RefreshCw className={`h-4 w-4 ${actionLoading ? "animate-spin" : ""}`} />
           </Button>
         )}
       </div>
@@ -495,7 +494,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto w-full sm:w-auto px-1 pb-1">
+          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto w-full sm:w-auto px-1 pb-1 justify-center sm:justify-start">
             {exportProgress ? (
               <div className="flex items-center px-4 py-2 bg-clay-surface rounded-full text-xs font-medium text-clay-primary shadow-clay-card">
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
