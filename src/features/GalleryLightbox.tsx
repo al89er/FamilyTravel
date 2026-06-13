@@ -121,18 +121,20 @@ export function GalleryLightbox({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
       {/* Top Bar */}
-      <div className="absolute top-0 inset-x-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-black/60 to-transparent">
-        <div className="flex-1">
-          <p className="text-white/80 text-xs font-medium">
+      <div 
+        className="absolute top-0 inset-x-0 p-4 pt-[max(1rem,env(safe-area-inset-top))] flex justify-between items-start sm:items-center z-10 bg-gradient-to-b from-black/80 via-black/40 to-transparent pb-12 pointer-events-none"
+      >
+        <div className="flex-1 pt-2">
+          <p className="text-white/90 text-sm font-medium drop-shadow-md">
             {currentIndex + 1} of {mediaItems.length}
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-2 sm:gap-4 flex-wrap justify-end pointer-events-auto">
           <button
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className={`p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors ${downloading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`p-2.5 sm:p-2 text-white bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full shadow-lg transition-colors ${downloading ? "opacity-50 cursor-not-allowed" : ""}`}
             title="Download photo"
             aria-label="Download photo"
           >
@@ -142,7 +144,7 @@ export function GalleryLightbox({
             <button
               type="button"
               onClick={() => setRemoveCandidate(currentItem)}
-              className="p-2 text-white/70 hover:text-red-400 hover:bg-white/10 rounded-full transition-colors"
+              className="p-2.5 sm:p-2 text-white bg-black/20 hover:bg-red-500/80 backdrop-blur-md rounded-full shadow-lg transition-colors"
               title="Remove from trip gallery"
               aria-label="Remove from trip gallery"
             >
@@ -152,7 +154,7 @@ export function GalleryLightbox({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+            className="p-2.5 sm:p-2 text-white bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full shadow-lg transition-colors"
             title="Close viewer"
             aria-label="Close viewer"
           >
