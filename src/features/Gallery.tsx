@@ -15,6 +15,7 @@ import {
   disconnectGooglePhotos
 } from "../lib/supabase";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { GalleryPageSkeleton } from "./GallerySkeletons";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
   return (
@@ -531,7 +532,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   }
 
   if (loading) {
-    return <LoadingState />;
+    return <GalleryPageSkeleton canManageGoogleConnection={canManageGoogleConnection} canUploadPhotos={canUploadPhotos} />;
   }
 
   async function handleRemoveMediaItem(mediaItemId: string) {

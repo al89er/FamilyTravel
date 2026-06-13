@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2, ImageOff } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, ImageOff, Loader2 } from "lucide-react";
 import { Modal, Button } from "../components/ui";
 
 interface GalleryLightboxProps {
@@ -22,14 +22,21 @@ export function GalleryLightbox({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [removeCandidate, setRemoveCandidate] = useState<any>(null);
   const [removing, setRemoving] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Sync state if initialIndex changes when opening
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex);
       setRemoveCandidate(null);
+      setImageLoaded(false);
     }
   }, [initialIndex, isOpen]);
+
+  // Reset image loaded state when navigating between images
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % mediaItems.length);
@@ -131,11 +138,19 @@ export function GalleryLightbox({
         if (e.target === e.currentTarget) onClose();
       }}>
         {hasValidUrl ? (
-          <img
-            src={imageUrl}
-            alt={currentItem.caption || currentItem.filename || "Trip photo"}
-            className="max-h-full max-w-full object-contain pointer-events-none"
-          />
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <Loader2 className="h-12 w-12 text-white/50 animate-spin" />
+              </div>
+            )}
+            <img
+              src={imageUrl}
+              alt={currentItem.caption || currentItem.filename || "Trip photo"}
+              className={`max-h-full max-w-full object-contain pointer-events-none transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              onLoad={() => setImageLoaded(true)}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center text-white/50">
             <ImageOff className="h-16 w-16 mb-4 opacity-50" />
