@@ -145,10 +145,12 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
         <p className="text-xs font-bold uppercase tracking-widest text-clay-secondary/70">
           {mediaItems.length} Photo{mediaItems.length !== 1 && "s"}
         </p>
-        <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="text-[11px] py-1.5 px-3">
-          <RefreshCw className={`h-3 w-3 mr-1.5 ${actionLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        {canUploadPhotos && (
+          <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="text-[11px] py-1.5 px-3">
+            <RefreshCw className={`h-3 w-3 mr-1.5 ${actionLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 px-4 lg:px-0">
@@ -285,15 +287,19 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
 
   async function loadData() {
     try {
-      const [albumData, mediaData, connData] = await Promise.all([
+      const [albumData, mediaData] = await Promise.all([
         getTripGalleryAlbum(data.trip.id),
-        listTripGalleryMediaItems(data.trip.id),
-        getGooglePhotosConnectionStatus(data.trip.id).catch(() => null)
+        listTripGalleryMediaItems(data.trip.id)
       ]);
+      
+      let connData = null;
+      if (canUploadPhotos || canManageGoogleConnection) {
+        connData = await getGooglePhotosConnectionStatus(data.trip.id).catch(() => null);
+      }
       
       let finalMediaData = mediaData;
       
-      if (mediaData.length > 0) {
+      if (mediaData.length > 0 && canUploadPhotos) {
         const now = Date.now();
         const needsRefresh = mediaData.some(m => {
           if (!m.cachedBaseUrl) return true;
@@ -490,35 +496,48 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       )}
 
       {/* UX State 2 & 3: Ready for Media */}
-      {isConnected && hasAlbum && (
-        <>
-          {canUploadPhotos && (
-            <div className="mb-8">
-              <GalleryUploadPanel 
-                selectedFiles={selectedFiles}
-                caption={caption}
-                uploading={uploading}
-                handleFileSelect={handleFileSelect}
-                removeFile={removeFile}
-                clearFiles={clearFiles}
-                setCaption={setCaption}
-                handleUpload={handleUpload}
-                fileInputRef={fileInputRef}
-              />
-            </div>
-          )}
+      {(!canUploadPhotos && !canManageGoogleConnection) ? (
+        hasPhotos ? (
+          <GalleryGrid 
+            mediaItems={mediaItems}
+            handleManualRefresh={handleManualRefresh}
+            actionLoading={actionLoading}
+            canUploadPhotos={canUploadPhotos}
+          />
+        ) : (
+          <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
+        )
+      ) : (
+        isConnected && hasAlbum && (
+          <>
+            {canUploadPhotos && (
+              <div className="mb-8">
+                <GalleryUploadPanel 
+                  selectedFiles={selectedFiles}
+                  caption={caption}
+                  uploading={uploading}
+                  handleFileSelect={handleFileSelect}
+                  removeFile={removeFile}
+                  clearFiles={clearFiles}
+                  setCaption={setCaption}
+                  handleUpload={handleUpload}
+                  fileInputRef={fileInputRef}
+                />
+              </div>
+            )}
 
-          {hasPhotos ? (
-            <GalleryGrid 
-              mediaItems={mediaItems}
-              handleManualRefresh={handleManualRefresh}
-              actionLoading={actionLoading}
-              canUploadPhotos={canUploadPhotos}
-            />
-          ) : (
-            <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
-          )}
-        </>
+            {hasPhotos ? (
+              <GalleryGrid 
+                mediaItems={mediaItems}
+                handleManualRefresh={handleManualRefresh}
+                actionLoading={actionLoading}
+                canUploadPhotos={canUploadPhotos}
+              />
+            ) : (
+              <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
+            )}
+          </>
+        )
       )}
 
       {/* UX State 4: Advanced Settings */}
