@@ -157,22 +157,20 @@ export function Layout({
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-          <div className="flex flex-col gap-1.5 pb-20">
-            {visibleNavItems.slice(PRIMARY_COUNT).map((item) => (
-              <DrawerNavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                active={activeView === item.id}
-                onClick={() => {
-                  onViewChange(item.id);
-                  setIsMoreOpen(false);
-                }}
-              />
-            ))}
-          </div>
-        </nav>
+        <div className="grid grid-cols-4 gap-2 p-4">
+          {visibleNavItems.slice(PRIMARY_COUNT).map((item) => (
+            <DrawerNavItem
+              key={item.id}
+              icon={item.icon}
+              label={item.label}
+              active={activeView === item.id}
+              onClick={() => {
+                onViewChange(item.id);
+                setIsMoreOpen(false);
+              }}
+            />
+          ))}
+        </div>
       </div>
 
       {/* ── Mobile bottom nav dock ── */}
