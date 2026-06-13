@@ -11,16 +11,39 @@ import {
 } from "../lib/supabase";
 import type { AccessMode, AppData, FamilySession, NewTripInput, TripSummary } from "../types";
 
-export type AppView =
-  | "dashboard"
-  | "itinerary"
-  | "map"
-  | "documents"
-  | "expenses"
-  | "packing"
-  | "emergency"
-  | "assignments"
-  | "settings";
+export const ALL_APP_VIEWS = [
+  "dashboard",
+  "itinerary",
+  "map",
+  "documents",
+  "expenses",
+  "packing",
+  "emergency",
+  "assignments",
+  "settings"
+] as const;
+
+export type AppView = typeof ALL_APP_VIEWS[number];
+
+export function isValidAppView(value: any): value is AppView {
+  return ALL_APP_VIEWS.includes(value as any);
+}
+
+export function getLastViewForTrip(tripId: string): AppView {
+  try {
+    const val = localStorage.getItem(`familytravel:last-view:${tripId}`);
+    if (isValidAppView(val)) {
+      return val;
+    }
+  } catch (e) {}
+  return "dashboard";
+}
+
+export function saveLastViewForTrip(tripId: string, view: AppView) {
+  try {
+    localStorage.setItem(`familytravel:last-view:${tripId}`, view);
+  } catch (e) {}
+}
 
 export type AccessStatus = "checking" | "locked" | "loading" | "trip-select" | "empty" | "ready";
 
@@ -140,8 +163,9 @@ export function useAppState() {
       const role = summary?.role ?? tripData.members.find((member) => member.userId === tripData.currentUser.id)?.role ?? "organizer";
       setData(tripData);
       setAccessMode(role);
-      setActiveView("dashboard");
+      setActiveView(getLastViewForTrip(tripId));
       setAccessStatus("ready");
+      window.scrollTo({ top: 0, behavior: "instant" });
     } catch (err) {
       setData(null);
       setAccessMode("locked");
@@ -197,8 +221,9 @@ export function useAppState() {
       setData(result.data);
       setFamilySession(result.session);
       setAccessMode("family");
-      setActiveView("dashboard");
+      setActiveView(getLastViewForTrip(result.data.trip.id));
       setAccessStatus("ready");
+      window.scrollTo({ top: 0, behavior: "instant" });
       localStorage.setItem("family_session", JSON.stringify({ displayName, shareToken }));
       window.history.replaceState({}, "", `${window.location.pathname}?share=${encodeURIComponent(result.session.shareToken)}`);
     } catch (err) {

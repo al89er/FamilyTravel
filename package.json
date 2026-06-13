@@ -1,13 +1,17 @@
 {
   "name": "family-travel-companion",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.13.11",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run version:generate && tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "version:generate": "node scripts/generate-version.mjs",
+    "version:patch": "node scripts/bump-version.mjs patch && npm run version:generate",
+    "version:minor": "node scripts/bump-version.mjs minor && npm run version:generate",
+    "version:major": "node scripts/bump-version.mjs major && npm run version:generate"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.16",

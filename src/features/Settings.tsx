@@ -1,9 +1,10 @@
-import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun } from "lucide-react";
+import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun, ChevronDown, ChevronUp, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
 import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled, updateTrip } from "../lib/supabase";
 import type { AccessMode, AppData, Role, ShareLink, TripInput, TripMember, FamilySession } from "../types";
+import { APP_VERSION_LABEL, APP_COMMIT_SHA, APP_BUILD_NUMBER, APP_BUILD_DATE } from "../version";
 
 const FAMILY_TRAVEL_PUBLIC_URL = "https://al89er.github.io/FamilyTravel/";
 
@@ -31,6 +32,8 @@ export function Settings({
     return (
       <div className="space-y-5">
         <SectionHeader title="Trip Control Centre" eyebrow="Family mode" />
+
+        <InstallAppSection />
 
         {/* Family session info */}
         <Card className="p-6 border-0 bg-clay-surface">
@@ -75,6 +78,8 @@ export function Settings({
             </Button>
           </div>
         ) : null}
+
+        <DeveloperInfo />
       </div>
     );
   }
@@ -83,6 +88,8 @@ export function Settings({
   return (
     <div className="space-y-5">
       <SectionHeader title="Trip Control Centre" eyebrow={`Current role: ${role}`} />
+
+      <InstallAppSection />
 
       {/* Signed-in user card */}
       {onLeave ? (
@@ -108,6 +115,7 @@ export function Settings({
       <TripOverviewEditor data={data} onRefresh={onRefresh} />
       <OrganizerManagement data={data} role={role} />
       <ShareLinkManagement data={data} role={role} />
+      <DeveloperInfo />
     </div>
   );
 }
@@ -124,6 +132,112 @@ function PermissionRow({ label, allowed }: { label: string; allowed: boolean }) 
         {allowed ? "Allowed" : "Restricted"}
       </Badge>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InstallAppSection
+// ─────────────────────────────────────────────────────────────────────────────
+
+function InstallAppSection() {
+  const [expanded, setExpanded] = useState(false);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+  
+  return (
+    <Card className="p-6 border-0 bg-clay-surface">
+      <button 
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between font-bold text-clay-primary text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-gradient-to-br from-emerald-400 to-sky-500 shadow-clay-card text-white shrink-0">
+            <Smartphone className="h-5 w-5" />
+          </div>
+          <span>Install App to Home Screen</span>
+        </div>
+        {expanded ? <ChevronUp className="h-5 w-5 text-clay-secondary" /> : <ChevronDown className="h-5 w-5 text-clay-secondary" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200">
+          {isStandalone ? (
+            <div className="bg-clay-recessed rounded-[20px] p-6 shadow-clay-pressed flex flex-col items-center justify-center text-center gap-2">
+              <Badge tone="brand">Already installed</Badge>
+              <p className="text-sm font-medium text-clay-secondary mt-1">
+                You are currently using the installed native app. Enjoy!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 text-sm text-clay-secondary font-medium">
+              <p>For the best offline experience, install Family Travel Companion as an app on your phone.</p>
+              
+              <div className="bg-clay-recessed rounded-[20px] p-4 shadow-clay-pressed space-y-3">
+                <p className="font-bold text-clay-primary text-xs uppercase tracking-wider">iOS (Safari)</p>
+                <ol className="list-decimal pl-4 space-y-2">
+                  <li>Tap the <strong>Share</strong> button at the bottom of the screen.</li>
+                  <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+                  <li>Tap <strong>Add</strong> in the top right.</li>
+                </ol>
+              </div>
+
+              <div className="bg-clay-recessed rounded-[20px] p-4 shadow-clay-pressed space-y-3">
+                <p className="font-bold text-clay-primary text-xs uppercase tracking-wider">Android (Chrome)</p>
+                <ol className="list-decimal pl-4 space-y-2">
+                  <li>Tap the <strong>Menu</strong> (3 dots) top right.</li>
+                  <li>Tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+                  <li>Follow the on-screen instructions.</li>
+                </ol>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DeveloperInfo
+// ─────────────────────────────────────────────────────────────────────────────
+
+function DeveloperInfo() {
+  let dateStr = "Unknown";
+  try {
+    const d = new Date(APP_BUILD_DATE);
+    if (!isNaN(d.getTime())) {
+      dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+  } catch(e) {}
+
+  return (
+    <Card className="p-6 border-0 bg-clay-surface mt-10">
+      <h3 className="font-bold text-clay-primary text-base mb-4">Developed by</h3>
+      
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between bg-clay-recessed shadow-clay-pressed rounded-[20px] px-4 py-3">
+          <span className="text-sm font-medium text-clay-secondary">Developer</span>
+          <span className="text-sm font-bold text-clay-primary">al89er</span>
+        </div>
+        
+        <div className="flex items-center justify-between bg-clay-recessed shadow-clay-pressed rounded-[20px] px-4 py-3">
+          <span className="text-sm font-medium text-clay-secondary">Version</span>
+          <div className="flex items-center gap-2">
+            <Badge tone="brand">FamilyTravel</Badge>
+            <span className="text-sm font-bold text-clay-primary">{APP_VERSION_LABEL}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-2 pt-2">
+          <span className="text-xs font-medium text-clay-secondary/80">
+            Build #{APP_BUILD_NUMBER} ({APP_COMMIT_SHA})
+          </span>
+          <span className="text-xs font-medium text-clay-secondary/80">
+            {dateStr}
+          </span>
+        </div>
+      </div>
+    </Card>
   );
 }
 

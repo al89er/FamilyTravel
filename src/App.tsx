@@ -10,7 +10,7 @@ import { Packing } from "./features/Packing";
 import { Settings } from "./features/Settings";
 import { Layout } from "./components/Layout";
 import { ErrorState, LoadingState } from "./components/ui";
-import { useAppState, type AppView } from "./hooks/useAppState";
+import { useAppState, type AppView, isValidAppView, saveLastViewForTrip } from "./hooks/useAppState";
 import { useTheme } from "./hooks/useTheme";
 import { Sparkles } from "lucide-react";
 import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
@@ -40,8 +40,12 @@ export default function App() {
 
   useTheme(); // Initialize theme on app load
 
-  function openView(view: string) {
-    setActiveView(view as AppView);
+  function handleSetActiveView(view: string) {
+    if (!isValidAppView(view)) return;
+    setActiveView(view);
+    if (data?.trip?.id) {
+      saveLastViewForTrip(data.trip.id, view);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -97,7 +101,7 @@ export default function App() {
   return (
     <Layout 
       activeView={activeView} 
-      setActiveView={setActiveView} 
+      setActiveView={handleSetActiveView as (v: AppView) => void} 
       offline={offline}
       topBar={renderTopBar()}
     >
@@ -105,7 +109,7 @@ export default function App() {
       {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}
       {!loading ? (
         <>
-          {activeView === "dashboard" ? <Dashboard data={data} openView={openView} canEdit={canEdit} /> : null}
+          {activeView === "dashboard" ? <Dashboard data={data} openView={handleSetActiveView} canEdit={canEdit} /> : null}
           {activeView === "itinerary" ? <Itinerary data={data} familySession={familySession} canEdit={canEdit} onRefresh={refreshCurrentTrip} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "map" ? <MapPlaces data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
           {activeView === "documents" ? <Documents data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
