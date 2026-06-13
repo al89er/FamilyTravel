@@ -402,8 +402,8 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
             </a>
           </div>
 
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <div className={`mb-2 ${canEdit ? "pr-9" : ""}`}>
+          <div className={`flex-1 min-w-0 overflow-hidden ${canEdit ? "pr-10" : ""}`}>
+            <div className="mb-2">
               <h3 className="font-bold text-base sm:text-lg text-clay-primary truncate">{place.name}</h3>
             </div>
             
