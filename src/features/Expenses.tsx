@@ -273,8 +273,8 @@ function ExpenseForm({ isOpen, data, expense, onSaved, onCancel }: { isOpen: boo
     }));
   }
 
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     if (!form.category.trim() || form.amount < 0 || !form.paidBy || form.splitBetween.length === 0) {
       setError("Category, amount, paid by, and at least one split member are required.");
       return;
@@ -292,7 +292,17 @@ function ExpenseForm({ isOpen, data, expense, onSaved, onCancel }: { isOpen: boo
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={expense ? "Edit Expense" : "Add Expense"}>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onCancel} 
+      title={expense ? "Edit Expense" : "Add Expense"}
+      footer={
+        <div className="flex gap-2">
+          <Button type="button" disabled={busy} onClick={() => save()}>Save expense</Button>
+          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
+        </div>
+      }
+    >
       <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
         <Field label="Category"><input className={formInputClass} value={form.category} onChange={(event) => update("category", event.target.value)} placeholder="e.g. Food, Transport, Hotel" /></Field>
         <Field label="Amount"><input type="number" min="0" step="0.01" className={formInputClass} value={form.amount} onChange={(event) => update("amount", Number(event.target.value))} /></Field>
@@ -312,10 +322,6 @@ function ExpenseForm({ isOpen, data, expense, onSaved, onCancel }: { isOpen: boo
           </div>
         </div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2 pt-4">
-          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
-          <Button type="submit" disabled={busy}>Save expense</Button>
-        </div>
       </form>
     </Modal>
   );

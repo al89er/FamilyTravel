@@ -202,8 +202,8 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     setBusy(true);
     setError(null);
     setStatus(null);
@@ -247,7 +247,17 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
         </div>
       </Card>
 
-      <Modal isOpen={editing} onClose={() => setEditing(false)} title="Edit Trip Overview">
+      <Modal 
+        isOpen={editing} 
+        onClose={() => setEditing(false)} 
+        title="Edit Trip Overview"
+        footer={
+          <div className="flex gap-2">
+            <Button type="button" disabled={busy} onClick={() => save()}>Save changes</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
+          </div>
+        }
+      >
         {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
         <form className="grid gap-3 md:grid-cols-2" onSubmit={save}>
           <Field label="Trip title"><input className={formInputClass} value={form.title} onChange={(event) => update("title", event.target.value)} /></Field>
@@ -280,10 +290,6 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
             <Field label="Emergency summary">
               <textarea className={formTextareaClass} value={form.emergencySummary} onChange={(event) => update("emergencySummary", event.target.value)} />
             </Field>
-          </div>
-          <div className="flex gap-2 md:col-span-2 mt-2">
-            <Button type="submit" disabled={busy}>Save changes</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button>
           </div>
         </form>
       </Modal>
@@ -324,8 +330,8 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
     }
   }
 
-  async function addOrganizer(event: React.FormEvent) {
-    event.preventDefault();
+  async function addOrganizer(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     const cleanUsername    = username.trim().toLowerCase();
     const cleanDisplayName = displayName.trim();
 
@@ -392,7 +398,17 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
         </p>
       ) : null}
 
-      <Modal isOpen={adding} onClose={() => setAdding(false)} title="Add Organizer">
+      <Modal 
+        isOpen={adding} 
+        onClose={() => setAdding(false)} 
+        title="Add Organizer"
+        footer={
+          <div className="flex gap-2">
+            <Button type="button" disabled={busy} onClick={() => addOrganizer()}>Add organizer</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        }
+      >
         {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
         <form className="grid gap-3" onSubmit={addOrganizer}>
           <Field label="Display name">
@@ -404,10 +420,6 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
           <Field label="Temporary password">
             <input className={formInputClass} type="password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} />
           </Field>
-          <div className="flex gap-2 mt-2">
-            <Button type="submit" disabled={busy}>Add organizer</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
-          </div>
         </form>
       </Modal>
 
@@ -426,7 +438,73 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
         ))}
       </div>
 
-      <Modal isOpen={!!selectedOrganizer} onClose={() => setSelectedUserId("")} title={`Manage ${selectedOrganizer?.profile.displayName}`}>
+      <Modal 
+        isOpen={!!selectedOrganizer} 
+        onClose={() => setSelectedUserId("")} 
+        title={`Manage ${selectedOrganizer?.profile.displayName}`}
+        footer={
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => {
+                if (selectedOrganizer) {
+                  void run(
+                    () => manageOrganizer({ action: "updateDisplayName", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, displayName: newDisplayName }),
+                    "Organizer display name updated."
+                  ).then(() => setSelectedUserId(""));
+                }
+              }}
+            >
+              Update name
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => {
+                if (selectedOrganizer) {
+                  void run(
+                    () => manageOrganizer({ action: "resetPassword", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, temporaryPassword }),
+                    "Temporary password set. Organizer must change password on next login."
+                  ).then(() => setSelectedUserId(""));
+                }
+              }}
+            >
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
+              Reset password
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onClick={() => {
+                if (selectedOrganizer && window.confirm("Transfer ownership to this organizer? You will become an organizer.")) {
+                  void run(
+                    () => manageOrganizer({ action: "transferOwnership", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
+                    "Ownership transferred."
+                  ).then(() => setSelectedUserId(""));
+                }
+              }}
+            >
+              Transfer ownership
+            </Button>
+            <Button
+              variant="ghost"
+              disabled={busy}
+              className="text-danger hover:text-danger hover:bg-danger/10"
+              onClick={() => {
+                if (selectedOrganizer && window.confirm("Remove this organizer from the trip?")) {
+                  void run(
+                    () => manageOrganizer({ action: "removeOrganizer", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
+                    "Organizer removed."
+                  ).then(() => setSelectedUserId(""));
+                }
+              }}
+            >
+              Remove organizer
+            </Button>
+          </div>
+        }
+      >
         {selectedOrganizer ? (
           <div className="grid gap-3">
             {error ? <div className="mb-2"><ErrorState message={error} /></div> : null}
@@ -436,62 +514,6 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
             <Field label="Temporary password">
               <input className={formInputClass} type="password" value={temporaryPassword} onChange={(event) => setTemporaryPassword(event.target.value)} />
             </Field>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() =>
-                  void run(
-                    () => manageOrganizer({ action: "updateDisplayName", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, displayName: newDisplayName }),
-                    "Organizer display name updated."
-                  ).then(() => setSelectedUserId(""))
-                }
-              >
-                Update name
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() =>
-                  void run(
-                    () => manageOrganizer({ action: "resetPassword", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId, temporaryPassword }),
-                    "Temporary password set. Organizer must change password on next login."
-                  ).then(() => setSelectedUserId(""))
-                }
-              >
-                <KeyRound className="h-4 w-4" aria-hidden="true" />
-                Reset password
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => {
-                  if (window.confirm("Transfer ownership to this organizer? You will become an organizer.")) {
-                    void run(
-                      () => manageOrganizer({ action: "transferOwnership", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
-                      "Ownership transferred."
-                    ).then(() => setSelectedUserId(""));
-                  }
-                }}
-              >
-                Transfer ownership
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={busy}
-                className="text-danger hover:text-danger hover:bg-danger/10"
-                onClick={() => {
-                  if (window.confirm("Remove this organizer from the trip?")) {
-                    void run(
-                      () => manageOrganizer({ action: "removeOrganizer", tripId: data.trip.id, organizerUserId: selectedOrganizer.userId }),
-                      "Organizer removed."
-                    ).then(() => setSelectedUserId(""));
-                  }
-                }}
-              >
-                Remove organizer
-              </Button>
-            </div>
           </div>
         ) : <div />}
       </Modal>
@@ -567,8 +589,8 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
     }
   }
 
-  async function onCreate(event: React.FormEvent) {
-    event.preventDefault();
+  async function onCreate(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     setBusy(true);
     setError(null);
     setStatus(null);
@@ -651,7 +673,17 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
       ) : null}
 
       {/* Create share link modal */}
-      <Modal isOpen={adding} onClose={() => setAdding(false)} title="Create Share Link">
+      <Modal 
+        isOpen={adding} 
+        onClose={() => setAdding(false)} 
+        title="Create Share Link"
+        footer={
+          <div className="flex gap-2">
+            <Button type="button" disabled={busy} onClick={() => onCreate()}>Create link</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        }
+      >
         {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
         <form className="space-y-4" onSubmit={onCreate}>
           <Field label="Label">
@@ -677,10 +709,6 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
                 {lbl}
               </label>
             ))}
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" disabled={busy}>Create link</Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setAdding(false)}>Cancel</Button>
           </div>
         </form>
       </Modal>

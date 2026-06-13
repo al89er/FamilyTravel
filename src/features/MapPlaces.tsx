@@ -553,8 +553,8 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
     setSearchError(null);
   }
 
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save(event?: React.FormEvent) {
+    if (event) event.preventDefault();
     if (!form.name.trim()) {
       setError("Place name is required.");
       return;
@@ -572,7 +572,17 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={place ? "Edit Destination" : "Add a Place"}>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onCancel} 
+      title={place ? "Edit Destination" : "Add a Place"}
+      footer={
+        <div className="flex gap-2">
+          <Button type="button" disabled={busy || !form.name.trim()} onClick={() => save()}>Save destination</Button>
+          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
+        </div>
+      }
+    >
       <form className="grid gap-4 md:grid-cols-2" onSubmit={save}>
         <div className="space-y-2 md:col-span-2">
           <Field label="Search place">
@@ -637,10 +647,6 @@ function PlaceForm({ isOpen, data, place, onSaved, onCancel }: { isOpen: boolean
         </div>
         <div className="md:col-span-2"><Field label="Notes"><textarea className={formTextareaClass} value={form.notes ?? ""} onChange={(event) => update("notes", event.target.value || undefined)} /></Field></div>
         {error ? <div className="md:col-span-2"><ErrorState message={error} /></div> : null}
-        <div className="flex gap-2 md:col-span-2 pt-4">
-          <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>Cancel</Button>
-          <Button type="submit" disabled={busy}>Save destination</Button>
-        </div>
       </form>
     </Modal>
   );
