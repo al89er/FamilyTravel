@@ -77,3 +77,6 @@ Rules:
 
 commit:checkpoint is only for temporary local save points when specifically requested.
 finish:* is preferred for completed AI coding tasks.
+
+Before using finish:patch/minor/major, the agent must complete the requested code changes. The finish script will run a build check before bumping the version. If the build check fails, the version must not be bumped and no commit should be created.
+Do not run finish:* repeatedly just to test. Fix build errors first, then run finish:* once.
