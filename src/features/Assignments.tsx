@@ -399,7 +399,7 @@ function RoomRow({
   const ActionMenu = () => {
     if (!canEdit) return null;
     return (
-      <div className="absolute top-4 right-4 z-30">
+      <div className="absolute top-4 right-4 z-[80]">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
@@ -413,12 +413,12 @@ function RoomRow({
           <>
             {/* Click-outside backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[70] bg-transparent"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -449,7 +449,7 @@ function RoomRow({
   };
 
   return (
-    <div className="relative rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+    <div className={`relative rounded-[28px] border-0 bg-clay-surface px-5 py-5 sm:px-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group ${menuOpen ? "z-50" : "z-0"}`}>
       <ActionMenu />
       {/* Key card accent strip */}
       <div className="absolute top-0 left-0 right-0 h-2 rounded-t-[28px] bg-gradient-to-r from-indigo-400 to-purple-500" />
@@ -852,7 +852,7 @@ function SeatCard({
   const ActionMenu = () => {
     if (!canEdit) return null;
     return (
-      <div className="absolute top-4 right-4 z-30">
+      <div className="absolute top-4 right-4 z-[80]">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
@@ -866,12 +866,12 @@ function SeatCard({
           <>
             {/* Click-outside backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[70] bg-transparent"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -902,7 +902,7 @@ function SeatCard({
   };
 
   return (
-    <div className="relative flex flex-col rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group">
+    <div className={`relative flex flex-col rounded-[28px] border-0 bg-clay-surface shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 group ${menuOpen ? "z-50" : "z-0"}`}>
       <ActionMenu />
       {/* Boarding pass accent strip */}
       <div className="absolute top-0 left-0 bottom-0 w-2.5 rounded-l-[28px] bg-gradient-to-b from-sky-400 to-blue-500" />
