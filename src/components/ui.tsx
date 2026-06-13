@@ -361,10 +361,10 @@ export function Button({
       "hover:bg-clay-recessed hover:shadow-clay-pressed " +
       "active:scale-[0.92]",
 
-    // Danger: soft red tint
+    // Danger: soft red tint with red border
     danger:
-      "bg-danger/10 text-danger ring-1 ring-danger/20 " +
-      "hover:bg-danger/20 active:bg-danger/30 active:scale-[0.92]",
+      "bg-danger/10 text-danger border border-danger " +
+      "hover:bg-danger/20 active:bg-danger/30 active:scale-[0.92] focus-visible:outline-danger",
   };
 
   return (
