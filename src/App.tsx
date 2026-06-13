@@ -13,6 +13,7 @@ import { ErrorState, LoadingState } from "./components/ui";
 import { useAppState, type AppView } from "./hooks/useAppState";
 import { useTheme } from "./hooks/useTheme";
 import { Sparkles } from "lucide-react";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 
 export default function App() {
   const {
@@ -115,6 +116,8 @@ export default function App() {
           {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} familySession={familySession} onRefresh={refreshCurrentTrip} onLeave={leaveSession} /> : null}
         </>
       ) : null}
+      
+      <PWAInstallPrompt />
     </Layout>
   );
 }
