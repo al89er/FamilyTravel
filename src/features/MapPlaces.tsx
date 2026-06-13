@@ -203,7 +203,7 @@ export function MapPlaces({ data, canEdit = false, onRefresh }: { data: AppData;
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-4 lg:grid-cols-1">
             {filteredPlaces.map((place, idx) => (
               <PlaceCard key={place.id} data={data} place={place} itineraryItem={place.itineraryItemId ? itineraryById.get(place.itineraryItemId) : undefined} canEdit={canEdit} onRefresh={onRefresh} listIndex={idx + 1} />
             ))}
@@ -382,27 +382,32 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
 
   return (
     <>
-      <Card className={`relative group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6 ${menuOpen ? "z-50" : "z-0"}`}>
+      <Card className={`relative group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-4 sm:p-6 ${menuOpen ? "z-50" : "z-0"}`}>
         <ActionMenu />
-        <div className="flex gap-4 sm:gap-6">
-          <div className="shrink-0 flex flex-col items-center gap-3">
-            <div className={`relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-[20px] sm:rounded-[24px] shadow-clay-btn ${orbClass}`}>
+        <div className="flex gap-3 sm:gap-5">
+          <div className="shrink-0 flex flex-col items-center gap-2">
+            <div className={`relative flex h-14 w-14 sm:h-20 sm:w-20 items-center justify-center rounded-[18px] sm:rounded-[24px] shadow-clay-btn ${orbClass}`}>
               {icon}
-              <div className={`absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-clay-surface`}>
+              <div className={`absolute -top-2 -right-2 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full ${bubbleClass} text-[10px] font-bold text-white shadow-sm ring-2 ring-clay-surface`}>
                 {listIndex}
               </div>
             </div>
-            <Button variant="ghost" className="h-8 px-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15 w-full" onClick={() => window.open(googleMapsUrl(place), "_blank", "noopener,noreferrer")}>
-              <ExternalLink className="h-3 w-3 mr-1" aria-hidden="true" />Maps
-            </Button>
+            <a
+              href={googleMapsUrl(place)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-[10px] text-[10px] sm:text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15 transition-colors w-full justify-center"
+            >
+              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />Maps
+            </a>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="mb-2 pr-10">
-              <h3 className="font-bold text-lg text-clay-primary truncate">{place.name}</h3>
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <div className={`mb-2 ${canEdit ? "pr-9" : ""}`}>
+              <h3 className="font-bold text-base sm:text-lg text-clay-primary truncate">{place.name}</h3>
             </div>
             
-            <div className="flex flex-wrap items-center justify-between gap-2 pr-10">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
                 {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
