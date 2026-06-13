@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2, ImageOff, Loader2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, ImageOff, Loader2, Download } from "lucide-react";
 import { Modal, Button } from "../components/ui";
+import { downloadTripGalleryMediaItem } from "../lib/supabase";
 
 interface GalleryLightboxProps {
+  tripId: string;
   mediaItems: any[];
   initialIndex: number;
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface GalleryLightboxProps {
 }
 
 export function GalleryLightbox({
+  tripId,
   mediaItems,
   initialIndex,
   isOpen,
@@ -22,6 +25,7 @@ export function GalleryLightbox({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [removeCandidate, setRemoveCandidate] = useState<any>(null);
   const [removing, setRemoving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
   // Sync state if initialIndex changes when opening
@@ -99,6 +103,21 @@ export function GalleryLightbox({
     }
   }
 
+  async function handleDownload() {
+    if (!currentItem || downloading) return;
+    setDownloading(true);
+    try {
+      // Use friendly filename
+      const filename = currentItem.filename || "family-travel-photo.jpg";
+      await downloadTripGalleryMediaItem(tripId, currentItem.id, filename);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Failed to download photo.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm">
       {/* Top Bar */}
@@ -109,6 +128,16 @@ export function GalleryLightbox({
           </p>
         </div>
         <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className={`p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors ${downloading ? "opacity-50 cursor-not-allowed" : ""}`}
+            title="Download photo"
+            aria-label="Download photo"
+          >
+            {downloading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+          </button>
           {isOwner && (
             <button
               type="button"

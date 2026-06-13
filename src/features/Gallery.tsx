@@ -633,6 +633,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
 
       {/* Lightbox */}
       <GalleryLightbox
+        tripId={data.trip.id}
         isOpen={lightboxIndex !== null}
         initialIndex={lightboxIndex ?? 0}
         mediaItems={mediaItems}

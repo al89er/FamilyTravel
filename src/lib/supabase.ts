@@ -814,6 +814,30 @@ export async function removeTripGalleryMediaItem(tripId: string, mediaItemId: st
   if (data?.error) throw new Error(data.error);
 }
 
+export async function downloadTripGalleryMediaItem(tripId: string, mediaItemId: string, filename: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("gallery-download-media", {
+    body: { tripId, mediaItemId }
+  });
+
+  if (error) {
+    console.error("gallery-download-media error:", error);
+    throw new Error(error.message || "Failed to prepare download");
+  }
+
+  // The edge function streams the image as a Blob
+  const blob = new Blob([data]);
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.style.display = "none";
+  a.href = url;
+  a.download = filename || "family-travel-photo.jpg";
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 export async function refreshGooglePhotosMedia(tripId: string, mediaItemIds?: string[]) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase.functions.invoke("google-photos-refresh-media", {
