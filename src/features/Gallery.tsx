@@ -14,6 +14,7 @@ import {
   removeTripGalleryMediaItem,
   disconnectGooglePhotos
 } from "../lib/supabase";
+import { GalleryLightbox } from "./GalleryLightbox";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
   return (
@@ -139,7 +140,7 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
   );
 }
 
-function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem }: any) {
+function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
   const [removeCandidate, setRemoveCandidate] = useState<any>(null);
   const [removing, setRemoving] = useState(false);
 
@@ -171,7 +172,7 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 px-4 lg:px-0">
-        {mediaItems.map((item: any) => {
+        {mediaItems.map((item: any, index: number) => {
           const now = Date.now();
           let hasValidThumbnail = false;
           if (item.cachedBaseUrl && item.cachedBaseUrlExpiresAt) {
@@ -182,7 +183,11 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
           }
 
           return (
-            <div key={item.id} className="group relative bg-clay-recessed rounded-[20px] shadow-clay-pressed overflow-hidden aspect-square flex flex-col">
+            <div 
+              key={item.id} 
+              className="group relative bg-clay-recessed rounded-[20px] shadow-clay-pressed overflow-hidden aspect-square flex flex-col cursor-pointer"
+              onClick={() => onImageClick?.(index)}
+            >
               {hasValidThumbnail ? (
                 <img 
                   src={`${item.cachedBaseUrl}=w400-h400-c`} 
@@ -321,6 +326,7 @@ function GallerySettingsPanel({ connection, album, mediaItemsCount, actionLoadin
 export function Gallery({ data, openView }: { data: AppData; openView: (view: AppView) => void }) {
   const [album, setAlbum] = useState<TripGalleryAlbum | null>(null);
   const [mediaItems, setMediaItems] = useState<TripGalleryMediaItem[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [connection, setConnection] = useState<GooglePhotosConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -571,6 +577,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             canUploadPhotos={canUploadPhotos}
             isOwner={isOwner}
             onRemoveMediaItem={handleRemoveMediaItem}
+            onImageClick={(index: number) => setLightboxIndex(index)}
           />
         ) : (
           <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
@@ -602,6 +609,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
                 canUploadPhotos={canUploadPhotos}
                 isOwner={isOwner}
                 onRemoveMediaItem={handleRemoveMediaItem}
+                onImageClick={(index: number) => setLightboxIndex(index)}
               />
             ) : (
               <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
@@ -610,8 +618,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
         )
       )}
 
-      {/* UX State 4: Advanced Settings */}
-      {canSeeAdvancedSettings && isConnected && (
+      {/* Advanced Settings */}
+      {canSeeAdvancedSettings && (
         <GallerySettingsPanel 
           connection={connection}
           album={album}
@@ -621,6 +629,16 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
           albumUrl={album?.albumUrl || data.trip.googlePhotosAlbumUrl}
         />
       )}
+
+      {/* Lightbox */}
+      <GalleryLightbox
+        isOpen={lightboxIndex !== null}
+        initialIndex={lightboxIndex ?? 0}
+        mediaItems={mediaItems}
+        onClose={() => setLightboxIndex(null)}
+        isOwner={isOwner}
+        onRemoveMediaItem={handleRemoveMediaItem}
+      />
     </div>
   );
 }
