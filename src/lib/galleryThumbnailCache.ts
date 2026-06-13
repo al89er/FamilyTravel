@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 const CACHE_NAME = 'family-travel-gallery-thumb-v1';
 const CACHE_PREFIX = 'https://localcache.familytravel.app/gallery-thumb/v1';
 
@@ -35,17 +37,7 @@ export async function getCachedThumbnailUrl(tripId: string, mediaItemId: string,
  */
 export async function fetchAndCacheThumbnail(tripId: string, mediaItemId: string, url: string, size: string = 'w400-h400-c'): Promise<string | null> {
   if (!('caches' in window)) {
-    // Fallback if no Cache API
-    try {
-      const res = await fetch(url);
-      if (res.ok) {
-        const blob = await res.blob();
-        return URL.createObjectURL(blob);
-      }
-    } catch (e) {
-      console.error("Fetch fallback error", e);
-    }
-    return null;
+    return url; // fallback to raw url
   }
 
   try {
@@ -55,12 +47,27 @@ export async function fetchAndCacheThumbnail(tripId: string, mediaItemId: string
     // Check if already cached concurrently
     let res = await cache.match(key);
     if (!res) {
-      res = await fetch(url);
+      if (!supabase) return url;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gallery-cors-proxy`;
+      
+      res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      });
+      
       if (res.ok) {
         // Clone to cache it
         await cache.put(key, res.clone());
       } else {
-        return null;
+        return url;
       }
     }
     
@@ -68,7 +75,7 @@ export async function fetchAndCacheThumbnail(tripId: string, mediaItemId: string
     return URL.createObjectURL(blob);
   } catch (e) {
     console.error("Fetch and Cache API error", e);
-    return null; // Don't return raw URL to avoid leaking or re-fetching repeatedly on fail
+    return url; // fallback to raw URL so image still displays even if cache fails
   }
 }
 
