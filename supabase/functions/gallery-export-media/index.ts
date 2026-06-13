@@ -52,12 +52,14 @@ serve(async (req) => {
     }
 
     // Verify trip membership
-    const { data: isMember, error: memberError } = await adminClient.rpc("is_trip_member", {
-      t_id: trip_id,
-      u_id: user.id
-    });
+    const { data: memberData, error: memberError } = await adminClient
+      .from("trip_members")
+      .select("id")
+      .eq("trip_id", trip_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (memberError || !isMember) {
+    if (memberError || !memberData) {
       return new Response(JSON.stringify({ error: "Forbidden: Not a trip member" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
