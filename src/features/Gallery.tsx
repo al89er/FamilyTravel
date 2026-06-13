@@ -1,4 +1,5 @@
 import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2, CheckCircle2, Circle, Download, Share2, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
@@ -483,7 +484,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
       </div>
 
       {/* Batch Action Bar */}
-      {isSelectionMode && (
+      {isSelectionMode && createPortal(
         <div className="fixed bottom-0 inset-x-0 z-[1040] p-4 bg-clay-surface border-t border-border/20 shadow-clay-card flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-4 animate-in slide-in-from-bottom-full pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-3">
@@ -526,7 +527,8 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
             </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <Modal
