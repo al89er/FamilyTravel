@@ -12,6 +12,7 @@ import { Layout } from "./components/Layout";
 import { ErrorState, LoadingState } from "./components/ui";
 import { useAppState, type AppView } from "./hooks/useAppState";
 import { useTheme } from "./hooks/useTheme";
+import { Sparkles } from "lucide-react";
 
 export default function App() {
   const {
@@ -61,21 +62,43 @@ export default function App() {
     );
   }
 
+  const renderTopBar = () => {
+    if (activeView === "dashboard") {
+      const name = data.currentUser?.displayName || data.currentUser?.username || "traveller";
+      return (
+        <div className="flex items-center justify-between px-4 py-3 lg:px-0 lg:py-0">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-0.5">Holiday mode</p>
+            <h1 className="truncate text-lg font-extrabold text-clay-primary leading-tight">Welcome, {name}</h1>
+            <p className="truncate text-xs font-medium text-clay-secondary/80 mt-0.5">
+              Ready for your getaway?
+            </p>
+          </div>
+          <div className="ml-4 shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-sky-500 shadow-clay-card text-white">
+            <Sparkles className="h-5 w-5" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-between px-4 py-3 lg:px-0 lg:py-0">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-bold text-primary">{data.trip.title}</h1>
+          <p className="truncate text-xs font-medium text-muted">
+            {data.trip.destination} <span className="mx-1">•</span> {accessModeLabel(accessMode)}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Layout 
       activeView={activeView} 
       setActiveView={setActiveView} 
       offline={offline}
-      topBar={
-        <div className="flex items-center justify-between px-4 py-3 lg:px-0 lg:py-0">
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold text-primary">{data.trip.title}</h1>
-            <p className="truncate text-xs font-medium text-muted">
-              {data.trip.destination} <span className="mx-1">•</span> {accessModeLabel(accessMode)}
-            </p>
-          </div>
-        </div>
-      }
+      topBar={renderTopBar()}
     >
       {loading ? <LoadingState /> : null}
       {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}

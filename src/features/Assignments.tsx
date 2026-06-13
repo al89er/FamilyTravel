@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   BedDouble,
   CalendarRange,
@@ -144,14 +144,16 @@ function RoomForm({
   onSave,
   onCancel,
   saving,
-  onFormReady
+  onValidityChange,
+  onRegisterSave
 }: {
   data: AppData;
   initial: RoomAssignmentInput;
   onSave: (input: RoomAssignmentInput) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
-  onFormReady?: (save: () => void, isValid: () => boolean) => void;
+  onValidityChange?: (isValid: boolean) => void;
+  onRegisterSave?: (saveFn: () => void) => void;
 }) {
   const [form, setForm] = useState<RoomAssignmentInput>(initial);
 
@@ -169,16 +171,19 @@ function RoomForm({
 
   const isValid = form.hotelName.trim() !== "" && form.roomNumber.trim() !== "";
 
-  // Expose save trigger to parent
-  const formRef = useRef({ form, isValid });
-  formRef.current = { form, isValid };
+  // Keep latest form state in a ref
+  const formRef = useRef(form);
+  formRef.current = form;
+
   useEffect(() => {
-    onFormReady?.(
-      () => void onSave(formRef.current.form),
-      () => formRef.current.isValid
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onFormReady]);
+    onValidityChange?.(isValid);
+  }, [isValid, onValidityChange]);
+
+  useEffect(() => {
+    onRegisterSave?.(() => {
+      void onSave(formRef.current);
+    });
+  }, [onRegisterSave, onSave]);
 
   return (
     <div className="space-y-4">
@@ -553,7 +558,16 @@ function RoomAssignmentsSection({
   const editingRoom = editingId ? data.roomAssignments.find(r => r.id === editingId) : null;
   const showModal = adding || !!editingRoom;
 
-  const [roomSaveTrigger, setRoomSaveTrigger] = useState<{ save: () => void; isValid: () => boolean } | null>(null);
+  const [roomValid, setRoomValid] = useState(false);
+  const roomSaveRef = useRef<(() => void) | null>(null);
+
+  const registerSave = useCallback((saveFn: () => void) => {
+    roomSaveRef.current = saveFn;
+  }, []);
+
+  const handleValidityChange = useCallback((valid: boolean) => {
+    setRoomValid(valid);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -565,8 +579,8 @@ function RoomAssignmentsSection({
           <div className="flex gap-2">
             <Button
               type="button"
-              onClick={() => roomSaveTrigger?.save()}
-              disabled={saving || !roomSaveTrigger?.isValid()}
+              onClick={() => roomSaveRef.current?.()}
+              disabled={saving || !roomValid}
             >
               {saving ? "Saving…" : "Save room"}
             </Button>
@@ -590,7 +604,8 @@ function RoomAssignmentsSection({
           onSave={(input) => handleSave(input, editingId ?? undefined)}
           onCancel={() => { setAdding(false); setEditingId(null); }}
           saving={saving}
-          onFormReady={(save, isValid) => setRoomSaveTrigger({ save, isValid })}
+          onValidityChange={handleValidityChange}
+          onRegisterSave={registerSave}
         />
       </Modal>
 
@@ -705,29 +720,34 @@ function SeatForm({
   onSave,
   onCancel,
   saving,
-  onFormReady
+  onValidityChange,
+  onRegisterSave
 }: {
   data: AppData;
   initial: FlightSeatAssignmentInput;
   onSave: (input: FlightSeatAssignmentInput) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
-  onFormReady?: (save: () => void, isValid: () => boolean) => void;
+  onValidityChange?: (isValid: boolean) => void;
+  onRegisterSave?: (saveFn: () => void) => void;
 }) {
   const [form, setForm] = useState<FlightSeatAssignmentInput>(initial);
   const flightItems = getFlightItems(data);
   const isValid = !!form.flightLabel.trim() && !!form.guestId.trim() && !!form.seatNumber.trim();
 
-  // Expose save trigger to parent
-  const formRef = useRef({ form, isValid });
-  formRef.current = { form, isValid };
+  // Keep latest form state in a ref
+  const formRef = useRef(form);
+  formRef.current = form;
+
   useEffect(() => {
-    onFormReady?.(
-      () => void onSave(formRef.current.form),
-      () => formRef.current.isValid
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onFormReady]);
+    onValidityChange?.(isValid);
+  }, [isValid, onValidityChange]);
+
+  useEffect(() => {
+    onRegisterSave?.(() => {
+      void onSave(formRef.current);
+    });
+  }, [onRegisterSave, onSave]);
 
   function selectMember(profileId: string) {
     const member = data.members.find((m) => m.profileId === profileId);
@@ -988,7 +1008,16 @@ function FlightSeatsSection({
   const editingSeat = editingId ? data.flightSeatAssignments.find(s => s.id === editingId) : null;
   const showModal = adding || !!editingSeat;
 
-  const [seatSaveTrigger, setSeatSaveTrigger] = useState<{ save: () => void; isValid: () => boolean } | null>(null);
+  const [seatValid, setSeatValid] = useState(false);
+  const seatSaveRef = useRef<(() => void) | null>(null);
+
+  const registerSave = useCallback((saveFn: () => void) => {
+    seatSaveRef.current = saveFn;
+  }, []);
+
+  const handleValidityChange = useCallback((valid: boolean) => {
+    setSeatValid(valid);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -1000,8 +1029,8 @@ function FlightSeatsSection({
           <div className="flex gap-2">
             <Button
               type="button"
-              onClick={() => seatSaveTrigger?.save()}
-              disabled={saving || !seatSaveTrigger?.isValid()}
+              onClick={() => seatSaveRef.current?.()}
+              disabled={saving || !seatValid}
             >
               {saving ? "Saving…" : "Save seat"}
             </Button>
@@ -1024,7 +1053,8 @@ function FlightSeatsSection({
           onSave={(input) => handleSave(input, editingId ?? undefined)}
           onCancel={() => { setAdding(false); setEditingId(null); }}
           saving={saving}
-          onFormReady={(save, isValid) => setSeatSaveTrigger({ save, isValid })}
+          onValidityChange={handleValidityChange}
+          onRegisterSave={registerSave}
         />
       </Modal>
 
