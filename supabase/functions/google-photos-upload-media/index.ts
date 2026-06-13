@@ -161,6 +161,7 @@ Deno.serve(async (req) => {
     // 5. Store metadata for successful items
     const results = batchData.newMediaItemResults || [];
     const uploadedMediaRows = [];
+    const diagnosticInsertedItems: any[] = [];
     
     // Fetch user profile to log uploader name
     const { data: profile } = await adminClient
@@ -215,6 +216,13 @@ Deno.serve(async (req) => {
       };
       
       uploadedMediaRows.push(mediaRow);
+      diagnosticInsertedItems.push({
+        fileName: originalFileName,
+        hasMediaItemId: !!mediaItem.id,
+        googleMediaItemIdPrefix: mediaItem.id ? String(mediaItem.id).substring(0, 12) : null,
+        hasBaseUrl: !!mediaItem.baseUrl,
+        hasProductUrl: !!mediaItem.productUrl
+      });
     }
 
     let savedItems = [];
@@ -238,6 +246,7 @@ Deno.serve(async (req) => {
       successCount: uploadedMediaRows.length,
       failedCount: errors.length + (files.length - uploadTokens.length),
       savedMetadataCount: savedItems.length,
+      insertedItems: diagnosticInsertedItems,
       uploadedItems: savedItems,
       errors
     });
