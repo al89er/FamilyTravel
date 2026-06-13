@@ -77,9 +77,17 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       if (res && res.refreshedCount > 0) {
         const finalMediaData = await listTripGalleryMediaItems(data.trip.id);
         setMediaItems(finalMediaData);
-        alert(`Thumbnails updated. Successfully refreshed ${res.refreshedCount} items.`);
+        let msg = `Thumbnails updated. Successfully refreshed ${res.refreshedCount} items.`;
+        if (res.processingDelayCount > 0) {
+          msg += `\nNote: ${res.processingDelayCount} item(s) are still processing by Google and couldn't be loaded yet. Try again in a few minutes.`;
+        }
+        alert(msg);
       } else {
-        alert("No thumbnails were refreshed. " + (res.message || "Unknown reason."));
+        if (res && res.processingDelayCount > 0) {
+          alert(`No thumbnails were refreshed.\n${res.processingDelayCount} recently uploaded photo(s) are still being processed by Google. Please try again in a few minutes.`);
+        } else {
+          alert("No thumbnails were refreshed. " + (res?.message || "Unknown reason."));
+        }
       }
     } catch (e) {
       console.error(e);

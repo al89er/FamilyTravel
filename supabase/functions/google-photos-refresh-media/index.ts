@@ -68,6 +68,7 @@ serve(async (req) => {
     let refreshedCount = 0;
     let missingBaseUrlCount = 0;
     let failedCount = 0;
+    let processingDelayCount = 0;
     let missingGoogleMediaIdCount = 0;
     const errors: any[] = [];
 
@@ -110,7 +111,11 @@ serve(async (req) => {
         console.log(`Item ${i + j}: hasMediaItem=${!!result.mediaItem}, hasBaseUrl=${!!result.mediaItem?.baseUrl}, statusCode=${result.status?.code}, statusMessage=${result.status?.message}`);
 
         if (result.status?.code) {
-          failedCount++;
+          if (result.status.code === 3) {
+            processingDelayCount++;
+          } else {
+            failedCount++;
+          }
           errors.push({
             index: i + j,
             code: result.status.code,
@@ -163,11 +168,14 @@ serve(async (req) => {
     }
 
     return json({ 
-      message: "Refresh complete",
+      message: processingDelayCount > 0 
+        ? `Refresh complete. ${processingDelayCount} item(s) are still processing by Google.`
+        : "Refresh complete",
       requestedCount,
       googleResultCount,
       refreshedCount,
       failedCount,
+      processingDelayCount,
       missingBaseUrlCount,
       missingGoogleMediaIdCount,
       errors: errors.length > 0 ? errors : undefined
