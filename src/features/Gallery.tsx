@@ -206,6 +206,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   
   const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
+  const [readyToShareFiles, setReadyToShareFiles] = useState<File[] | null>(null);
 
   // Sync selected IDs if items are removed
   useEffect(() => {
@@ -294,7 +295,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
     if (selectedItems.length === 0) return;
     
     if (!forceZip && selectedItems.length > 10) {
-      alert(`Please select up to 10 photos for native sharing (you selected ${selectedItems.length}). For larger batches, use ZIP download.`);
+      alert(`Please select up to 10 photos for native sharing (you selected ${selectedItems.length}). Use ZIP download for more photos.`);
       return;
     }
     
@@ -311,41 +312,34 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
       });
       
       if (result.files.length === 0) {
-        alert("Could not prepare any files for export.");
+        alert("Could not prepare the selected photos. Please try again.");
         return;
       }
       
       let warning = "";
       if (result.failedCount > 0) {
-        warning = `\nNote: ${result.failedCount} file(s) failed to download.`;
+        warning = `Prepared ${result.files.length} photos. ${result.failedCount} could not be prepared.`;
+      } else if (result.files.length < selectedItems.length) {
+         warning = `Prepared ${result.files.length} photos out of ${selectedItems.length}.`;
       }
       
       // canShare only reliably works on modern mobile browsers.
       const canShareNative = navigator.canShare && navigator.canShare({ files: result.files });
       
       if (!forceZip && canShareNative) {
-        setExportProgress({ current: result.files.length, total: result.files.length, message: "Opening share sheet..." });
-        
-        try {
-          await navigator.share({
-            files: result.files,
-            title: "Trip photos",
-            text: "Selected photos from Family Travel"
-          });
-        } catch (e: any) {
-          if (e.name !== "AbortError") {
-            console.error("Native share failed", e);
-            const useZip = window.confirm(`Native sharing failed or was not supported. Download as ZIP instead?${warning}`);
-            if (useZip) {
-              setExportProgress({ current: result.files.length, total: result.files.length, message: "Creating ZIP..." });
-              await downloadAsZip(tripTitle, result.files);
-            }
-          }
-        }
+        setExportProgress(null);
+        if (warning) alert(warning);
+        setReadyToShareFiles(result.files);
+        // Do NOT call navigator.share here because async prep loses transient user activation on iOS
+        return;
       } else {
         // Force ZIP or unsupported native share
         setExportProgress({ current: result.files.length, total: result.files.length, message: "Creating ZIP..." });
-        if (!forceZip && warning) alert(`${result.files.length} photos ready.${warning}`);
+        if (!forceZip) {
+          alert(`Your browser cannot share multiple photos directly. Try downloading as ZIP instead.${warning ? '\n' + warning : ''}`);
+        } else if (warning) {
+          alert(warning);
+        }
         await downloadAsZip(tripTitle, result.files);
       }
       
@@ -527,6 +521,50 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
         </div>,
         document.body
       )}
+
+      <Modal
+        isOpen={!!readyToShareFiles}
+        onClose={() => setReadyToShareFiles(null)}
+        title="Ready to Share"
+      >
+        <div className="p-6 flex flex-col items-center">
+          <Share2 className="h-12 w-12 text-primary mb-4" />
+          <p className="text-center text-sm text-clay-secondary mb-6">
+            Successfully prepared {readyToShareFiles?.length} photo(s) for sharing.
+          </p>
+          <Button 
+            variant="primary" 
+            className="w-full py-3"
+            onClick={async () => {
+              try {
+                if (readyToShareFiles) {
+                  await navigator.share({
+                    files: readyToShareFiles,
+                    title: "Trip photos",
+                    text: "Selected photos from Family Travel"
+                  });
+                }
+              } catch (e: any) {
+                if (e.name !== "AbortError") {
+                  console.error("Native share failed", e);
+                  alert("Native sharing failed. You can try downloading as ZIP instead.");
+                }
+              } finally {
+                setReadyToShareFiles(null);
+              }
+            }}
+          >
+            Open Share Sheet
+          </Button>
+          <button 
+            type="button"
+            className="mt-4 text-xs font-semibold text-clay-secondary hover:text-clay-primary transition-colors"
+            onClick={() => setReadyToShareFiles(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={itemsToRemove.length > 0}
