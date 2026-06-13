@@ -874,16 +874,6 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
           </div>
         </form>
       </Modal>
-
-      {/* Share link cards */}
-      <div className="mt-5 space-y-3">
-        {links.length === 0 ? (
-          <EmptyState title="No share links" body="Create a family share link when you are ready to invite relatives." />
-        ) : null}
-        {links.map((link) => (
-          <ShareLinkCard key={link.id} link={link} busy={busy} onToggle={toggleLink} />
-        ))}
-      </div>
     </Card>
   );
 }
