@@ -84,7 +84,7 @@ export function Settings({
             <h2 className="text-lg font-bold text-clay-primary">Troubleshooting</h2>
             <p className="mt-1 text-sm text-clay-secondary">Reload the app to fetch the latest data and clear temporary issues.</p>
           </div>
-          <Button onClick={() => window.location.reload()} variant="secondary">
+          <Button onClick={() => window.location.reload()} variant="danger">
             Reload App
           </Button>
         </Card>
@@ -131,7 +131,7 @@ export function Settings({
           <h2 className="text-lg font-bold text-clay-primary">Troubleshooting</h2>
           <p className="mt-1 text-sm text-clay-secondary">Reload the app to fetch the latest data and clear temporary issues.</p>
         </div>
-        <Button onClick={() => window.location.reload()} variant="secondary">
+        <Button onClick={() => window.location.reload()} variant="danger">
           Reload App
         </Button>
       </Card>
