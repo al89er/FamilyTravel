@@ -322,6 +322,20 @@ export interface TripGalleryMediaItem {
   updatedAt: string;
 }
 
+export interface TripMemoryDayNote {
+  id: string;
+  tripId: string;
+  dayDate: string;
+  dayNumber: number;
+  note: string | null;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TripMemoryDayNoteInput = Omit<TripMemoryDayNote, "id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy">;
+
 export type TripGalleryAlbumInput = Omit<TripGalleryAlbum, "id" | "tripId" | "createdAt" | "updatedAt">;
 export type TripGalleryMediaItemInput = Omit<TripGalleryMediaItem, "id" | "tripId" | "createdAt" | "updatedAt">;
 

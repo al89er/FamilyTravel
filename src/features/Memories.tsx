@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { AppData, TripGalleryMediaItem } from "../types";
-import { Card, EmptyState, LoadingState } from "../components/ui";
-import { BookHeart, CalendarDays, ImageIcon } from "lucide-react";
-import { listTripGalleryMediaItems } from "../lib/supabase";
+import { AppData, TripGalleryMediaItem, TripMemoryDayNote } from "../types";
+import { Card, EmptyState, LoadingState, Button, Modal } from "../components/ui";
+import { BookHeart, CalendarDays, ImageIcon, PlusCircle, Edit3, X } from "lucide-react";
+import { listTripGalleryMediaItems, listTripMemoryDayNotes, upsertTripMemoryDayNote } from "../lib/supabase";
 import { GalleryThumbnail } from "./Gallery";
 import { GalleryLightbox } from "./GalleryLightbox";
 
@@ -10,12 +10,20 @@ interface TripDay {
   dayNumber: number;
   dateStr: string;
   items: TripGalleryMediaItem[];
+  note: TripMemoryDayNote | null;
+  itinerarySummary: string;
 }
 
 export function Memories({ data, accessMode }: { data: AppData; accessMode: string }) {
   const [loading, setLoading] = useState(true);
   const [mediaItems, setMediaItems] = useState<TripGalleryMediaItem[]>([]);
+  const [dayNotes, setDayNotes] = useState<TripMemoryDayNote[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Edit Note State
+  const [editingNoteDay, setEditingNoteDay] = useState<TripDay | null>(null);
+  const [editingNoteText, setEditingNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   // Lightbox state
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -30,11 +38,15 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
       setLoading(true);
       setError(null);
       try {
-        const items = await listTripGalleryMediaItems(data.trip.id);
+        const [items, notes] = await Promise.all([
+          listTripGalleryMediaItems(data.trip.id),
+          listTripMemoryDayNotes(data.trip.id)
+        ]);
         if (!active) return;
         // Filter out removed items
         const visibleItems = items.filter(item => !item.is_removed);
         setMediaItems(visibleItems);
+        setDayNotes(notes);
       } catch (err: any) {
         if (active) setError(err.message || "Failed to load memories.");
       } finally {
@@ -62,7 +74,15 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
       // Generate up to 100 days to prevent infinite loops from bad data
       while (current <= end && dayNum <= 100) {
         const dateStr = current.toISOString().split("T")[0];
-        const dayObj = { dayNumber: dayNum, dateStr, items: [] };
+        
+        // Find existing note
+        const note = dayNotes.find(n => n.dayDate === dateStr) || null;
+
+        // Build itinerary summary
+        const dayItinerary = data.itinerary.filter(i => i.date === dateStr);
+        const itinerarySummary = dayItinerary.map(i => i.title).join(", ");
+
+        const dayObj = { dayNumber: dayNum, dateStr, items: [], note, itinerarySummary };
         tripDaysMap.set(dateStr, dayObj);
         tripDaysArr.push(dayObj);
         
@@ -118,7 +138,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
       unsortedItems: unsorted, 
       allSortedItemsForLightbox: sortedTimelineItems 
     };
-  }, [data.trip.startDate, data.trip.endDate, mediaItems]);
+  }, [data.trip.startDate, data.trip.endDate, mediaItems, dayNotes, data.itinerary]);
 
   const openLightbox = useCallback((item: TripGalleryMediaItem) => {
     // Find index of the item in the flat array
@@ -144,8 +164,38 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
     return dt.toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
   }
 
-  // Count days that have at least one photo
-  const daysWithPhotos = tripDays.filter(day => day.items.length > 0);
+  // Count days that have at least one photo or a note
+  const activeDays = tripDays.filter(day => day.items.length > 0 || day.note);
+
+  const handleSaveNote = async () => {
+    if (!editingNoteDay || !data.trip.id) return;
+    setSavingNote(true);
+    try {
+      const savedNote = await upsertTripMemoryDayNote({
+        tripId: data.trip.id,
+        dayDate: editingNoteDay.dateStr,
+        dayNumber: editingNoteDay.dayNumber,
+        note: editingNoteText.trim() || null
+      });
+
+      setDayNotes(prev => {
+        const next = [...prev];
+        const idx = next.findIndex(n => n.id === savedNote.id || n.dayDate === savedNote.dayDate);
+        if (idx >= 0) {
+          next[idx] = savedNote;
+        } else {
+          next.push(savedNote);
+        }
+        return next;
+      });
+
+      setEditingNoteDay(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to save note");
+    } finally {
+      setSavingNote(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -167,15 +217,15 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
         <div className="py-12">
           <LoadingState label="Loading your memories..." />
         </div>
-      ) : mediaItems.length === 0 ? (
+      ) : mediaItems.length === 0 && dayNotes.length === 0 ? (
         <EmptyState 
           icon={<BookHeart className="h-10 w-10 text-pink-400" />} 
           title="No memories yet" 
-          body="Photos will appear here grouped by day once they are uploaded to the Gallery." 
+          body="Photos and notes will appear here grouped by day." 
         />
       ) : (
         <div className="space-y-8 px-4 lg:px-0">
-          {daysWithPhotos.length === 0 && unsortedItems.length === 0 ? (
+          {activeDays.length === 0 && unsortedItems.length === 0 ? (
              <EmptyState 
                icon={<CalendarDays className="h-10 w-10 text-clay-secondary/40" />} 
                title="No matching days" 
@@ -193,9 +243,34 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                         <div>
                           <h3 className="text-xl font-black text-clay-primary">Day {day.dayNumber}</h3>
                           <p className="text-sm font-bold text-clay-secondary mt-0.5">{fmtDateLong(day.dateStr)}</p>
+                          {day.itinerarySummary && (
+                            <p className="text-xs font-semibold text-primary mt-2">
+                              {day.itinerarySummary}
+                            </p>
+                          )}
                         </div>
-                        {/* Could put an itinerary summary here later */}
+                        
+                        {isOwner || accessMode === "organizer" ? (
+                          <button
+                            onClick={() => {
+                              setEditingNoteDay(day);
+                              setEditingNoteText(day.note?.note || "");
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-clay-surface text-clay-secondary hover:text-primary hover:bg-primary/5 transition-colors shadow-clay-pressed"
+                          >
+                            {day.note?.note ? <Edit3 className="w-3.5 h-3.5" /> : <PlusCircle className="w-3.5 h-3.5" />}
+                            <span className="text-xs font-bold uppercase tracking-wide">
+                              {day.note?.note ? "Edit Note" : "Add Note"}
+                            </span>
+                          </button>
+                        ) : null}
                       </div>
+                      
+                      {day.note?.note && (
+                        <div className="mt-4 p-4 rounded-[16px] bg-clay-surface shadow-clay-pressed border border-border/50">
+                          <p className="text-sm font-medium text-clay-primary whitespace-pre-wrap">{day.note.note}</p>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="p-5">
@@ -256,6 +331,30 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
         isOwner={isOwner}
         onRemoveMediaItem={handleRemoveMediaItem}
       />
+
+      {/* Edit Note Modal */}
+      <Modal isOpen={!!editingNoteDay} onClose={() => { if (!savingNote) setEditingNoteDay(null); }} title={`Note for Day ${editingNoteDay?.dayNumber}`}>
+        <div className="space-y-4">
+          <p className="text-sm font-bold text-clay-secondary">
+            {editingNoteDay && fmtDateLong(editingNoteDay.dateStr)}
+          </p>
+          <textarea
+            className="w-full h-32 rounded-[16px] border border-border/50 bg-clay-surface px-4 py-3 text-sm font-medium text-clay-primary shadow-clay-pressed placeholder:text-clay-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Add your memories and notes for this day..."
+            value={editingNoteText}
+            onChange={e => setEditingNoteText(e.target.value)}
+            disabled={savingNote}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setEditingNoteDay(null)} disabled={savingNote}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveNote} disabled={savingNote}>
+              {savingNote ? "Saving..." : "Save Note"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -29,7 +29,9 @@ import type {
   TripGalleryAlbumStatus,
   TripGalleryVisibility,
   TripGalleryMediaType,
-  GooglePhotosConnectionStatus
+  GooglePhotosConnectionStatus,
+  TripMemoryDayNote,
+  TripMemoryDayNoteInput
 } from "../types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -1390,6 +1392,65 @@ function commentToComment(comment: Record<string, unknown>) {
     profileId: asString(comment.profile_id),
     body: asString(comment.body),
     createdAt: asString(comment.created_at)
+  };
+}
+
+export async function listTripMemoryDayNotes(tripId: string): Promise<TripMemoryDayNote[]> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from("trip_memory_day_notes")
+    .select("*")
+    .eq("trip_id", tripId)
+    .order("day_date", { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map(row => ({
+    id: row.id,
+    tripId: row.trip_id,
+    dayDate: row.day_date,
+    dayNumber: row.day_number,
+    note: row.note,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+}
+
+export async function upsertTripMemoryDayNote(input: TripMemoryDayNoteInput): Promise<TripMemoryDayNote> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) throw userError ?? new Error("Authentication required.");
+
+  const payload = {
+    trip_id: input.tripId,
+    day_date: input.dayDate,
+    day_number: input.dayNumber,
+    note: input.note,
+    updated_by: userData.user.id
+  };
+
+  const { data, error } = await supabase
+    .from("trip_memory_day_notes")
+    .upsert(
+      { ...payload, created_by: userData.user.id },
+      { onConflict: 'trip_id,day_date' }
+    )
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  
+  return {
+    id: data.id,
+    tripId: data.trip_id,
+    dayDate: data.day_date,
+    dayNumber: data.day_number,
+    note: data.note,
+    createdBy: data.created_by,
+    updatedBy: data.updated_by,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at
   };
 }
 
