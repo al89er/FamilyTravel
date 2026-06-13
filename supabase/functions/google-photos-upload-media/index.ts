@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     }
 
     const uploadTokens: { token: string; file: File }[] = [];
-    const errors: string[] = [];
+    const errors: any[] = [];
+    const uploadTokenMap = new Map<string, File>();
 
     // 3. Upload raw bytes to get upload tokens
     for (const file of files) {
@@ -106,16 +107,23 @@ Deno.serve(async (req) => {
 
         const token = await uploadResponse.text();
         uploadTokens.push({ token, file });
+        uploadTokenMap.set(token, file);
       } catch (e) {
         console.error("File upload error:", e);
-        errors.push(`Failed to upload ${file.name}.`);
+        errors.push({
+          fileName: file.name,
+          message: `Failed to upload ${file.name}.`
+        });
       }
     }
 
     if (uploadTokens.length === 0) {
       return json({ 
+        uploadTokenCount: 0,
+        batchCreateResultCount: 0,
         successCount: 0, 
         failedCount: errors.length, 
+        savedMetadataCount: 0,
         uploadedItems: [], 
         errors 
       }, 400);
@@ -161,28 +169,46 @@ Deno.serve(async (req) => {
       .eq("id", actor.id)
       .maybeSingle();
 
-    for (const result of results) {
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      const originalFile = result.uploadToken ? uploadTokenMap.get(result.uploadToken) : null;
+      const originalFileName = originalFile ? originalFile.name : "Unknown File";
+      const originalMimeType = originalFile ? originalFile.type : "application/octet-stream";
+
       if (result.status && result.status.code !== 0 && result.status.message !== "Success") {
-        errors.push(`Google failed to process an item: ${result.status.message}`);
+        errors.push({
+          index: i,
+          fileName: originalFileName,
+          statusCode: result.status.code,
+          statusMessage: result.status.message
+        });
         continue;
       }
       
       const mediaItem = result.mediaItem;
-      if (!mediaItem) continue;
+      if (!mediaItem || !mediaItem.id) {
+        errors.push({
+          index: i,
+          fileName: originalFileName,
+          statusCode: result.status?.code,
+          statusMessage: "Google returned success but missing mediaItem.id"
+        });
+        continue;
+      }
 
       const mediaRow = {
         trip_id: tripId,
         album_id: album.id,
         provider: "google_photos",
         google_media_item_id: mediaItem.id,
-        filename: mediaItem.filename,
-        mime_type: mediaItem.mimeType,
+        filename: mediaItem.filename || originalFileName,
+        mime_type: mediaItem.mimeType || originalMimeType,
         media_type: "photo",
         caption: caption || null,
         description: caption || null,
-        google_product_url: mediaItem.productUrl,
-        cached_base_url: mediaItem.baseUrl,
-        cached_base_url_expires_at: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
+        google_product_url: mediaItem.productUrl || null,
+        cached_base_url: mediaItem.baseUrl || null,
+        cached_base_url_expires_at: mediaItem.baseUrl ? new Date(Date.now() + 55 * 60 * 1000).toISOString() : null,
         uploaded_by_profile_id: actor.id,
         uploaded_by_name: profile?.display_name || actor.email || "Owner",
         taken_at: mediaItem.mediaMetadata?.creationTime || new Date().toISOString()
@@ -200,15 +226,18 @@ Deno.serve(async (req) => {
         
       if (insertError) {
         console.error("Failed to insert media metadata:", insertError);
-        errors.push("Photos uploaded to Google, but failed to save metadata to app.");
+        errors.push({ message: "Photos uploaded to Google, but failed to save metadata to app." });
       } else {
         savedItems = inserted;
       }
     }
 
     return json({
-      successCount: savedItems.length,
+      uploadTokenCount: uploadTokens.length,
+      batchCreateResultCount: results.length,
+      successCount: uploadedMediaRows.length,
       failedCount: errors.length + (files.length - uploadTokens.length),
+      savedMetadataCount: savedItems.length,
       uploadedItems: savedItems,
       errors
     });

@@ -320,6 +320,12 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             </Button>
           </div>
 
+          <div className="mb-4 px-4 lg:px-0">
+            <p className="text-xs font-bold text-clay-secondary/70">
+              Note: If older uploaded items cannot refresh thumbnails, please re-upload them.
+            </p>
+          </div>
+
           <Card className="p-6 sm:p-8 border-0 bg-clay-surface shadow-clay-card rounded-[32px] mx-4 lg:mx-0">
             {mediaItems.length === 0 ? (
               <div className="text-center py-6">
