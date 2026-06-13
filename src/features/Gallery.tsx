@@ -16,6 +16,7 @@ import {
 } from "../lib/supabase";
 import { GalleryLightbox } from "./GalleryLightbox";
 import { GalleryPageSkeleton } from "./GallerySkeletons";
+import { getCachedThumbnailUrl, fetchAndCacheThumbnail, deleteCachedThumbnail, clearGalleryThumbnailCache } from "../lib/galleryThumbnailCache";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
   return (
@@ -141,7 +142,61 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
   );
 }
 
-function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
+function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+    
+    async function load() {
+      // 1. Try to get from cache first
+      const cachedUrl = await getCachedThumbnailUrl(tripId, item.id);
+      if (cachedUrl) {
+        if (active) {
+          objectUrl = cachedUrl;
+          setSrc(cachedUrl);
+        } else {
+          URL.revokeObjectURL(cachedUrl);
+        }
+      }
+      
+      // 2. If valid baseUrl, fetch and cache it
+      const now = Date.now();
+      const isValid = item.cachedBaseUrl && item.cachedBaseUrlExpiresAt && (new Date(item.cachedBaseUrlExpiresAt).getTime() > now);
+      
+      if (isValid) {
+        const url = `${item.cachedBaseUrl}=w400-h400-c`;
+        const freshUrl = await fetchAndCacheThumbnail(tripId, item.id, url);
+        if (freshUrl && active) {
+          if (objectUrl && objectUrl !== freshUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = freshUrl;
+          setSrc(freshUrl);
+        } else if (freshUrl && !active) {
+          URL.revokeObjectURL(freshUrl);
+        }
+      }
+    }
+    
+    load();
+    
+    return () => { 
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [item, tripId]);
+  
+  if (!src) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-clay-surface/50 animate-pulse">
+        <ImageIcon className="h-8 w-8 text-clay-secondary/40" />
+      </div>
+    );
+  }
+  return <img src={src} alt={item.caption || item.filename || "Trip photo"} className="w-full h-full object-cover" />;
+}
+
+function GalleryGrid({ tripId, mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
   const [itemsToRemove, setItemsToRemove] = useState<any[]>([]);
   const [removing, setRemoving] = useState(false);
   
@@ -233,7 +288,10 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
     if (itemsToRemove.length === 0) return;
     setRemoving(true);
     try {
-      await Promise.all(itemsToRemove.map(item => onRemoveMediaItem(item.id)));
+      await Promise.all(itemsToRemove.map(async item => {
+        await onRemoveMediaItem(item.id);
+        await deleteCachedThumbnail(tripId, item.id);
+      }));
       setItemsToRemove([]);
       clearSelection();
     } catch (error) {
@@ -309,17 +367,7 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
                   )}
                 </button>
               </div>
-              {hasValidThumbnail ? (
-                <img 
-                  src={`${item.cachedBaseUrl}=w400-h400-c`} 
-                  alt={item.caption || item.filename || "Trip photo"} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex-1 flex items-center justify-center bg-clay-surface/50">
-                  <ImageIcon className="h-8 w-8 text-clay-secondary/40" />
-                </div>
-              )}
+              <GalleryThumbnail item={item} tripId={tripId} />
               
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 pointer-events-none">
                 {isOwner && !isSelectionMode && (
@@ -429,7 +477,17 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
   );
 }
 
-function GallerySettingsPanel({ connection, album, mediaItemsCount, actionLoading, handleDisconnect, albumUrl }: any) {
+function GallerySettingsPanel({ connection, album, mediaItemsCount, actionLoading, handleDisconnect, albumUrl, tripId }: any) {
+  const [clearingCache, setClearingCache] = useState(false);
+
+  const handleClearCache = async () => {
+    setClearingCache(true);
+    await clearGalleryThumbnailCache(tripId);
+    setClearingCache(false);
+    alert("Local thumbnail cache cleared. Refreshing page will load thumbnails from Google.");
+    window.location.reload();
+  };
+
   return (
     <details className="group mx-4 lg:mx-0 mt-12 bg-clay-recessed rounded-[24px] shadow-clay-pressed [&_summary::-webkit-details-marker]:hidden">
       <summary className="flex cursor-pointer items-center justify-between p-6">
@@ -522,7 +580,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       
       let finalMediaData = mediaData;
       
-      if (mediaData.length > 0 && canUploadPhotos) {
+      if (mediaData.length > 0) {
         const now = Date.now();
         const needsRefresh = mediaData.some(m => {
           if (!m.cachedBaseUrl) return true;
@@ -731,6 +789,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       {(!canUploadPhotos && !canManageGoogleConnection) ? (
         hasPhotos ? (
           <GalleryGrid 
+            tripId={data.trip.id}
             mediaItems={mediaItems}
             handleManualRefresh={handleManualRefresh}
             actionLoading={actionLoading}
@@ -763,6 +822,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
 
             {hasPhotos ? (
               <GalleryGrid 
+                tripId={data.trip.id}
                 mediaItems={mediaItems}
                 handleManualRefresh={handleManualRefresh}
                 actionLoading={actionLoading}
@@ -781,6 +841,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       {/* Advanced Settings */}
       {canSeeAdvancedSettings && (
         <GallerySettingsPanel 
+          tripId={data.trip.id}
           connection={connection}
           album={album}
           mediaItemsCount={mediaItems.length}
