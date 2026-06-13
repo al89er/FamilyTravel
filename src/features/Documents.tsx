@@ -97,7 +97,7 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
   const ActionMenu = () => {
     if (!canEdit) return null;
     return (
-      <div className="absolute top-4 right-4 z-30">
+      <div className="absolute top-4 right-4 z-[80]">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
@@ -111,12 +111,12 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
           <>
             {/* Click-outside backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[70] bg-transparent"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -164,7 +164,7 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
 
   return (
     <>
-      <Card className="relative p-5 sm:p-6 border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group">
+      <Card className={`relative p-5 sm:p-6 border-0 bg-clay-surface rounded-[32px] shadow-clay-card hover:shadow-clay-hover hover:-translate-y-1 transition-all group ${menuOpen ? "z-50" : "z-0"}`}>
         <ActionMenu />
         {/* Document wallet subtle top border */}
         <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-[32px] bg-gradient-to-r from-slate-200 to-slate-300" />

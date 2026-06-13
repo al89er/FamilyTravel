@@ -192,7 +192,7 @@ function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId:
   const ActionMenu = () => {
     if (!canEdit) return null;
     return (
-      <div className="absolute top-4 right-4 z-30">
+      <div className="absolute top-4 right-4 z-[80]">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
@@ -211,7 +211,7 @@ function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId:
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -243,7 +243,7 @@ function EmergencyContactCard({ tripId, contact, canEdit, onRefresh }: { tripId:
 
   return (
     <>
-    <div className="rounded-[28px] border-0 bg-clay-surface p-5 sm:p-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 relative">
+    <div className={`rounded-[28px] border-0 bg-clay-surface p-5 sm:p-6 shadow-clay-card transition-all hover:shadow-clay-hover hover:-translate-y-1 relative ${menuOpen ? "z-50" : "z-0"}`}>
       <ActionMenu />
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-red-100 shadow-clay-pressed">
@@ -295,12 +295,12 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
           <>
             {/* Click-outside backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[70] bg-transparent"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -332,7 +332,7 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
 
   return (
     <>
-    <Card className="relative p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all">
+    <Card className={`relative p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all ${menuOpen ? "z-50" : "z-0"}`}>
       <ActionMenu />
       <div className="absolute left-0 top-0 bottom-0 w-2.5 rounded-l-[28px] bg-red-500" />
       <div className="flex items-start gap-4 pl-3">

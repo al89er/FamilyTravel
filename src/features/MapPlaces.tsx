@@ -296,7 +296,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
   const ActionMenu = () => {
     if (!canEdit) return null;
     return (
-      <div className="absolute top-4 right-4 z-30">
+      <div className="absolute top-4 right-4 z-[80]">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
@@ -310,12 +310,12 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
           <>
             {/* Click-outside backdrop */}
             <div
-              className="fixed inset-0 z-40 bg-transparent"
+              className="fixed inset-0 z-[70] bg-transparent"
               onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
             />
             
             {/* Menu overlay */}
-            <div className="absolute right-0 top-11 z-50 min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
+            <div className="absolute right-0 top-11 z-[90] min-w-[120px] rounded-[20px] bg-clay-surface p-2 shadow-clay-card border border-border/40 flex flex-col gap-1">
               <button
                 type="button"
                 onClick={(e) => {
@@ -382,7 +382,7 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
 
   return (
     <>
-      <Card className="relative group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6">
+      <Card className={`relative group hover:-translate-y-1 hover:shadow-clay-hover transition-all border-0 bg-clay-surface shadow-clay-card rounded-[32px] p-5 sm:p-6 ${menuOpen ? "z-50" : "z-0"}`}>
         <ActionMenu />
         <div className="flex gap-4 sm:gap-6">
           <div className="shrink-0 flex flex-col items-center gap-3">
