@@ -42,6 +42,7 @@ serve(async (req) => {
       .select("*")
       .eq("trip_id", tripId)
       .eq("provider", "google_photos")
+      .eq("is_removed", false)
       .not("google_media_item_id", "is", null);
 
     if (mediaItemIds && Array.isArray(mediaItemIds) && mediaItemIds.length > 0) {

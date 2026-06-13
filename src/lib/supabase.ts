@@ -677,6 +677,7 @@ export async function listTripGalleryMediaItems(tripId: string): Promise<TripGal
     .from("trip_gallery_media_items")
     .select("*")
     .eq("trip_id", tripId)
+    .eq("is_removed", false)
     .order("taken_at", { ascending: false });
 
   if (error) throw error;
@@ -802,6 +803,15 @@ export async function createGooglePhotosAlbum(tripId: string, title?: string): P
   if (error) throw error;
   if (data?.error) throw new Error(data.error);
   return data;
+}
+
+export async function removeTripGalleryMediaItem(tripId: string, mediaItemId: string): Promise<void> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.functions.invoke("gallery-remove-media", {
+    body: { tripId, mediaItemId }
+  });
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
 }
 
 export async function refreshGooglePhotosMedia(tripId: string, mediaItemIds?: string[]) {

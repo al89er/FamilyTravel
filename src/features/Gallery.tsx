@@ -1,17 +1,18 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
-import { Card, Button, EmptyState, LoadingState } from "../components/ui";
+import { Card, Button, EmptyState, LoadingState, Modal } from "../components/ui";
 import { 
   getTripGalleryAlbum, 
   listTripGalleryMediaItems,
   getGooglePhotosConnectionStatus,
   startGooglePhotosOAuth,
-  disconnectGooglePhotos,
-  createGooglePhotosAlbum,
   uploadGooglePhotosMedia,
-  refreshGooglePhotosMedia
+  refreshGooglePhotosMedia,
+  createGooglePhotosAlbum,
+  removeTripGalleryMediaItem,
+  disconnectGooglePhotos
 } from "../lib/supabase";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
@@ -138,7 +139,23 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
   );
 }
 
-function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos }: any) {
+function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem }: any) {
+  const [removeCandidate, setRemoveCandidate] = useState<any>(null);
+  const [removing, setRemoving] = useState(false);
+
+  async function handleConfirmRemove() {
+    if (!removeCandidate) return;
+    setRemoving(true);
+    try {
+      await onRemoveMediaItem(removeCandidate.id);
+      setRemoveCandidate(null);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Failed to remove photo.");
+    } finally {
+      setRemoving(false);
+    }
+  }
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center px-4 lg:px-0">
@@ -179,6 +196,17 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
               )}
               
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setRemoveCandidate(item)}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/40 text-white/80 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition-all shadow-clay-card"
+                    aria-label="Remove from trip gallery"
+                    title="Remove from trip gallery"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
                 <p className="text-[10px] text-white/80 font-bold truncate">
                   {item.caption || item.filename || "Media Item"}
                 </p>
@@ -203,6 +231,35 @@ function GalleryGrid({ mediaItems, handleManualRefresh, actionLoading, canUpload
           );
         })}
       </div>
+
+      <Modal
+        isOpen={!!removeCandidate}
+        onClose={() => setRemoveCandidate(null)}
+        title="Remove photo from trip gallery?"
+      >
+        <div className="p-6">
+          <p className="text-sm font-medium text-clay-secondary mb-8">
+            This will hide the photo from the shared trip gallery. It will remain in Google Photos and can be managed manually there.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => setRemoveCandidate(null)}
+              disabled={removing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmRemove}
+              disabled={removing}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              {removing ? "Removing..." : "Remove"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -471,6 +528,15 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
     return <LoadingState />;
   }
 
+  async function handleRemoveMediaItem(mediaItemId: string) {
+    await removeTripGalleryMediaItem(data.trip.id, mediaItemId);
+    setMediaItems(prev => prev.filter(item => item.id !== mediaItemId));
+    // The prompt says "show toast: Photo removed from trip gallery." We don't have a toast system, so we'll use alert or a custom toast. But alert is fine, or just nothing.
+    // wait, we can just use alert or rely on the UI update.
+    // Let's use alert to be safe:
+    alert("Photo removed from trip gallery.");
+  }
+
   const isConnected = connection?.connected;
   const hasAlbum = album?.googleAlbumId;
   const hasPhotos = mediaItems.length > 0;
@@ -503,6 +569,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             handleManualRefresh={handleManualRefresh}
             actionLoading={actionLoading}
             canUploadPhotos={canUploadPhotos}
+            isOwner={isOwner}
+            onRemoveMediaItem={handleRemoveMediaItem}
           />
         ) : (
           <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
@@ -532,6 +600,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
                 handleManualRefresh={handleManualRefresh}
                 actionLoading={actionLoading}
                 canUploadPhotos={canUploadPhotos}
+                isOwner={isOwner}
+                onRemoveMediaItem={handleRemoveMediaItem}
               />
             ) : (
               <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
