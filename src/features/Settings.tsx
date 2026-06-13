@@ -4,7 +4,7 @@ import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, form
 import { useTheme } from "../hooks/useTheme";
 import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled, updateTrip } from "../lib/supabase";
 import type { AccessMode, AppData, Role, ShareLink, TripInput, TripMember, FamilySession } from "../types";
-import { APP_VERSION_LABEL, APP_COMMIT_SHA, APP_BUILD_NUMBER, APP_BUILD_DATE } from "../version";
+import { APP_VERSION_LABEL, APP_COMMIT_SHA, APP_BUILD_NUMBER, APP_BUILD_DATE, APP_BUILD_SOURCE } from "../version";
 
 const FAMILY_TRAVEL_PUBLIC_URL = "https://al89er.github.io/FamilyTravel/";
 
@@ -230,7 +230,7 @@ function DeveloperInfo() {
 
         <div className="flex items-center justify-between px-2 pt-2">
           <span className="text-xs font-medium text-clay-secondary/80">
-            Build #{APP_BUILD_NUMBER} ({APP_COMMIT_SHA})
+            Build #{APP_BUILD_NUMBER} · {APP_BUILD_SOURCE === "github-actions" ? "GitHub Actions" : "Local"} · {APP_COMMIT_SHA}
           </span>
           <span className="text-xs font-medium text-clay-secondary/80">
             {dateStr}

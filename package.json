@@ -1,7 +1,7 @@
 {
   "name": "family-travel-companion",
   "private": true,
-  "version": "0.13.12",
+  "version": "0.13.14",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,9 @@
     "version:patch": "node scripts/bump-version.mjs patch && npm run version:generate",
     "version:minor": "node scripts/bump-version.mjs minor && npm run version:generate",
     "version:major": "node scripts/bump-version.mjs major && npm run version:generate",
+    "finish:patch": "node scripts/finish-change.mjs patch",
+    "finish:minor": "node scripts/finish-change.mjs minor",
+    "finish:major": "node scripts/finish-change.mjs major",
     "commit:checkpoint": "node scripts/commit-if-build-passes.mjs"
   },
   "dependencies": {

@@ -18,17 +18,32 @@ try {
   }
 
   let commitSha = "unknown";
-  try {
-    commitSha = execSync('git rev-parse --short HEAD', { stdio: 'pipe' }).toString().trim();
-  } catch (e) {
-    // Ignore error
+  if (process.env.GITHUB_SHA) {
+    commitSha = process.env.GITHUB_SHA.substring(0, 7);
+  } else {
+    try {
+      commitSha = execSync('git rev-parse --short HEAD', { stdio: 'pipe' }).toString().trim();
+    } catch (e) {
+      // Ignore error
+    }
   }
 
   let buildNumber = "unknown";
-  try {
-    buildNumber = execSync('git rev-list --count HEAD', { stdio: 'pipe' }).toString().trim();
-  } catch (e) {
-    // Ignore error
+  if (process.env.GITHUB_RUN_NUMBER) {
+    buildNumber = process.env.GITHUB_RUN_NUMBER;
+  } else {
+    try {
+      buildNumber = execSync('git rev-list --count HEAD', { stdio: 'pipe' }).toString().trim();
+    } catch (e) {
+      // Ignore error
+    }
+  }
+
+  let buildSource = "unknown";
+  if (process.env.GITHUB_ACTIONS) {
+    buildSource = "github-actions";
+  } else {
+    buildSource = "local";
   }
 
   const buildDate = new Date().toISOString();
@@ -41,11 +56,12 @@ export const APP_VERSION_LABEL = "v${version}";
 export const APP_COMMIT_SHA = "${commitSha}";
 export const APP_BUILD_NUMBER = "${buildNumber}";
 export const APP_BUILD_DATE = "${buildDate}";
+export const APP_BUILD_SOURCE: string = "${buildSource}";
 `;
 
   const destPath = path.join(__dirname, '..', 'src', 'version.ts');
   fs.writeFileSync(destPath, content, 'utf-8');
-  console.log(`Version generated: v${version} (build ${buildNumber}, commit ${commitSha})`);
+  console.log(`Version generated: v${version} (build ${buildNumber}, commit ${commitSha}, source ${buildSource})`);
 } catch (e) {
   console.error("Error generating version file:", e.message);
 }

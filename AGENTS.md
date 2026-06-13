@@ -52,11 +52,28 @@ Examples:
 * chore: add version metadata workflow
 * checkpoint: save local progress before modal footer refactor
 
-Recommended AI workflow:
+# Required Finalization Workflow
 
-1. Make requested code changes.
-2. Run `npm run build`.
-3. If build passes, run:
-   `npm run commit:checkpoint -- "type: concise task summary"`
-4. Stop.
-5. Do not push.
+For every completed coding task, choose exactly one:
+
+* npm run finish:patch -- "type: summary"
+  Use for bug fixes, copy changes, styling polish, small UI fixes, non-breaking refactors.
+
+* npm run finish:minor -- "type: summary"
+  Use for new user-visible features, new sections, new cards, new workflows, API integrations.
+
+* npm run finish:major -- "type: summary"
+  Use for breaking changes, schema changes, auth/permission changes, migrations, or data model changes.
+
+Rules:
+
+* Do not use git commit directly for normal completed tasks.
+* Use finish:* so version bump, metadata generation, build, and local commit happen together.
+* Never push unless the user explicitly says “push”.
+* If build fails, fix it before committing.
+* Mention the new version in the final response.
+* package.json version is the source of truth.
+* src/version.ts is generated; do not edit manually.
+
+commit:checkpoint is only for temporary local save points when specifically requested.
+finish:* is preferred for completed AI coding tasks.
