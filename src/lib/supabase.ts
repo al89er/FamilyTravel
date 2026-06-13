@@ -305,7 +305,8 @@ export async function updateTrip(tripId: string, input: TripInput) {
       default_visibility: input.defaultVisibility,
       hotel_info: input.hotelInfo,
       emergency_summary: input.emergencySummary,
-      estimated_budget: input.estimatedBudget
+      estimated_budget: input.estimatedBudget,
+      google_photos_album_url: input.googlePhotosAlbumUrl
     })
     .eq("id", tripId);
   if (error) throw error;
@@ -989,7 +990,8 @@ function tripToTrip(trip: Record<string, unknown>) {
     defaultVisibility: asVisibility(trip.default_visibility),
     hotelInfo: asString(trip.hotel_info),
     emergencySummary: asString(trip.emergency_summary),
-    estimatedBudget: asNumber(trip.estimated_budget)
+    estimatedBudget: asNumber(trip.estimated_budget),
+    googlePhotosAlbumUrl: optionalString(trip.google_photos_album_url)
   };
 }
 

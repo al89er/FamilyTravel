@@ -4,6 +4,7 @@ import { Dashboard } from "./features/Dashboard";
 import { Documents } from "./features/Documents";
 import { Emergency } from "./features/Emergency";
 import { Expenses } from "./features/Expenses";
+import { Gallery } from "./features/Gallery";
 import { Itinerary } from "./features/Itinerary";
 import { MapPlaces } from "./features/MapPlaces";
 import { Packing } from "./features/Packing";
@@ -104,6 +105,7 @@ export default function App() {
       setActiveView={handleSetActiveView as (v: AppView) => void} 
       offline={offline}
       topBar={renderTopBar()}
+      accessMode={accessMode}
     >
       {loading ? <LoadingState /> : null}
       {error ? <div className="mb-5"><ErrorState message={error} /></div> : null}
@@ -117,6 +119,9 @@ export default function App() {
           {activeView === "packing" ? <Packing data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "emergency" ? <Emergency data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
           {activeView === "assignments" ? <Assignments data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "gallery" ? (
+            accessMode === "owner" ? <Gallery data={data} openView={handleSetActiveView} /> : <Dashboard data={data} openView={handleSetActiveView} canEdit={canEdit} />
+          ) : null}
           {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} familySession={familySession} onRefresh={refreshCurrentTrip} onLeave={leaveSession} /> : null}
         </>
       ) : null}
@@ -136,6 +141,7 @@ function pageTitle(view: AppView) {
     packing: "Packing Lists",
     emergency: "Emergency & Medical",
     assignments: "Family Assignments",
+    gallery: "Trip Gallery",
     settings: "Settings"
   };
   return titles[view];

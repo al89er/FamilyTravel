@@ -53,6 +53,7 @@ export interface Trip {
   hotelInfo: string;
   emergencySummary: string;
   estimatedBudget: number;
+  googlePhotosAlbumUrl?: string;
 }
 
 export interface TripMember {

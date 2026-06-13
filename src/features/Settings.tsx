@@ -1,4 +1,4 @@
-import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun, ChevronDown, ChevronUp, Smartphone } from "lucide-react";
+import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun, ChevronDown, ChevronUp, Smartphone, CheckCircle2, Trash2, Images, BedDouble } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
@@ -113,6 +113,7 @@ export function Settings({
 
       <ThemeSettings />
       <TripOverviewEditor data={data} onRefresh={onRefresh} />
+      {accessMode === "owner" && <TripGalleryEditor data={data} onRefresh={onRefresh} />}
       <OrganizerManagement data={data} role={role} />
       <ShareLinkManagement data={data} role={role} />
       <DeveloperInfo />
@@ -421,6 +422,94 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
         </form>
       </Modal>
     </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TripGalleryEditor
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TripGalleryEditor({ data, onRefresh }: { data: AppData; onRefresh?: () => Promise<void> | void }) {
+  const [expanded, setExpanded] = useState(false);
+  const [url, setUrl] = useState(data.trip.googlePhotosAlbumUrl || "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const cleanUrl = url.trim();
+    if (cleanUrl && !cleanUrl.startsWith("https://")) {
+      setError("Please enter a valid https:// URL.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await updateTrip(data.trip.id, {
+        title: data.trip.title,
+        destination: data.trip.destination,
+        startDate: data.trip.startDate,
+        endDate: data.trip.endDate,
+        timezone: data.trip.timezone,
+        currency: data.trip.currency,
+        dateFormat: data.trip.dateFormat,
+        defaultVisibility: data.trip.defaultVisibility,
+        hotelInfo: data.trip.hotelInfo,
+        emergencySummary: data.trip.emergencySummary,
+        estimatedBudget: data.trip.estimatedBudget,
+        googlePhotosAlbumUrl: cleanUrl || undefined
+      });
+      if (onRefresh) {
+        await onRefresh();
+      }
+      setExpanded(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update gallery link");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-6 border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
+      <button 
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between font-bold text-clay-primary text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-gradient-to-br from-indigo-400 to-purple-500 shadow-clay-card text-white shrink-0">
+            <Images className="h-5 w-5" />
+          </div>
+          <span>Trip Gallery</span>
+        </div>
+        {expanded ? <ChevronUp className="h-5 w-5 text-clay-secondary" /> : <ChevronDown className="h-5 w-5 text-clay-secondary" />}
+      </button>
+
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200">
+          <p className="text-sm text-clay-secondary mb-4">
+            Paste your Google Photos shared album link for this trip. This feature is owner-only for now.
+          </p>
+          {error ? <div className="mb-4"><ErrorState message={error} /></div> : null}
+          <form className="space-y-4" onSubmit={handleSave}>
+            <Field label="Google Photos album URL">
+              <input 
+                className={formInputClass} 
+                value={url} 
+                onChange={(e) => setUrl(e.target.value)} 
+                placeholder="https://photos.app.goo.gl/..." 
+              />
+            </Field>
+            <div className="flex gap-2 pt-2">
+              <Button disabled={busy} type="submit">
+                Save Link
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+    </Card>
   );
 }
 

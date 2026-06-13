@@ -9,11 +9,13 @@ import {
   ReceiptText,
   Settings,
   ShieldAlert,
+  Images,
   X,
   LucideIcon,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { AppView } from "../hooks/useAppState";
+import type { AccessMode } from "../types";
 
 const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "dashboard",   label: "Home",              icon: Home       },
@@ -24,6 +26,7 @@ const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "documents",   label: "Docs",              icon: FileText   },
   { id: "packing",     label: "Packing",           icon: Luggage    },
   { id: "emergency",   label: "Safety",            icon: ShieldAlert },
+  { id: "gallery",     label: "Gallery",           icon: Images     },
   { id: "settings",    label: "Trip Settings",     icon: Settings   },
 ];
 
@@ -36,12 +39,14 @@ export function Layout({
   setActiveView,
   offline,
   topBar,
+  accessMode,
 }: {
   children: ReactNode;
   activeView: AppView;
   setActiveView: (view: AppView) => void;
   offline: boolean;
   topBar?: ReactNode;
+  accessMode?: AccessMode;
 }) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
@@ -50,7 +55,12 @@ export function Layout({
     setIsMoreOpen(false);
   }
 
-  const moreActive = navItems.slice(PRIMARY_COUNT).some((i) => i.id === activeView);
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.id === "gallery" && accessMode !== "owner") return false;
+    return true;
+  });
+
+  const moreActive = visibleNavItems.slice(PRIMARY_COUNT).some((i) => i.id === activeView);
 
   return (
     <div className="min-h-dvh bg-clay-canvas flex flex-col relative overflow-hidden text-clay-primary selection:bg-primary/20">
@@ -99,8 +109,8 @@ export function Layout({
               <span className="ml-1.5 text-xl font-semibold text-clay-secondary">Companion</span>
             </h1>
           </div>
-          <nav className="flex-1 space-y-0.5" aria-label="Primary">
-            {navItems.map((item) => (
+          <nav className="flex-1 space-y-1.5 overflow-y-auto pr-2 pb-6 custom-scrollbar">
+            {visibleNavItems.map((item) => (
               <NavButton
                 key={item.id}
                 {...item}
@@ -147,20 +157,22 @@ export function Layout({
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
-        <div className="grid grid-cols-4 gap-2 p-4">
-          {navItems.slice(PRIMARY_COUNT).map((item) => (
-            <DrawerNavItem
-              key={item.id}
-              icon={item.icon}
-              label={item.label}
-              active={activeView === item.id}
-              onClick={() => {
-                onViewChange(item.id);
-                setIsMoreOpen(false);
-              }}
-            />
-          ))}
-        </div>
+        <nav className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+          <div className="flex flex-col gap-1.5 pb-20">
+            {visibleNavItems.slice(PRIMARY_COUNT).map((item) => (
+              <DrawerNavItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                active={activeView === item.id}
+                onClick={() => {
+                  onViewChange(item.id);
+                  setIsMoreOpen(false);
+                }}
+              />
+            ))}
+          </div>
+        </nav>
       </div>
 
       {/* ── Mobile bottom nav dock ── */}
@@ -168,8 +180,8 @@ export function Layout({
         className="fixed inset-x-3 bottom-[calc(max(env(safe-area-inset-bottom),0.75rem))] z-[1030] mx-auto max-w-md rounded-[32px] bg-clay-surface shadow-clay-card px-2 py-2 lg:hidden"
         aria-label="Primary navigation"
       >
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          {navItems.slice(0, PRIMARY_COUNT).map((item) => (
+        <div className="flex w-full justify-around items-end">
+          {visibleNavItems.slice(0, PRIMARY_COUNT).map((item) => (
             <MobileNavItem
               key={item.id}
               icon={item.icon}
