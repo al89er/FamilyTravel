@@ -3,6 +3,6 @@
 
 export const APP_VERSION = "0.13.12";
 export const APP_VERSION_LABEL = "v0.13.12";
-export const APP_COMMIT_SHA = "48c6381";
-export const APP_BUILD_NUMBER = "51";
-export const APP_BUILD_DATE = "2026-06-13T07:06:48.351Z";
+export const APP_COMMIT_SHA = "3d15d09";
+export const APP_BUILD_NUMBER = "52";
+export const APP_BUILD_DATE = "2026-06-13T07:08:35.744Z";
