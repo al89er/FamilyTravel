@@ -398,31 +398,36 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1 pr-8">
+            <div className="mb-2 pr-10">
               <h3 className="font-bold text-lg text-clay-primary truncate">{place.name}</h3>
-              <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
-              {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
             </div>
-            {place.address ? (
-              <div className="mt-2">
+            
+            <div className="flex flex-wrap items-center justify-between gap-2 pr-10">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge tone={badgeTone as any} className="capitalize text-[10px] shadow-sm">{formatCategory(place.category)}</Badge>
+                {place.visibility !== "shared" && <Badge tone="zinc" className="text-[10px] shadow-sm">{place.visibility.replace("_", " ")}</Badge>}
+              </div>
+
+              {place.address ? (
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setShowAddress(!showAddress); }}
                   className="inline-flex items-center gap-1.5 text-xs font-bold text-clay-secondary hover:text-clay-primary transition-all active:scale-95 focus:outline-none bg-clay-recessed shadow-clay-pressed py-1.5 px-3 rounded-[12px]"
                 >
                   <MapPin className="h-3.5 w-3.5" />
-                  <span>{showAddress ? "Hide Address" : "Show Address"}</span>
+                  <span>{showAddress ? "Hide" : "Address"}</span>
                   {showAddress ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
-                {showAddress && (
-                  <p className="mt-2 text-sm font-medium text-clay-secondary leading-relaxed bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px] transition-all break-words">
-                    {place.address}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="mt-1.5 text-xs font-bold text-clay-secondary/60 uppercase tracking-wider italic">No address saved</p>
-            )}
+              ) : (
+                <p className="text-xs font-bold text-clay-secondary/60 uppercase tracking-wider italic">No address saved</p>
+              )}
+            </div>
+
+            {place.address && showAddress ? (
+              <p className="mt-3 text-sm font-medium text-clay-secondary leading-relaxed bg-clay-recessed shadow-clay-pressed p-3.5 rounded-[16px] transition-all break-words">
+                {place.address}
+              </p>
+            ) : null}
             {itineraryItem ? (
               <p className="mt-1.5 text-xs font-bold text-primary uppercase tracking-wider">
                 {formatDateLabel(itineraryItem.date, data.trip.dateFormat).split(',')[0]} · Stop {itineraryItem.sortOrder}
