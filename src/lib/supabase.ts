@@ -804,6 +804,34 @@ export async function createGooglePhotosAlbum(tripId: string, title?: string): P
   return data;
 }
 
+export async function uploadGooglePhotosMedia(tripId: string, files: File[], caption?: string): Promise<{ successCount: number, failedCount: number, uploadedItems: any[], errors: string[] }> {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Authentication required.");
+
+  const formData = new FormData();
+  formData.append("tripId", tripId);
+  if (caption) formData.append("caption", caption);
+  files.forEach(file => formData.append("files[]", file));
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/google-photos-upload-media`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${session.access_token}`
+    },
+    body: formData
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data?.error || `Upload failed with status ${response.status}`);
+  }
+
+  return data;
+}
+
 export async function loadFamilyTrip(displayName: string, shareToken: string): Promise<{ data: AppData; session: FamilySession }> {
   if (!supabase) {
     throw new Error("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");

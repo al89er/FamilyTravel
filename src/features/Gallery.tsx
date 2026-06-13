@@ -1,5 +1,5 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Server, Database, Cloud } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Images, ExternalLink, Settings as SettingsIcon, Server, Database, Cloud, UploadCloud, X, FileImage } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
 import { Card, Button, EmptyState, LoadingState } from "../components/ui";
@@ -9,7 +9,8 @@ import {
   getGooglePhotosConnectionStatus,
   startGooglePhotosOAuth,
   disconnectGooglePhotos,
-  createGooglePhotosAlbum
+  createGooglePhotosAlbum,
+  uploadGooglePhotosMedia
 } from "../lib/supabase";
 
 export function Gallery({ data, openView }: { data: AppData; openView: (view: AppView) => void }) {
@@ -20,25 +21,30 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const [albumData, mediaData, connData] = await Promise.all([
-          getTripGalleryAlbum(data.trip.id),
-          listTripGalleryMediaItems(data.trip.id),
-          getGooglePhotosConnectionStatus(data.trip.id).catch(() => null)
-        ]);
-        setAlbum(albumData);
-        setMediaItems(mediaData);
-        setConnection(connData);
-      } catch (e) {
-        console.error("Failed to load gallery metadata", e);
-      } finally {
-        setLoading(false);
-      }
+  // Upload state
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [caption, setCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function loadData() {
+    try {
+      const [albumData, mediaData, connData] = await Promise.all([
+        getTripGalleryAlbum(data.trip.id),
+        listTripGalleryMediaItems(data.trip.id),
+        getGooglePhotosConnectionStatus(data.trip.id).catch(() => null)
+      ]);
+      setAlbum(albumData);
+      setMediaItems(mediaData);
+      setConnection(connData);
+    } catch (e) {
+      console.error("Failed to load gallery metadata", e);
     }
-    void loadData();
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    loadData().finally(() => setLoading(false));
   }, [data.trip.id]);
 
   async function handleConnect() {
@@ -79,6 +85,58 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       alert(e instanceof Error ? e.message : "Failed to create album.");
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    
+    // Validate count
+    if (selectedFiles.length + files.length > 10) {
+      alert("You can select a maximum of 10 files at a time.");
+      return;
+    }
+
+    // Validate size
+    const validFiles = files.filter(f => {
+      if (f.size > 25 * 1024 * 1024) {
+        alert(`File ${f.name} is too large. Please upload images under 25 MB.`);
+        return false;
+      }
+      return true;
+    });
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = ""; // Reset input
+  }
+
+  function removeFile(index: number) {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleUpload() {
+    if (selectedFiles.length === 0) return;
+    setUploading(true);
+    try {
+      const res = await uploadGooglePhotosMedia(data.trip.id, selectedFiles, caption);
+      
+      let msg = `Successfully uploaded ${res.successCount} photos.`;
+      if (res.failedCount > 0) {
+        msg = `Upload partially completed. ${res.successCount} succeeded, ${res.failedCount} failed.\nErrors: ${res.errors.join(", ")}`;
+      }
+      alert(msg);
+      
+      if (res.successCount > 0) {
+        setSelectedFiles([]);
+        setCaption("");
+        await loadData();
+      }
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : "Upload failed.");
+    } finally {
+      setUploading(false);
     }
   }
 
