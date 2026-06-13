@@ -31,14 +31,14 @@ function fmtDate(d: string): string {
   if (!d) return d;
   const [y, m, day] = d.split("-");
   const dt = new Date(Date.UTC(Number(y), Number(m) - 1, Number(day)));
-  return dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return dt.toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" });
 }
 
 function fmtShort(d: string): string {
   if (!d) return d;
   const [y, m, day] = d.split("-");
   const dt = new Date(Date.UTC(Number(y), Number(m) - 1, Number(day)));
-  return dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return dt.toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "short" });
 }
 
 function tripDuration(start: string, end: string): number {

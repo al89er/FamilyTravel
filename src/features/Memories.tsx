@@ -48,9 +48,9 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
 
   // Grouping logic
   const { tripDays, unsortedItems, allSortedItemsForLightbox } = useMemo(() => {
-    // Generate trip dates array
-    const start = new Date(`${data.trip.startDate}T00:00:00`);
-    const end = new Date(`${data.trip.endDate}T00:00:00`);
+    // Generate trip dates array using UTC to prevent local timezone shifts
+    const start = new Date(`${data.trip.startDate}T00:00:00Z`);
+    const end = new Date(`${data.trip.endDate}T00:00:00Z`);
     
     // Safety check for invalid dates
     const tripDaysMap = new Map<string, TripDay>();
@@ -66,7 +66,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
         tripDaysMap.set(dateStr, dayObj);
         tripDaysArr.push(dayObj);
         
-        current.setDate(current.getDate() + 1);
+        current.setUTCDate(current.getUTCDate() + 1);
         dayNum++;
       }
     }
@@ -141,7 +141,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
     if (!d) return d;
     const [y, m, day] = d.split("-");
     const dt = new Date(Date.UTC(Number(y), Number(m) - 1, Number(day)));
-    return dt.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+    return dt.toLocaleDateString("en-GB", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
   }
 
   // Count days that have at least one photo
