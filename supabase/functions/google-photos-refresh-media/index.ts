@@ -16,7 +16,6 @@ serve(async (req) => {
 
     const { actor, adminClient } = await requireOwner(req, tripId);
 
-    // Get the Google Photos connection for the owner
     const { data: connection, error: connError } = await adminClient
       .from("google_photos_connections")
       .select("*")
@@ -26,6 +25,11 @@ serve(async (req) => {
 
     if (connError || !connection) {
       return json({ error: "No connected Google Photos account found" }, 400);
+    }
+
+    const requiredScope = "https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata";
+    if (!connection.scopes || !connection.scopes.includes(requiredScope)) {
+      return json({ error: "Google Photos read permission is missing. Please reconnect Google Photos." }, 403);
     }
 
     const accessToken = await refreshGoogleTokenIfNeeded(adminClient, connection);
@@ -46,7 +50,16 @@ serve(async (req) => {
 
     if (itemsError) throw itemsError;
     if (!items || items.length === 0) {
-      return json({ message: "No media items to refresh", successCount: 0, failedCount: 0 });
+      return json({ 
+        message: "No Google media item IDs found to refresh.",
+        requestedCount: 0,
+        googleResultCount: 0,
+        refreshedCount: 0,
+        failedCount: 0,
+        missingBaseUrlCount: 0,
+        missingGoogleMediaIdCount: mediaItemIds ? mediaItemIds.length : 0,
+        errors: []
+      });
     }
 
     const chunkSize = 50;
@@ -55,7 +68,8 @@ serve(async (req) => {
     let refreshedCount = 0;
     let missingBaseUrlCount = 0;
     let failedCount = 0;
-    const errors: string[] = [];
+    let missingGoogleMediaIdCount = 0;
+    const errors: any[] = [];
 
     for (let i = 0; i < items.length; i += chunkSize) {
       const chunk = items.slice(i, i + chunkSize);
@@ -66,13 +80,21 @@ serve(async (req) => {
       });
 
       const response = await fetch(`https://photoslibrary.googleapis.com/v1/mediaItems:batchGet?${params.toString()}`, {
+        method: "GET",
         headers: {
           "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
         }
       });
 
       if (!response.ok) {
-        errors.push(`Failed batchGet: ${response.status}`);
+        errors.push({
+          index: -1,
+          code: response.status,
+          message: `Failed batchGet HTTP ${response.status}`,
+          hasMediaItem: false,
+          hasBaseUrl: false
+        });
         continue;
       }
 
@@ -87,8 +109,21 @@ serve(async (req) => {
         
         console.log(`Item ${i + j}: hasMediaItem=${!!result.mediaItem}, hasBaseUrl=${!!result.mediaItem?.baseUrl}, statusCode=${result.status?.code}, statusMessage=${result.status?.message}`);
 
-        if (!result.mediaItem) {
+        if (result.status?.code) {
           failedCount++;
+          errors.push({
+            index: i + j,
+            code: result.status.code,
+            message: result.status.message || "Unknown error",
+            hasMediaItem: !!result.mediaItem,
+            hasBaseUrl: !!result.mediaItem?.baseUrl
+          });
+        }
+
+        if (!result.mediaItem) {
+          if (!result.status?.code) {
+             failedCount++;
+          }
           continue;
         }
 
@@ -134,6 +169,7 @@ serve(async (req) => {
       refreshedCount,
       failedCount,
       missingBaseUrlCount,
+      missingGoogleMediaIdCount,
       errors: errors.length > 0 ? errors : undefined
     });
 

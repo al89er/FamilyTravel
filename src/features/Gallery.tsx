@@ -52,8 +52,10 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
 
         if (needsRefresh) {
           try {
-            await refreshGooglePhotosMedia(data.trip.id);
-            finalMediaData = await listTripGalleryMediaItems(data.trip.id);
+            const refreshRes = await refreshGooglePhotosMedia(data.trip.id);
+            if (refreshRes && refreshRes.refreshedCount > 0) {
+              finalMediaData = await listTripGalleryMediaItems(data.trip.id);
+            }
           } catch (e) {
             console.error("Failed auto refresh thumbnails", e);
           }
@@ -71,13 +73,17 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   async function handleManualRefresh() {
     setActionLoading(true);
     try {
-      await refreshGooglePhotosMedia(data.trip.id);
-      const finalMediaData = await listTripGalleryMediaItems(data.trip.id);
-      setMediaItems(finalMediaData);
-      alert("Thumbnails updated.");
+      const res = await refreshGooglePhotosMedia(data.trip.id);
+      if (res && res.refreshedCount > 0) {
+        const finalMediaData = await listTripGalleryMediaItems(data.trip.id);
+        setMediaItems(finalMediaData);
+        alert(`Thumbnails updated. Successfully refreshed ${res.refreshedCount} items.`);
+      } else {
+        alert("No thumbnails were refreshed. " + (res.message || "Unknown reason."));
+      }
     } catch (e) {
       console.error(e);
-      alert("Could not refresh thumbnails. Open in Google Photos still works.");
+      alert(e instanceof Error ? e.message : "Could not refresh thumbnails. Open in Google Photos still works.");
     } finally {
       setActionLoading(false);
     }
