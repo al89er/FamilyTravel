@@ -294,6 +294,7 @@ function ThemeSettings() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: () => Promise<void> }) {
+  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<TripInput>({
     title:              data.trip.title,
@@ -344,21 +345,33 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
   return (
     <>
       <Card className="p-6 border-0 bg-clay-surface">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-bold text-clay-primary">Trip overview</h3>
-          <Button variant="ghost" onClick={() => setEditing(true)}>Edit</Button>
-        </div>
-        {status ? (
-          <p className="mt-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
-            {status}
-          </p>
-        ) : null}
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Currency"><input className={formInputClass} readOnly value={data.trip.currency} /></Field>
-          <Field label="Timezone"><input className={formInputClass} readOnly value={data.trip.timezone} /></Field>
-          <Field label="Date format"><input className={formInputClass} readOnly value={data.trip.dateFormat} /></Field>
-          <Field label="Default visibility"><input className={formInputClass} readOnly value={data.trip.defaultVisibility} /></Field>
-        </div>
+        <button 
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex w-full items-center justify-between font-bold text-clay-primary text-left"
+        >
+          <span>Trip overview</span>
+          {expanded ? <ChevronUp className="h-5 w-5 text-clay-secondary" /> : <ChevronDown className="h-5 w-5 text-clay-secondary" />}
+        </button>
+
+        {expanded && (
+          <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200">
+            <div className="flex justify-end mb-3">
+              <Button variant="ghost" onClick={() => setEditing(true)}>Edit</Button>
+            </div>
+            {status ? (
+              <p className="mb-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
+                {status}
+              </p>
+            ) : null}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Currency"><input className={formInputClass} readOnly value={data.trip.currency} /></Field>
+              <Field label="Timezone"><input className={formInputClass} readOnly value={data.trip.timezone} /></Field>
+              <Field label="Date format"><input className={formInputClass} readOnly value={data.trip.dateFormat} /></Field>
+              <Field label="Default visibility"><input className={formInputClass} readOnly value={data.trip.defaultVisibility} /></Field>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Modal 
@@ -416,6 +429,7 @@ function TripOverviewEditor({ data, onRefresh }: { data: AppData; onRefresh?: ()
 // ─────────────────────────────────────────────────────────────────────────────
 
 function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
+  const [expanded, setExpanded]                   = useState(false);
   const [displayName, setDisplayName]             = useState("");
   const [username, setUsername]                   = useState("");
   const [temporaryPassword, setTemporaryPassword] = useState("");
@@ -492,25 +506,52 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
 
   return (
     <Card className="p-6 border-0 bg-clay-surface">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <button 
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between font-bold text-clay-primary text-left"
+      >
         <div className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" aria-hidden="true" />
-          <h3 className="font-bold text-clay-primary">Organizers</h3>
+          <span>Organizers</span>
         </div>
-        <Button onClick={() => setAdding(true)}>
-          <UserPlus className="h-4 w-4" aria-hidden="true" />
-          Add organizer
-        </Button>
-      </div>
-      <p className="text-sm text-clay-secondary">
-        Owner: {owner?.profile.displayName ?? "Not set"}. Organizers can manage planning data for this trip, but cannot delete or transfer trips.
-      </p>
+        {expanded ? <ChevronUp className="h-5 w-5 text-clay-secondary" /> : <ChevronDown className="h-5 w-5 text-clay-secondary" />}
+      </button>
 
-      {status ? (
-        <p className="mt-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
-          {status}
-        </p>
-      ) : null}
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <p className="text-sm text-clay-secondary flex-1">
+              Owner: {owner?.profile.displayName ?? "Not set"}. Organizers can manage planning data for this trip, but cannot delete or transfer trips.
+            </p>
+            <Button onClick={() => setAdding(true)}>
+              <UserPlus className="h-4 w-4" aria-hidden="true" />
+              Add organizer
+            </Button>
+          </div>
+
+          {status ? (
+            <p className="mb-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
+              {status}
+            </p>
+          ) : null}
+
+          <div className="space-y-3">
+            {organizers.map((member) => (
+              <OrganizerRow
+                key={member.id}
+                member={member}
+                owner={owner}
+                selected={selectedUserId === member.userId}
+                onSelect={() => {
+                  setSelectedUserId(member.userId);
+                  setNewDisplayName(member.profile.displayName);
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <Modal 
         isOpen={adding} 
@@ -536,21 +577,6 @@ function OrganizerManagement({ data, role }: { data: AppData; role: Role }) {
           </Field>
         </form>
       </Modal>
-
-      <div className="mt-5 space-y-3">
-        {organizers.map((member) => (
-          <OrganizerRow
-            key={member.id}
-            member={member}
-            owner={owner}
-            selected={selectedUserId === member.userId}
-            onSelect={() => {
-              setSelectedUserId(member.userId);
-              setNewDisplayName(member.profile.displayName);
-            }}
-          />
-        ))}
-      </div>
 
       <Modal 
         isOpen={!!selectedOrganizer} 
@@ -676,6 +702,7 @@ function OrganizerRow({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
+  const [expanded, setExpanded]                   = useState(false);
   const [links, setLinks]                         = useState<ShareLink[]>([]);
   const [label, setLabel]                         = useState("Family share link");
   const [allowComments, setAllowComments]         = useState(true);
@@ -759,32 +786,53 @@ function ShareLinkManagement({ data, role }: { data: AppData; role: Role }) {
 
   return (
     <Card className="p-6 border-0 bg-clay-surface">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <button 
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between font-bold text-clay-primary text-left"
+      >
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-primary" aria-hidden="true" />
-          <h3 className="font-bold text-clay-primary">Family share links</h3>
+          <span>Family share links</span>
         </div>
-        <Button onClick={() => setAdding(true)}>Create link</Button>
-      </div>
-      <p className="text-sm text-clay-secondary">
-        Share links let family members open a shared view without Supabase Auth. Tokens are generated once and stored hashed.
-      </p>
+        {expanded ? <ChevronUp className="h-5 w-5 text-clay-secondary" /> : <ChevronDown className="h-5 w-5 text-clay-secondary" />}
+      </button>
 
-      {status ? (
-        <div className="mt-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
-          <p className="break-all">{status}</p>
-          {status.includes("https://") ? (
-            <button
-              type="button"
-              className="mt-2 inline-flex items-center gap-2 font-semibold text-primary hover:text-primary/80 transition-colors"
-              onClick={() => void navigator.clipboard.writeText(status.replace("Share link created: ", ""))}
-            >
-              <Copy className="h-4 w-4" aria-hidden="true" />
-              Copy URL
-            </button>
+      {expanded && (
+        <div className="mt-4 pt-4 border-t border-border/50 animate-in slide-in-from-top-2 fade-in duration-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <p className="text-sm text-clay-secondary flex-1">
+              Share links let family members open a shared view without Supabase Auth.
+            </p>
+            <Button onClick={() => setAdding(true)}>Create link</Button>
+          </div>
+
+          {status ? (
+            <div className="mb-4 rounded-[16px] bg-primary/10 shadow-clay-pressed px-4 py-3 text-sm text-primary">
+              <p className="break-all">{status}</p>
+              {status.includes("https://") ? (
+                <button
+                  type="button"
+                  className="mt-2 inline-flex items-center gap-2 font-semibold text-primary hover:text-primary/80 transition-colors"
+                  onClick={() => void navigator.clipboard.writeText(status.replace("Share link created: ", ""))}
+                >
+                  <Copy className="h-4 w-4" aria-hidden="true" />
+                  Copy URL
+                </button>
+              ) : null}
+            </div>
           ) : null}
+
+          <div className="space-y-3">
+            {links.length === 0 ? (
+              <EmptyState title="No share links" body="Create a family share link when you are ready to invite relatives." />
+            ) : null}
+            {links.map((link) => (
+              <ShareLinkCard key={link.id} link={link} busy={busy} onToggle={toggleLink} />
+            ))}
+          </div>
         </div>
-      ) : null}
+      )}
 
       {/* Create share link modal */}
       <Modal 
