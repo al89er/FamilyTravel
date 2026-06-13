@@ -317,6 +317,7 @@ export interface TripGalleryMediaItem {
   uploadedByProfileId?: string;
   uploadedByName?: string;
   takenAt?: string;
+  is_removed?: boolean;
   createdAt: string;
   updatedAt: string;
 }

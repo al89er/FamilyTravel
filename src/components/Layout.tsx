@@ -10,6 +10,7 @@ import {
   Settings,
   ShieldAlert,
   Images,
+  BookHeart,
   X,
   LucideIcon,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const navItems: Array<{ id: AppView; label: string; icon: LucideIcon }> = [
   { id: "dashboard",   label: "Home",              icon: Home       },
   { id: "itinerary",   label: "Plan",              icon: CalendarDays },
   { id: "map",         label: "Explore",           icon: Map        },
+  { id: "memories",    label: "Memories",          icon: BookHeart  },
   { id: "gallery",     label: "Gallery",           icon: Images     },
   { id: "expenses",    label: "Money",             icon: ReceiptText },
   { id: "documents",   label: "Docs",              icon: FileText   },

@@ -21,6 +21,7 @@ export const ALL_APP_VIEWS = [
   "emergency",
   "assignments",
   "gallery",
+  "memories",
   "settings"
 ] as const;
 

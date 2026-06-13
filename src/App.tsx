@@ -6,6 +6,7 @@ import { Documents } from "./features/Documents";
 import { Emergency } from "./features/Emergency";
 import { Expenses } from "./features/Expenses";
 import { Gallery } from "./features/Gallery";
+import { Memories } from "./features/Memories";
 import { Itinerary } from "./features/Itinerary";
 import { MapPlaces } from "./features/MapPlaces";
 import { Packing } from "./features/Packing";
@@ -138,6 +139,7 @@ export default function App() {
           {activeView === "expenses" ? <Expenses data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
           {activeView === "packing" ? <Packing data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} familySession={familySession} onRefreshFamily={refreshFamilySession} /> : null}
           {activeView === "emergency" ? <Emergency data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
+          {activeView === "memories" ? <Memories data={data} accessMode={accessMode} /> : null}
           {activeView === "assignments" ? <Assignments data={data} canEdit={canEdit} onRefresh={refreshCurrentTrip} /> : null}
           {activeView === "gallery" ? <Gallery data={data} openView={handleSetActiveView} /> : null}
           {activeView === "settings" ? <Settings data={data} role={role} accessMode={accessMode} familySession={familySession} onRefresh={refreshCurrentTrip} onLeave={leaveSession} /> : null}
@@ -160,6 +162,7 @@ function pageTitle(view: AppView) {
     emergency: "Emergency & Medical",
     assignments: "Family Assignments",
     gallery: "Trip Gallery",
+    memories: "Trip Memories",
     settings: "Settings"
   };
   return titles[view];

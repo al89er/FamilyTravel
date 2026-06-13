@@ -144,7 +144,7 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
   );
 }
 
-function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }) {
+export function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }) {
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
