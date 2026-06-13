@@ -1,4 +1,4 @@
-import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2, CheckCircle2, Circle, Download, Share2 } from "lucide-react";
+import { Images, ExternalLink, Settings as SettingsIcon, Cloud, UploadCloud, X, FileImage, RefreshCw, Image as ImageIcon, Trash2, CheckCircle2, Circle, Download, Share2, Loader2 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { AppData, TripGalleryAlbum, TripGalleryMediaItem, GooglePhotosConnectionStatus } from "../types";
 import { AppView } from "../hooks/useAppState";
@@ -17,6 +17,7 @@ import {
 import { GalleryLightbox } from "./GalleryLightbox";
 import { GalleryPageSkeleton } from "./GallerySkeletons";
 import { getCachedThumbnailUrl, fetchAndCacheThumbnail, deleteCachedThumbnail, clearGalleryThumbnailCache } from "../lib/galleryThumbnailCache";
+import { prepareExportFiles, downloadAsZip, ExportProgress } from "../lib/exportGallery";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
   return (
@@ -196,12 +197,14 @@ function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }) {
   return <img src={src} alt={item.caption || item.filename || "Trip photo"} className="w-full h-full object-cover" />;
 }
 
-function GalleryGrid({ tripId, mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
+function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
   const [itemsToRemove, setItemsToRemove] = useState<any[]>([]);
   const [removing, setRemoving] = useState(false);
   
   const [selectedMediaIds, setSelectedMediaIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  
+  const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
 
   // Sync selected IDs if items are removed
   useEffect(() => {
@@ -281,6 +284,76 @@ function GalleryGrid({ tripId, mediaItems, handleManualRefresh, actionLoading, c
       toggleSelection(id);
     } else {
       onImageClick?.(index);
+    }
+  };
+
+  const handleBatchExport = async (forceZip = false) => {
+    const selectedItems = mediaItems.filter((m: any) => selectedMediaIds.has(m.id));
+    
+    if (selectedItems.length === 0) return;
+    
+    if (!forceZip && selectedItems.length > 10) {
+      alert(`Please select up to 10 photos for native sharing (you selected ${selectedItems.length}). For larger batches, use ZIP download.`);
+      return;
+    }
+    
+    if (forceZip && selectedItems.length > 25) {
+      alert(`Please select up to 25 photos for ZIP download (you selected ${selectedItems.length}).`);
+      return;
+    }
+    
+    try {
+      setExportProgress({ current: 0, total: selectedItems.length, message: "Starting export..." });
+      
+      const result = await prepareExportFiles(tripId, selectedItems, (progress) => {
+        setExportProgress(progress);
+      });
+      
+      if (result.files.length === 0) {
+        alert("Could not prepare any files for export.");
+        return;
+      }
+      
+      let warning = "";
+      if (result.failedCount > 0) {
+        warning = `\nNote: ${result.failedCount} file(s) failed to download.`;
+      }
+      
+      // canShare only reliably works on modern mobile browsers.
+      const canShareNative = navigator.canShare && navigator.canShare({ files: result.files });
+      
+      if (!forceZip && canShareNative) {
+        setExportProgress({ current: result.files.length, total: result.files.length, message: "Opening share sheet..." });
+        
+        try {
+          await navigator.share({
+            files: result.files,
+            title: "Trip photos",
+            text: "Selected photos from Family Travel"
+          });
+        } catch (e: any) {
+          if (e.name !== "AbortError") {
+            console.error("Native share failed", e);
+            const useZip = window.confirm(`Native sharing failed or was not supported. Download as ZIP instead?${warning}`);
+            if (useZip) {
+              setExportProgress({ current: result.files.length, total: result.files.length, message: "Creating ZIP..." });
+              await downloadAsZip(tripTitle, result.files);
+            }
+          }
+        }
+      } else {
+        // Force ZIP or unsupported native share
+        setExportProgress({ current: result.files.length, total: result.files.length, message: "Creating ZIP..." });
+        if (!forceZip && warning) alert(`${result.files.length} photos ready.${warning}`);
+        await downloadAsZip(tripTitle, result.files);
+      }
+      
+      // Do not clear selection after export so user can do another action if they want
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || "Failed to export photos.");
+    } finally {
+      setExportProgress(null);
     }
   };
 
@@ -422,15 +495,24 @@ function GalleryGrid({ tripId, mediaItems, handleManualRefresh, actionLoading, c
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto w-full sm:w-auto px-1 pb-1">
-            <Button variant="secondary" onClick={() => alert("Batch download coming in future phase")} className="px-3 py-2 text-sm whitespace-nowrap">
-              <Download className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">Download</span>
-            </Button>
-            <Button variant="secondary" onClick={() => alert("WhatsApp sharing coming in future phase")} className="px-3 py-2 text-sm whitespace-nowrap">
-              <Share2 className="h-4 w-4 sm:mr-1.5" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
-            {isOwner && (
+            {exportProgress ? (
+              <div className="flex items-center px-4 py-2 bg-clay-surface rounded-full text-xs font-medium text-clay-primary shadow-clay-card">
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {exportProgress.message}
+              </div>
+            ) : (
+              <>
+                {("share" in navigator) && (
+                  <Button variant="secondary" onClick={() => handleBatchExport(false)} className="px-3 py-2 text-sm whitespace-nowrap" disabled={selectedMediaIds.size === 0}>
+                    <Share2 className="h-4 w-4 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Share selected</span>
+                  </Button>
+                )}
+                <Button variant="secondary" onClick={() => handleBatchExport(true)} className="px-3 py-2 text-sm whitespace-nowrap" disabled={selectedMediaIds.size === 0}>
+                  <Download className="h-4 w-4 sm:mr-1.5" />
+                  <span className="hidden sm:inline">{"share" in navigator ? "Download ZIP" : "Download selected"}</span>
+                </Button>
+                {isOwner && (
               <Button 
                 variant="primary" 
                 onClick={() => setItemsToRemove(mediaItems.filter((m: any) => selectedMediaIds.has(m.id)))} 
@@ -440,6 +522,8 @@ function GalleryGrid({ tripId, mediaItems, handleManualRefresh, actionLoading, c
                 <Trash2 className="h-4 w-4 sm:mr-1.5" />
                 <span className="hidden sm:inline">Remove</span>
               </Button>
+            )}
+            </>
             )}
           </div>
         </div>
@@ -790,6 +874,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
         hasPhotos ? (
           <GalleryGrid 
             tripId={data.trip.id}
+            tripTitle={data.trip.title}
             mediaItems={mediaItems}
             handleManualRefresh={handleManualRefresh}
             actionLoading={actionLoading}
@@ -823,6 +908,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             {hasPhotos ? (
               <GalleryGrid 
                 tripId={data.trip.id}
+                tripTitle={data.trip.title}
                 mediaItems={mediaItems}
                 handleManualRefresh={handleManualRefresh}
                 actionLoading={actionLoading}
