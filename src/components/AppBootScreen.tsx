@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, X } from "lucide-react";
 
 const MESSAGES = [
   "Preparing your trip...",
@@ -9,8 +9,25 @@ const MESSAGES = [
   "Almost there..."
 ];
 
-export function AppBootScreen() {
+export interface AppBootScreenProps {
+  previewMode?: boolean;
+  onClose?: () => void;
+  messageOverride?: string;
+  showCloseButton?: boolean;
+}
+
+export function AppBootScreen({ previewMode, onClose, messageOverride, showCloseButton }: AppBootScreenProps = {}) {
   const [messageIndex, setMessageIndex] = useState(0);
+
+  useEffect(() => {
+    if (previewMode && onClose) {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [previewMode, onClose]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,7 +38,32 @@ export function AppBootScreen() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-to-b from-clay-canvas via-clay-surface to-clay-canvas overflow-hidden">
-      <div className="max-w-md w-full px-8 flex flex-col items-center">
+      {/* Subtle Background Visuals */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 motion-reduce:hidden">
+        <div className="absolute top-[10%] left-[15%] w-32 h-32 bg-primary rounded-full mix-blend-multiply filter blur-3xl animate-[blob_7s_infinite]" />
+        <div className="absolute top-[20%] right-[15%] w-32 h-32 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl animate-[blob_7s_infinite_2s]" />
+        <div className="absolute bottom-[20%] left-[20%] w-32 h-32 bg-[#A78BFA] rounded-full mix-blend-multiply filter blur-3xl animate-[blob_7s_infinite_4s]" />
+      </div>
+
+      {showCloseButton && onClose && (
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 sm:top-6 sm:right-6 text-clay-secondary hover:text-clay-primary hover:bg-clay-recessed rounded-full transition-colors z-50"
+          aria-label="Close preview"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      )}
+
+      {previewMode && (
+        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 pointer-events-none">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200">
+            Preview Mode
+          </span>
+        </div>
+      )}
+
+      <div className="max-w-md w-full px-8 flex flex-col items-center relative z-10">
         
         {/* Brand Icon with subtle glowing animation */}
         <div className="relative mb-8 flex items-center justify-center">
@@ -54,30 +96,42 @@ export function AppBootScreen() {
 
           {/* Rotating Message */}
           <div className="mt-8 h-6 overflow-hidden relative w-full text-center">
-            {MESSAGES.map((msg, i) => (
-              <p
-                key={msg}
-                className={`absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 transition-all duration-700
-                  ${i === messageIndex 
-                    ? 'opacity-100 translate-y-0' 
-                    : i < messageIndex 
-                      ? 'opacity-0 -translate-y-4' 
-                      : 'opacity-0 translate-y-4'
-                  }`}
-              >
-                {msg}
+            {messageOverride ? (
+              <p className="absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70">
+                {messageOverride}
               </p>
-            ))}
+            ) : (
+              MESSAGES.map((msg, i) => (
+                <p
+                  key={msg}
+                  className={`absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 transition-all duration-700
+                    ${i === messageIndex 
+                      ? 'opacity-100 translate-y-0' 
+                      : i < messageIndex 
+                        ? 'opacity-0 -translate-y-4' 
+                        : 'opacity-0 translate-y-4'
+                    }`}
+                >
+                  {msg}
+                </p>
+              ))
+            )}
           </div>
         </div>
         
       </div>
       
-      {/* Keyframes for the shimmer/route progress */}
+      {/* Keyframes for animations */}
       <style>{`
         @keyframes travel-progress {
           0% { transform: translateX(-150%); }
           100% { transform: translateX(350%); }
+        }
+        @keyframes blob {
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
         }
       `}</style>
     </div>

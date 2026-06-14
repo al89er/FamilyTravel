@@ -1,6 +1,7 @@
 import { Ban, Copy, KeyRound, Link2, LogOut, Shield, UserPlus, Monitor, Moon, Sun, ChevronDown, ChevronUp, Smartphone, CheckCircle2, Trash2, Images, BedDouble } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
+import { AppBootScreen } from "../components/AppBootScreen";
 import { useTheme } from "../hooks/useTheme";
 import { createShareLink, listShareLinks, manageOrganizer, setShareLinkEnabled, updateTrip } from "../lib/supabase";
 import type { AccessMode, AppData, Role, ShareLink, TripInput, TripMember, FamilySession } from "../types";
@@ -256,6 +257,18 @@ function DeveloperInfo() {
             {dateStr}
           </span>
         </div>
+
+        {import.meta.env.DEV && (
+          <div className="mt-4 flex flex-col items-center">
+            <Button variant="secondary" onClick={() => {
+              const event = new CustomEvent("openBootPreview");
+              window.dispatchEvent(event);
+            }}>
+              Preview Boot Screen
+            </Button>
+            <p className="mt-2 text-xs text-clay-secondary text-center">View the app launch screen for design testing.</p>
+          </div>
+        )}
       </div>
     </Card>
   );

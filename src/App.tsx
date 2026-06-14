@@ -45,10 +45,23 @@ export default function App() {
   useTheme(); // Initialize theme on app load
 
   const [minBootTimePassed, setMinBootTimePassed] = useState(false);
+  const [showBootPreview, setShowBootPreview] = useState(() => {
+    if (import.meta.env.DEV) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get("previewBoot") === "1";
+    }
+    return false;
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => setMinBootTimePassed(true), 1200);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenPreview = () => setShowBootPreview(true);
+    window.addEventListener("openBootPreview", handleOpenPreview);
+    return () => window.removeEventListener("openBootPreview", handleOpenPreview);
   }, []);
 
   // Check for googlePhotos OAuth return
@@ -83,23 +96,30 @@ export default function App() {
 
   const isBooting = !minBootTimePassed || (!data && accessStatus === "checking");
 
-  if (isBooting) {
+  if (isBooting && !showBootPreview) {
     return <AppBootScreen />;
   }
 
+  const renderBootPreview = showBootPreview ? (
+    <AppBootScreen previewMode showCloseButton onClose={() => setShowBootPreview(false)} />
+  ) : null;
+
   if (!data) {
     return (
-      <AccessGate
-        loading={loading}
-        error={error}
-        accessStatus={accessStatus}
-        availableTrips={availableTrips}
-        shareTokenFromUrl={shareTokenFromUrl}
-        onAdminAuthenticated={loadAdminTrips}
-        onSelectTrip={openAuthenticatedTrip}
-        onCreateTrip={createTrip}
-        onFamilyJoin={joinFamilyTrip}
-      />
+      <>
+        <AccessGate
+          loading={loading}
+          error={error}
+          accessStatus={accessStatus}
+          availableTrips={availableTrips}
+          shareTokenFromUrl={shareTokenFromUrl}
+          onAdminAuthenticated={loadAdminTrips}
+          onSelectTrip={openAuthenticatedTrip}
+          onCreateTrip={createTrip}
+          onFamilyJoin={joinFamilyTrip}
+        />
+        {renderBootPreview}
+      </>
     );
   }
 
@@ -161,6 +181,7 @@ export default function App() {
       ) : null}
       
       <PWAInstallPrompt />
+      {renderBootPreview}
     </Layout>
   );
 }
