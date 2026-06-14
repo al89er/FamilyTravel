@@ -66,9 +66,10 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
       <div className="max-w-md w-full px-8 flex flex-col items-center relative z-10">
         
         {/* Brand Icon with glowing animation */}
-        <div className="relative mb-8 flex h-24 w-24 items-center justify-center overflow-visible sm:h-28 sm:w-28">
-          <div className="pointer-events-none absolute -inset-8 z-0 rounded-full bg-primary/25 blur-3xl motion-safe:animate-pulse" />
-          <div className="pointer-events-none absolute -inset-4 z-0 rounded-full bg-primary/30 blur-xl" />
+        <div className="relative mb-10 flex h-24 w-24 items-center justify-center overflow-visible sm:h-28 sm:w-28">
+          <div className="pointer-events-none absolute -inset-x-10 -top-10 -bottom-4 z-0 rounded-full bg-primary/30 blur-3xl motion-safe:animate-pulse" />
+          <div className="pointer-events-none absolute -inset-x-5 -top-5 -bottom-2 z-0 rounded-full bg-primary/35 blur-2xl" />
+          <div className="pointer-events-none absolute -inset-2 z-0 rounded-full bg-primary/20 blur-xl" />
 
           <img
             src="/icon-192.png"
