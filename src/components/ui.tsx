@@ -599,7 +599,7 @@ export function DayPickerChips({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 snap-x">
+    <div className="flex w-full gap-2 overflow-x-auto pb-2 px-4 scroll-px-4 snap-x">
       {dates.map((date, idx) => {
         const isSelected = value === date;
         const d = new Date(date + "T00:00:00");

@@ -92,7 +92,7 @@ export function Itinerary({
 
       {/* Pill navigation for the days */}
       {tripDates.length > 0 && (
-        <div className="sticky top-[56px] z-30 bg-clay-canvas/90 backdrop-blur-md py-3 -mx-4 px-4 sm:mx-0 sm:px-0 border-b border-border/20">
+        <div className="sticky top-[56px] z-30 bg-clay-canvas/90 backdrop-blur-md py-3 -mx-4 sm:mx-0 border-b border-border/20">
           <DayPickerChips
             dates={tripDates}
             dateFormat={data.trip.dateFormat}
