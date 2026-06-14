@@ -566,16 +566,15 @@ function ItineraryCard({
   let bgClass = "bg-clay-surface";
   let accentClass = "text-clay-primary";
   let badgeTone = "slate";
-  let stripClass = "bg-border/50";
+  let accentBorderClass = "border-l-border/50";
 
-  if (isFood) { ringClass = "ring-amber-200"; bgClass = "bg-gradient-to-br from-clay-surface to-amber-50/50"; accentClass = "text-amber-700"; badgeTone = "amber"; stripClass = "bg-amber-400"; }
-  else if (isActivity) { ringClass = "ring-emerald-200"; bgClass = "bg-gradient-to-br from-clay-surface to-emerald-50/50"; accentClass = "text-emerald-700"; badgeTone = "emerald"; stripClass = "bg-emerald-400"; }
-  else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
+  if (isFood) { ringClass = "ring-amber-200"; bgClass = "bg-gradient-to-br from-clay-surface to-amber-50/50"; accentClass = "text-amber-700"; badgeTone = "amber"; accentBorderClass = "border-l-amber-400"; }
+  else if (isActivity) { ringClass = "ring-emerald-200"; bgClass = "bg-gradient-to-br from-clay-surface to-emerald-50/50"; accentClass = "text-emerald-700"; badgeTone = "emerald"; accentBorderClass = "border-l-emerald-400"; }
+  else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; accentBorderClass = "border-l-cyan-400"; }
 
   return (
-    <Card className={`relative flex flex-col sm:flex-row border-0 shadow-clay-card p-0 transition-all ${bgClass} ${menuOpen ? "z-50" : "z-0"}`}>
-      <div className={`absolute left-0 inset-y-0 w-2 rounded-l-[inherit] ${stripClass}`} aria-hidden="true" />
-      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 pl-6 sm:pl-7 relative">
+    <Card className={`relative flex flex-col sm:flex-row shadow-clay-card p-0 transition-all ${bgClass} border-l-8 ${accentBorderClass} border-y-0 border-r-0 ${menuOpen ? "z-50" : "z-0"}`}>
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 relative">
         <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
           <span className="inline-flex items-center justify-center rounded-[16px] bg-clay-recessed shadow-clay-pressed px-3 py-2 text-sm font-black text-clay-primary tabular-nums border-0 min-w-[4.5rem]">
