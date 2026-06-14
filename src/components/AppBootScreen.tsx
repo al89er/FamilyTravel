@@ -74,11 +74,11 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
           {/* Static fallback for reduced motion */}
           <div className="absolute w-32 h-32 bg-primary/20 rounded-full blur-2xl hidden motion-reduce:block" />
 
-          <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-[32px] bg-clay-surface shadow-clay-btn ring-4 ring-white/40 dark:ring-white/10 overflow-hidden">
+          <div className="relative z-10 h-24 w-24 rounded-[28px] overflow-hidden shadow-xl shadow-primary/20 dark:shadow-none">
             <img 
               src="/icon-192.png" 
               alt="Family Travel App Icon" 
-              className="w-full h-full object-contain"
+              className="block w-full h-full object-cover rounded-[inherit]"
               width={96}
               height={96}
             />
