@@ -422,51 +422,49 @@ function ItineraryCard({
   if (item.category === "flight") {
     return (
       <Card className={`flex flex-col sm:flex-row border-0 bg-clay-surface transition-all group relative p-0 shadow-clay-card ${menuOpen ? "z-50" : "z-0"}`}>
-        <ActionMenu />
-        <div className="flex flex-col sm:flex-row w-full overflow-hidden rounded-[inherit]">
-          {/* Saturated sky accent strip — white text is safe on this background */}
-          <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
-            <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.4)_0%,transparent_60%)]"></div>
-            <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" />
-            <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90 drop-shadow-sm">Boarding</span>
-            <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10" />
-          </div>
+        {/* Saturated sky accent strip — white text is safe on this background */}
+        <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden rounded-t-[inherit] sm:rounded-tr-none sm:rounded-l-[inherit]">
+          <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.4)_0%,transparent_60%)]"></div>
+          <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" />
+          <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90 drop-shadow-sm">Boarding</span>
+          <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10" />
+        </div>
 
-          {/* Perforation notches — match canvas so they look punched out */}
-          <div className="hidden sm:flex flex-col justify-between items-center w-4 -ml-2 -mr-2 z-10">
-            <div className="h-4 w-4 rounded-full bg-clay-canvas -mt-2 border-b border-border/50"></div>
-            <div className="h-full w-px border-l-[3px] border-dashed border-border/60 my-2"></div>
-            <div className="h-4 w-4 rounded-full bg-clay-canvas -mb-2 border-t border-border/50"></div>
-          </div>
+        {/* Perforation notches — match canvas so they look punched out */}
+        <div className="hidden sm:flex flex-col justify-between items-center w-4 -ml-2 -mr-2 z-10">
+          <div className="h-4 w-4 rounded-full bg-clay-canvas -mt-2 border-b border-border/50"></div>
+          <div className="h-full w-px border-l-[3px] border-dashed border-border/60 my-2"></div>
+          <div className="h-4 w-4 rounded-full bg-clay-canvas -mb-2 border-t border-border/50"></div>
+        </div>
 
-          {/* Ticket body — solid clay surface, all text must be dark */}
-          <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8 relative">
-            <div className="flex items-start justify-between gap-3 mb-3 pr-8">
-              <h3 className="font-extrabold text-xl text-clay-primary tracking-tight leading-tight">{item.title}</h3>
-              {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm shrink-0">Ref: {item.bookingReference}</Badge>}
-            </div>
-            {/* Times — sky-700 (#0369a1) on white passes WCAG AA */}
-            <div className="flex items-center gap-4 mb-4 bg-sky-50 p-3 rounded-[18px] border border-sky-100">
-              <div className="font-mono text-2xl font-black text-sky-700">{item.startTime}</div>
-              <div className="flex-1 flex items-center justify-center relative">
-                <div className="h-px w-full bg-sky-200 absolute" />
-                <Plane className="h-4 w-4 text-sky-400 absolute rotate-90" />
-              </div>
-              <div className="font-mono text-2xl font-black text-sky-700">{item.endTime || "—"}</div>
-            </div>
-            {item.locationName && (
-              <p className="text-sm font-bold text-clay-secondary flex items-center gap-2 mb-1">
-                <MapPin className="h-4 w-4 opacity-60" />
-                {item.locationName}
-              </p>
-            )}
-            {item.notes && (
-              <p className="mt-3 rounded-[18px] bg-clay-recessed shadow-clay-pressed p-4 text-sm text-clay-secondary border border-border/30 leading-relaxed whitespace-pre-line">
-                {item.notes}
-              </p>
-            )}
-            <FamilyInteractions />
+        {/* Ticket body — solid clay surface, all text must be dark */}
+        <div className="p-5 sm:p-6 flex-1 min-w-0 flex flex-col justify-center sm:pl-8 relative">
+          <ActionMenu />
+          <div className="flex items-start justify-between gap-3 mb-3 pr-8">
+            <h3 className="font-extrabold text-xl text-clay-primary tracking-tight leading-tight">{item.title}</h3>
+            {item.bookingReference && <Badge tone="sky" className="font-mono uppercase shadow-sm shrink-0">Ref: {item.bookingReference}</Badge>}
           </div>
+          {/* Times — sky-700 (#0369a1) on white passes WCAG AA */}
+          <div className="flex items-center gap-4 mb-4 bg-sky-50 p-3 rounded-[18px] border border-sky-100">
+            <div className="font-mono text-2xl font-black text-sky-700">{item.startTime}</div>
+            <div className="flex-1 flex items-center justify-center relative">
+              <div className="h-px w-full bg-sky-200 absolute" />
+              <Plane className="h-4 w-4 text-sky-400 absolute rotate-90" />
+            </div>
+            <div className="font-mono text-2xl font-black text-sky-700">{item.endTime || "—"}</div>
+          </div>
+          {item.locationName && (
+            <p className="text-sm font-bold text-clay-secondary flex items-center gap-2 mb-1">
+              <MapPin className="h-4 w-4 opacity-60" />
+              {item.locationName}
+            </p>
+          )}
+          {item.notes && (
+            <p className="mt-3 rounded-[18px] bg-clay-recessed shadow-clay-pressed p-4 text-sm text-clay-secondary border border-border/30 leading-relaxed whitespace-pre-line">
+              {item.notes}
+            </p>
+          )}
+          <FamilyInteractions />
         </div>
       </Card>
     );
@@ -575,11 +573,10 @@ function ItineraryCard({
   else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; stripClass = "bg-cyan-400"; }
 
   return (
-    <Card className={`relative flex flex-col sm:flex-row border-0 shadow-clay-card p-0 transition-all bg-clay-surface ${menuOpen ? "z-50" : "z-0"}`}>
-      <ActionMenu />
-      <div className="relative flex flex-col sm:flex-row w-full overflow-hidden rounded-[inherit]">
-        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripClass}`} />
-        <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 ml-1.5 relative">
+    <Card className={`relative flex flex-col sm:flex-row border-0 shadow-clay-card p-0 transition-all ${bgClass} ${menuOpen ? "z-50" : "z-0"}`}>
+      <div className={`absolute left-0 top-5 bottom-5 w-1.5 rounded-r-full ${stripClass}`} aria-hidden="true" />
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 pl-6 sm:pl-7 relative">
+        <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
           <span className="inline-flex items-center justify-center rounded-[16px] bg-clay-recessed shadow-clay-pressed px-3 py-2 text-sm font-black text-clay-primary tabular-nums border-0 min-w-[4.5rem]">
             {item.startTime}
@@ -595,7 +592,6 @@ function ItineraryCard({
           {item.notes && <p className="mt-3 rounded-[16px] bg-clay-recessed shadow-clay-pressed p-4 text-sm font-medium text-clay-secondary leading-relaxed whitespace-pre-line">{item.notes}</p>}
           <FamilyInteractions />
         </div>
-      </div>
       </div>
     </Card>
   );
