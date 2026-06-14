@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MapPin, X } from "lucide-react";
+import { X } from "lucide-react";
 
 const MESSAGES = [
   "Preparing your trip...",
@@ -68,14 +68,20 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
         {/* Brand Icon with glowing animation */}
         <div className="relative mb-8 flex items-center justify-center overflow-visible">
           {/* Outer wide blur */}
-          <div className="absolute w-40 h-40 bg-amber-500/30 dark:bg-amber-500/40 rounded-full blur-[40px] animate-pulse motion-reduce:animate-none" />
+          <div className="absolute w-40 h-40 bg-primary/20 dark:bg-primary/30 rounded-full blur-[40px] animate-pulse motion-reduce:animate-none" />
           {/* Inner ring */}
-          <div className="absolute w-28 h-28 bg-amber-400/30 dark:bg-amber-400/40 rounded-full blur-xl animate-[pulse_3s_infinite] motion-reduce:animate-none" />
+          <div className="absolute w-28 h-28 bg-primary/30 dark:bg-primary/40 rounded-full blur-xl animate-[pulse_3s_infinite] motion-reduce:animate-none" />
           {/* Static fallback for reduced motion */}
-          <div className="absolute w-32 h-32 bg-amber-500/30 rounded-full blur-2xl hidden motion-reduce:block" />
+          <div className="absolute w-32 h-32 bg-primary/20 rounded-full blur-2xl hidden motion-reduce:block" />
 
-          <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-[32px] bg-gradient-to-br from-[#A78BFA] to-[#7C3AED] shadow-clay-btn ring-4 ring-white/20 dark:ring-white/10">
-            <MapPin className="h-10 w-10 text-white drop-shadow-md" aria-hidden="true" />
+          <div className="relative z-10 flex h-24 w-24 items-center justify-center rounded-[32px] bg-clay-surface shadow-clay-btn ring-4 ring-white/40 dark:ring-white/10 overflow-hidden">
+            <img 
+              src="/icon-192.png" 
+              alt="Family Travel App Icon" 
+              className="w-full h-full object-contain"
+              width={96}
+              height={96}
+            />
           </div>
         </div>
 
