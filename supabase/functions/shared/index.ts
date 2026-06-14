@@ -104,6 +104,45 @@ export async function requireOrganizerOrOwner(req: Request, tripId: string) {
   return { actor, adminClient, userClient, role: roleCheck.data.role };
 }
 
+export async function requireTripMember(req: Request, tripId: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  
+  if (!supabaseUrl || !anonKey) {
+    throw new Error("Function environment is not configured (missing anon key).");
+  }
+
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  const { data: userResult, error: userError } = await userClient.auth.getUser();
+  const actor = userResult.user;
+  if (userError || !actor) {
+    throw new Error("Authentication required.");
+  }
+
+  const adminClient = getAdminClient();
+
+  const roleCheck = await adminClient
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", actor.id)
+    .maybeSingle();
+
+  if (roleCheck.error) {
+    throw new Error(roleCheck.error.message);
+  }
+
+  if (!roleCheck.data) {
+    throw new Error("Only trip members can perform this action.");
+  }
+
+  return { actor, adminClient, userClient, role: roleCheck.data.role };
+}
+
 export async function getTripOwnerId(adminClient: any, tripId: string) {
   const { data, error } = await adminClient
     .from("trip_members")

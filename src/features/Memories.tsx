@@ -6,6 +6,7 @@ import { listTripGalleryMediaItems, listTripMemoryDayNotes, upsertTripMemoryDayN
 import { GalleryThumbnail } from "./Gallery";
 import { GalleryLightbox } from "./GalleryLightbox";
 import { MemoriesPageSkeleton } from "./MemoriesSkeletons";
+import { useGalleryMediaRefresh } from "../hooks/useGalleryMediaRefresh";
 
 interface TripDay {
   dayNumber: number;
@@ -20,6 +21,8 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
   const [mediaItems, setMediaItems] = useState<TripGalleryMediaItem[]>([]);
   const [dayNotes, setDayNotes] = useState<TripMemoryDayNote[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const { triggerRefresh, checkAndRefreshStaleItems } = useGalleryMediaRefresh(data.trip.id, setMediaItems);
 
   // Edit Note State
   const [editingNoteDay, setEditingNoteDay] = useState<TripDay | null>(null);
@@ -47,6 +50,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
         // Filter out removed items
         const visibleItems = items.filter(item => !item.is_removed);
         setMediaItems(visibleItems);
+        checkAndRefreshStaleItems(visibleItems);
         setDayNotes(notes);
       } catch (err: any) {
         if (active) setError(err.message || "Failed to load memories.");
@@ -282,7 +286,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                               onClick={() => openLightbox(item)}
                               className="group relative aspect-square overflow-hidden rounded-[16px] bg-clay-recessed focus:outline-none focus:ring-2 focus:ring-primary shadow-clay-pressed"
                             >
-                              <GalleryThumbnail item={item} tripId={data.trip.id} />
+                              <GalleryThumbnail item={item} tripId={data.trip.id} onRefreshRequest={(id) => triggerRefresh([id])} />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                             </button>
                           ))}
@@ -308,7 +312,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
                           onClick={() => openLightbox(item)}
                           className="group relative aspect-square overflow-hidden rounded-[16px] bg-clay-recessed focus:outline-none focus:ring-2 focus:ring-primary shadow-clay-pressed"
                         >
-                          <GalleryThumbnail item={item} tripId={data.trip.id} />
+                          <GalleryThumbnail item={item} tripId={data.trip.id} onRefreshRequest={(id) => triggerRefresh([id])} />
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                         </button>
                       ))}
@@ -330,6 +334,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
         onClose={() => setIsLightboxOpen(false)}
         isOwner={isOwner}
         onRemoveMediaItem={handleRemoveMediaItem}
+        onRefreshRequest={(id) => triggerRefresh([id])}
       />
 
       {/* Edit Note Modal */}

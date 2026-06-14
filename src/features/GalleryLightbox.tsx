@@ -12,6 +12,7 @@ interface GalleryLightboxProps {
   onClose: () => void;
   isOwner: boolean;
   onRemoveMediaItem: (id: string) => Promise<void>;
+  onRefreshRequest?: (id: string) => void;
 }
 
 export function GalleryLightbox({
@@ -21,27 +22,34 @@ export function GalleryLightbox({
   isOpen,
   onClose,
   isOwner,
-  onRemoveMediaItem
+  onRemoveMediaItem,
+  onRefreshRequest
 }: GalleryLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [removeCandidate, setRemoveCandidate] = useState<any>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [removeCandidate, setRemoveCandidate] = useState<any | null>(null);
   const [removing, setRemoving] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [hasImageError, setHasImageError] = useState(false);
+  const [retried, setRetried] = useState(false);
 
-  // Sync state if initialIndex changes when opening
+  // Sync index when initialIndex changes or modal opens
   useEffect(() => {
     if (isOpen) {
       setCurrentIndex(initialIndex);
       setRemoveCandidate(null);
       setImageLoaded(false);
+      setHasImageError(false);
+      setRetried(false);
     }
   }, [initialIndex, isOpen]);
 
   // Reset image loaded state when navigating between images
   useEffect(() => {
     setImageLoaded(false);
-  }, [currentIndex]);
+    setHasImageError(false);
+    setRetried(false);
+  }, [currentIndex, mediaItems]);
 
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % mediaItems.length);
@@ -169,7 +177,7 @@ export function GalleryLightbox({
         // Close if clicking the backdrop directly
         if (e.target === e.currentTarget) onClose();
       }}>
-        {hasValidUrl ? (
+        {hasValidUrl && !hasImageError ? (
           <>
             {!imageLoaded && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -181,6 +189,14 @@ export function GalleryLightbox({
               alt={currentItem.caption || currentItem.filename || "Trip photo"}
               className={`max-h-full max-w-full object-contain pointer-events-none transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setImageLoaded(true)}
+              onError={() => {
+                if (!retried && onRefreshRequest) {
+                  setRetried(true);
+                  onRefreshRequest(currentItem.id);
+                } else {
+                  setHasImageError(true);
+                }
+              }}
             />
           </>
         ) : (

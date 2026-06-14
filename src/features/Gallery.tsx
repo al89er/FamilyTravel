@@ -19,6 +19,7 @@ import { GalleryLightbox } from "./GalleryLightbox";
 import { GalleryPageSkeleton } from "./GallerySkeletons";
 import { getCachedThumbnailUrl, fetchAndCacheThumbnail, deleteCachedThumbnail, clearGalleryThumbnailCache } from "../lib/galleryThumbnailCache";
 import { prepareExportFiles, downloadAsZip, ExportProgress } from "../lib/exportGallery";
+import { useGalleryMediaRefresh } from "../hooks/useGalleryMediaRefresh";
 
 function GalleryHeader({ title, subtitle, icon: Icon, colorClass }: { title: string, subtitle: string, icon: any, colorClass: string }) {
   return (
@@ -144,8 +145,10 @@ function GalleryEmptyState({ canUploadPhotos }: { canUploadPhotos: boolean }) {
   );
 }
 
-export function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }) {
+export function GalleryThumbnail({ item, tripId, onRefreshRequest }: { item: any; tripId: string; onRefreshRequest?: (id: string) => void }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [retried, setRetried] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -188,17 +191,41 @@ export function GalleryThumbnail({ item, tripId }: { item: any; tripId: string }
     };
   }, [item, tripId]);
   
+  if (hasError) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-clay-surface/50 text-clay-secondary/60">
+        <ImageIcon className="h-6 w-6 mb-1 opacity-50" />
+        <span className="text-[10px] font-bold uppercase tracking-wider">Unavailable</span>
+      </div>
+    );
+  }
+
   if (!src) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-clay-surface/50 animate-pulse">
+      <div className="flex-1 flex items-center justify-center bg-clay-surface/50 animate-pulse motion-reduce:animate-none">
         <ImageIcon className="h-8 w-8 text-clay-secondary/40" />
       </div>
     );
   }
-  return <img src={src} alt={item.caption || item.filename || "Trip photo"} className="w-full h-full object-cover" />;
+  
+  return (
+    <img 
+      src={src} 
+      alt={item.caption || item.filename || "Trip photo"} 
+      className="w-full h-full object-cover" 
+      onError={() => {
+        if (!retried && onRefreshRequest) {
+          setRetried(true);
+          onRefreshRequest(item.id);
+        } else {
+          setHasError(true);
+        }
+      }}
+    />
+  );
 }
 
-function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick }: any) {
+function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actionLoading, canUploadPhotos, isOwner, onRemoveMediaItem, onImageClick, refreshing, onRefreshRequest }: any) {
   const [itemsToRemove, setItemsToRemove] = useState<any[]>([]);
   const [removing, setRemoving] = useState(false);
   
@@ -388,8 +415,8 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
           </p>
         </div>
         {canUploadPhotos && (
-          <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading} className="p-2" aria-label="Refresh">
-            <RefreshCw className={`h-4 w-4 ${actionLoading ? "animate-spin" : ""}`} />
+          <Button variant="secondary" onClick={handleManualRefresh} disabled={actionLoading || refreshing} className="p-2" aria-label="Refresh">
+            <RefreshCw className={`h-4 w-4 ${actionLoading || refreshing ? "animate-spin" : ""}`} />
           </Button>
         )}
       </div>
@@ -434,7 +461,7 @@ function GalleryGrid({ tripId, tripTitle, mediaItems, handleManualRefresh, actio
                   )}
                 </button>
               </div>
-              <GalleryThumbnail item={item} tripId={tripId} />
+              <GalleryThumbnail item={item} tripId={tripId} onRefreshRequest={onRefreshRequest} />
               
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3 pointer-events-none">
                 {isOwner && !isSelectionMode && (
@@ -687,6 +714,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { triggerRefresh, checkAndRefreshStaleItems, refreshing } = useGalleryMediaRefresh(data.trip.id, setMediaItems);
+
   async function loadData() {
     try {
       const [albumData, mediaData] = await Promise.all([
@@ -702,24 +731,7 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
       let finalMediaData = mediaData;
       
       if (mediaData.length > 0) {
-        const now = Date.now();
-        const needsRefresh = mediaData.some(m => {
-          if (!m.cachedBaseUrl) return true;
-          if (!m.cachedBaseUrlExpiresAt) return true;
-          const expires = new Date(m.cachedBaseUrlExpiresAt).getTime();
-          return expires < now + 5 * 60 * 1000;
-        });
-
-        if (needsRefresh) {
-          try {
-            const refreshRes = await refreshGooglePhotosMedia(data.trip.id);
-            if (refreshRes && refreshRes.refreshedCount > 0) {
-              finalMediaData = await listTripGalleryMediaItems(data.trip.id);
-            }
-          } catch (e) {
-            console.error("Failed auto refresh thumbnails", e);
-          }
-        }
+        checkAndRefreshStaleItems(mediaData);
       }
 
       setAlbum(albumData);
@@ -733,21 +745,21 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
   async function handleManualRefresh() {
     setActionLoading(true);
     try {
-      const res = await refreshGooglePhotosMedia(data.trip.id);
-      if (res && res.refreshedCount > 0) {
-        const finalMediaData = await listTripGalleryMediaItems(data.trip.id);
-        setMediaItems(finalMediaData);
+      const res = await triggerRefresh();
+      if (res.success && res.refreshedCount > 0) {
         let msg = `Thumbnails updated. Successfully refreshed ${res.refreshedCount} items.`;
         if (res.processingDelayCount > 0) {
           msg += `\nNote: ${res.processingDelayCount} item(s) are still processing by Google and couldn't be loaded yet. Try again in a few minutes.`;
         }
         alert(msg);
-      } else {
-        if (res && res.processingDelayCount > 0) {
+      } else if (res.success) {
+        if (res.processingDelayCount > 0) {
           alert(`No thumbnails were refreshed.\n${res.processingDelayCount} recently uploaded photo(s) are still being processed by Google. Please try again in a few minutes.`);
         } else {
-          alert("No thumbnails were refreshed. " + (res?.message || "Unknown reason."));
+          alert("No thumbnails were refreshed. " + (res.message || "Unknown reason."));
         }
+      } else {
+        alert(res.message || "Failed to refresh thumbnails.");
       }
     } catch (e) {
       console.error(e);
@@ -919,6 +931,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
             isOwner={isOwner}
             onRemoveMediaItem={handleRemoveMediaItem}
             onImageClick={(index: number) => setLightboxIndex(index)}
+            refreshing={refreshing}
+            onRefreshRequest={(id: string) => triggerRefresh([id])}
           />
         ) : (
           <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
@@ -953,6 +967,8 @@ export function Gallery({ data, openView }: { data: AppData; openView: (view: Ap
                 isOwner={isOwner}
                 onRemoveMediaItem={handleRemoveMediaItem}
                 onImageClick={(index: number) => setLightboxIndex(index)}
+                refreshing={refreshing}
+                onRefreshRequest={(id: string) => triggerRefresh([id])}
               />
             ) : (
               <GalleryEmptyState canUploadPhotos={canUploadPhotos} />
