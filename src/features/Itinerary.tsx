@@ -574,7 +574,7 @@ function ItineraryCard({
 
   return (
     <Card className={`relative flex flex-col sm:flex-row border-0 shadow-clay-card p-0 transition-all ${bgClass} ${menuOpen ? "z-50" : "z-0"}`}>
-      <div className={`absolute left-0 top-5 bottom-5 w-1.5 rounded-r-full ${stripClass}`} aria-hidden="true" />
+      <div className={`absolute left-0 top-5 bottom-5 w-1.5 rounded-full ${stripClass}`} aria-hidden="true" />
       <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 pl-6 sm:pl-7 relative">
         <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
