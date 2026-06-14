@@ -76,7 +76,7 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
 
           <div className="relative z-10 h-24 w-24 rounded-[28px] overflow-hidden shadow-xl shadow-primary/20 dark:shadow-none">
             <img 
-              src="/icon-192.png" 
+              src="/icon-1024-transparent.png" 
               alt="Family Travel App Icon" 
               className="block w-full h-full object-cover rounded-[inherit]"
               width={96}
