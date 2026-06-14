@@ -66,23 +66,17 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
       <div className="max-w-md w-full px-8 flex flex-col items-center relative z-10">
         
         {/* Brand Icon with glowing animation */}
-        <div className="relative mb-8 flex items-center justify-center overflow-visible">
-          {/* Outer wide blur */}
-          <div className="absolute w-40 h-40 bg-primary/20 dark:bg-primary/30 rounded-full blur-[40px] animate-pulse motion-reduce:animate-none" />
-          {/* Inner ring */}
-          <div className="absolute w-28 h-28 bg-primary/30 dark:bg-primary/40 rounded-full blur-xl animate-[pulse_3s_infinite] motion-reduce:animate-none" />
-          {/* Static fallback for reduced motion */}
-          <div className="absolute w-32 h-32 bg-primary/20 rounded-full blur-2xl hidden motion-reduce:block" />
+        <div className="relative mb-8 flex h-24 w-24 items-center justify-center overflow-visible sm:h-28 sm:w-28">
+          <div className="pointer-events-none absolute -inset-8 z-0 rounded-full bg-primary/25 blur-3xl motion-safe:animate-pulse" />
+          <div className="pointer-events-none absolute -inset-4 z-0 rounded-full bg-primary/30 blur-xl" />
 
-          <div className="relative z-10 h-24 w-24 rounded-[28px] overflow-hidden shadow-xl shadow-primary/20 dark:shadow-none">
-            <img 
-              src="/icon-1024-transparent.png" 
-              alt="Family Travel App Icon" 
-              className="block w-full h-full object-cover rounded-[inherit]"
-              width={96}
-              height={96}
-            />
-          </div>
+          <img
+            src="/icon-192.png"
+            alt="Family Travel App Icon"
+            className="relative z-10 block h-full w-full object-cover drop-shadow-xl"
+            width={112}
+            height={112}
+          />
         </div>
 
         {/* Brand Text */}
