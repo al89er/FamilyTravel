@@ -1,6 +1,6 @@
 import { AccessGate, AccessStatusCard } from "./features/AuthPanel";
 import { Assignments } from "./features/Assignments";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Dashboard } from "./features/Dashboard";
 import { Documents } from "./features/Documents";
 import { Emergency } from "./features/Emergency";
@@ -13,6 +13,7 @@ import { Packing } from "./features/Packing";
 import { Settings } from "./features/Settings";
 import { Layout } from "./components/Layout";
 import { ErrorState, LoadingState } from "./components/ui";
+import { AppBootScreen } from "./components/AppBootScreen";
 import { useAppState, type AppView, isValidAppView, saveLastViewForTrip } from "./hooks/useAppState";
 import { useTheme } from "./hooks/useTheme";
 import { Sparkles } from "lucide-react";
@@ -43,6 +44,13 @@ export default function App() {
 
   useTheme(); // Initialize theme on app load
 
+  const [minBootTimePassed, setMinBootTimePassed] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinBootTimePassed(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Check for googlePhotos OAuth return
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -72,6 +80,12 @@ export default function App() {
   }
 
   const canEdit = accessMode === "owner" || accessMode === "organizer";
+
+  const isBooting = !minBootTimePassed || (!data && accessStatus === "checking");
+
+  if (isBooting) {
+    return <AppBootScreen />;
+  }
 
   if (!data) {
     return (

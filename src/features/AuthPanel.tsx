@@ -38,13 +38,7 @@ export function AccessGate({
   const showFamilyFormByDefault = !!shareTokenFromUrl;
   const [showFamilyAccess, setShowFamilyAccess] = useState(showFamilyFormByDefault);
 
-  if (accessStatus === "checking") {
-    return (
-      <main className="min-h-dvh bg-clay-canvas flex items-center justify-center p-4">
-        <LoadingState label="Checking access..." />
-      </main>
-    );
-  }
+
 
   return (
     <main className="min-h-dvh bg-clay-canvas px-4 py-8 sm:px-6">
