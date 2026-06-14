@@ -5,6 +5,7 @@ import { BookHeart, CalendarDays, ImageIcon, PlusCircle, Edit3, X } from "lucide
 import { listTripGalleryMediaItems, listTripMemoryDayNotes, upsertTripMemoryDayNote } from "../lib/supabase";
 import { GalleryThumbnail } from "./Gallery";
 import { GalleryLightbox } from "./GalleryLightbox";
+import { MemoriesPageSkeleton } from "./MemoriesSkeletons";
 
 interface TripDay {
   dayNumber: number;
@@ -214,9 +215,7 @@ export function Memories({ data, accessMode }: { data: AppData; accessMode: stri
           {error}
         </div>
       ) : loading ? (
-        <div className="py-12">
-          <LoadingState label="Loading your memories..." />
-        </div>
+        <MemoriesPageSkeleton />
       ) : mediaItems.length === 0 && dayNotes.length === 0 ? (
         <EmptyState 
           icon={<BookHeart className="h-10 w-10 text-pink-400" />} 
