@@ -46,7 +46,7 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
       </div>
 
       {showCloseButton && onClose && (
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 sm:top-6 sm:right-6 text-clay-secondary hover:text-clay-primary hover:bg-clay-recessed rounded-full transition-colors z-50"
           aria-label="Close preview"
@@ -64,7 +64,7 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
       )}
 
       <div className="max-w-md w-full px-8 flex flex-col items-center relative z-10">
-        
+
         {/* Brand Icon with glowing animation */}
         <div className="relative mb-10 flex h-24 w-24 items-center justify-center overflow-visible sm:h-28 sm:w-28">
           <div className="pointer-events-none absolute -inset-x-10 -top-10 -bottom-4 z-0 rounded-full bg-primary/30 blur-3xl motion-safe:animate-pulse" />
@@ -90,11 +90,11 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
 
         {/* Loading Visual */}
         <div className="mt-16 w-full max-w-[200px] flex flex-col items-center">
-          
+
           {/* Animated Route Shimmer Bar */}
           <div className="w-full relative h-1.5 bg-clay-recessed rounded-full overflow-hidden shadow-inner">
-            <div 
-              className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full opacity-80 motion-reduce:hidden" 
+            <div
+              className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full opacity-80 motion-reduce:hidden"
               style={{ animation: "travel-progress 2s infinite ease-in-out" }}
             />
             {/* Fallback for reduced motion */}
@@ -112,10 +112,10 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
                 <p
                   key={msg}
                   className={`absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 transition-all duration-700 leading-snug
-                    ${i === messageIndex 
-                      ? 'opacity-100 translate-y-0' 
-                      : i < messageIndex 
-                        ? 'opacity-0 -translate-y-4 pointer-events-none' 
+                    ${i === messageIndex
+                      ? 'opacity-100 translate-y-0'
+                      : i < messageIndex
+                        ? 'opacity-0 -translate-y-4 pointer-events-none'
                         : 'opacity-0 translate-y-4 pointer-events-none'
                     }`}
                 >
@@ -125,9 +125,9 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
             )}
           </div>
         </div>
-        
+
       </div>
-      
+
       {/* Keyframes for animations */}
       <style>{`
         @keyframes travel-progress {
