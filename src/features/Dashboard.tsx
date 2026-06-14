@@ -19,7 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Badge, Card, EmptyState, GlassPanel, SectionHeader, StatPill, ScrollingTitle } from "../components/ui";
-import type { AppData } from "../types";
+import type { AppData, FlightSeatAssignment, RoomAssignment } from "../types";
 
 function daysUntil(date: string) {
   const today = new Date();
@@ -249,6 +249,22 @@ export function Dashboard({
 
   const nextPlan = data.itinerary[0];
 
+  const profileId = data.currentUser?.id;
+
+  let mySeat: FlightSeatAssignment | undefined;
+  if (nextPlan?.category === "flight" && profileId) {
+    mySeat = data.flightSeatAssignments?.find(
+      (sa) => sa.guestId === profileId && sa.flightLabel === nextPlan.title
+    );
+  }
+
+  let myRoom: RoomAssignment | undefined;
+  if (nextPlan?.category === "hotel" && profileId) {
+    myRoom = data.roomAssignments?.find(
+      (ra) => ra.guestIds.includes(profileId) && (ra.hotelName === nextPlan.locationName || ra.hotelName === nextPlan.title)
+    );
+  }
+
   return (
     <div className="space-y-6">
 
@@ -338,13 +354,25 @@ export function Dashboard({
               // Boarding pass style — solid clay body, sky accent strip on left
               <div className="mt-4 flex flex-col sm:flex-row overflow-hidden rounded-[24px] bg-clay-surface shadow-clay-card">
                 {/* Saturated sky strip — white text is safe here */}
-                <div className="bg-sky-500 text-white p-4 sm:p-5 flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
+                <div className="bg-sky-500 text-white p-4 sm:p-5 grid grid-cols-[1fr_auto_1fr] sm:flex sm:flex-col justify-between items-center sm:w-[5.5rem] shrink-0 relative overflow-hidden">
                   <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.4)_0%,transparent_60%)]"></div>
-                  <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md z-10" aria-hidden="true" />
-                  <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 z-10 opacity-90 drop-shadow-sm">
-                    Boarding
-                  </span>
-                  <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10" aria-hidden="true" />
+                  <div className="flex items-center justify-start sm:justify-center z-10 w-full sm:w-auto">
+                    <Plane className="h-6 w-6 sm:h-7 sm:w-7 rotate-45 sm:rotate-0 drop-shadow-md" aria-hidden="true" />
+                  </div>
+                  <div className="flex flex-col items-center justify-center z-10 w-full sm:w-auto">
+                    {mySeat && (
+                      <div className="flex flex-col items-center rotate-0 sm:-rotate-90 sm:my-6 opacity-90">
+                        <span className="text-[9px] uppercase tracking-widest font-black opacity-80">Seat</span>
+                        <span className="text-sm font-black tracking-tight">{mySeat.seatNumber}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end sm:justify-center z-10 w-full sm:w-auto">
+                    <span className="text-[11px] uppercase tracking-[0.2em] font-black rotate-0 sm:-rotate-90 whitespace-nowrap sm:my-10 opacity-90 drop-shadow-sm">
+                      Boarding
+                    </span>
+                  </div>
+                  <Ticket className="h-5 w-5 opacity-40 hidden sm:block z-10 mt-auto" aria-hidden="true" />
                 </div>
                 {/* Perforation separator */}
                 <div className="hidden sm:flex flex-col justify-between items-center w-4 -ml-2 -mr-2 z-10">
@@ -409,9 +437,16 @@ export function Dashboard({
                                                       <CalendarCheck className="h-6 w-6" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-bold text-lg text-clay-primary leading-tight">{nextPlan.title}</p>
-                    <Badge tone="brand" className="hidden sm:inline-flex capitalize">
+                  <div className="flex justify-between items-start mb-1 gap-2">
+                    <p className="font-bold text-lg text-clay-primary leading-tight flex items-center gap-2 flex-wrap">
+                      <span>{nextPlan.title}</span>
+                      {nextPlan.category === "hotel" && myRoom && (
+                        <span className="inline-flex items-center rounded-[8px] bg-indigo-50 px-2 py-0.5 text-[11px] font-bold text-indigo-700 shadow-sm border border-indigo-100/50">
+                          {myRoom.roomNumber.length <= 5 ? `Room ${myRoom.roomNumber}` : myRoom.roomNumber}
+                        </span>
+                      )}
+                    </p>
+                    <Badge tone="brand" className="hidden sm:inline-flex capitalize shrink-0">
                       {nextPlan.category}
                     </Badge>
                   </div>
