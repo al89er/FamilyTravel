@@ -237,7 +237,7 @@ export function Dashboard({
   const nights      = tripDuration(data.trip.startDate, data.trip.endDate);
 
   const hotelItemsCount = data.itinerary.filter(i => i.category === "hotel").length;
-  const roomAssignmentsCount = data.roomAssignments.length;
+  const roomAssignmentsCount = data.roomAssignments.filter(ra => ra.roomNumber !== "__CONTAINER__").length;
   
   const totalPacking = data.packing.length;
   const packedCount = data.packing.filter(i => i.checkedBy && i.checkedBy.length > 0).length;
@@ -251,19 +251,13 @@ export function Dashboard({
 
   const profileId = data.currentUser?.id;
 
-  let mySeat: FlightSeatAssignment | undefined;
-  if (nextPlan?.category === "flight" && profileId) {
-    mySeat = data.flightSeatAssignments?.find(
-      (sa) => sa.guestId === profileId && sa.flightLabel === nextPlan.title
-    );
-  }
+  const mySeat = nextPlan?.category === "flight" && profileId
+    ? data.flightSeatAssignments.find(sa => sa.seatNumber !== "__CONTAINER__" && sa.guestId === profileId && (sa.itineraryItemId === nextPlan.id || sa.flightLabel === nextPlan.title))
+    : undefined;
 
-  let myRoom: RoomAssignment | undefined;
-  if (nextPlan?.category === "hotel" && profileId) {
-    myRoom = data.roomAssignments?.find(
-      (ra) => ra.guestIds.includes(profileId) && (ra.hotelName === nextPlan.locationName || ra.hotelName === nextPlan.title)
-    );
-  }
+  const myRoom = nextPlan?.category === "hotel" && profileId
+    ? data.roomAssignments.find(ra => ra.roomNumber !== "__CONTAINER__" && ra.guestIds.includes(profileId) && (ra.itineraryItemId === nextPlan.id || ra.hotelName === nextPlan.title || ra.hotelName === nextPlan.locationName))
+    : undefined;
 
   return (
     <div className="space-y-6">

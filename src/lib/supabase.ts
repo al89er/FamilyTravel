@@ -1020,6 +1020,12 @@ export async function deleteRoomAssignment(tripId: string, id: string) {
   if (error) throw error;
 }
 
+export async function deleteHotelFromAssignments(tripId: string, itineraryItemId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("family_room_assignments").delete().eq("itinerary_item_id", itineraryItemId).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
 export async function listFlightSeatAssignments(tripId: string) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase
@@ -1058,6 +1064,12 @@ export async function deleteFlightSeatAssignment(tripId: string, id: string) {
   if (error) throw error;
 }
 
+export async function deleteFlightFromAssignments(tripId: string, itineraryItemId: string) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.from("family_flight_seat_assignments").delete().eq("itinerary_item_id", itineraryItemId).eq("trip_id", tripId);
+  if (error) throw error;
+}
+
 async function functionErrorToError(error: unknown) {
   const context = (error as { context?: Response }).context;
   if (context) {
@@ -1084,16 +1096,19 @@ interface FamilyTripPayload {
   votes: Array<Record<string, unknown>>;
   comments: Array<Record<string, unknown>>;
   emergencyContacts: Array<Record<string, unknown>>;
+  members?: Array<Record<string, unknown>>;
+  roomAssignments?: Array<Record<string, unknown>>;
+  flightSeatAssignments?: Array<Record<string, unknown>>;
 }
 
 function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string, shareToken: string) {
   const guestId = payload.guestId;
+  const members = asArray(payload.members).map(memberToTripMember);
+  const matchedMember = members.find((member) => member.profile.displayName.toLowerCase() === displayName.toLowerCase());
+  const currentProfile = matchedMember?.profile ?? { id: guestId, displayName };
   const data: AppData = {
     ...demoData,
-    currentUser: {
-      id: guestId,
-      displayName
-    },
+    currentUser: currentProfile,
     trip: {
       ...demoData.trip,
       id: asString(payload.trip.id),
@@ -1109,7 +1124,7 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       emergencySummary: asString(payload.trip.emergency_summary),
       estimatedBudget: asNumber(payload.trip.estimated_budget)
     },
-    members: [
+    members: members.length > 0 ? members : [
       {
         id: guestId,
         tripId: asString(payload.trip.id),
@@ -1215,8 +1230,8 @@ function familyPayloadToAppData(payload: FamilyTripPayload, displayName: string,
       policyNumber: "Hidden from family share",
       emergencyPhone: demoData.insurance.emergencyPhone
     },
-    roomAssignments: [],
-    flightSeatAssignments: []
+    roomAssignments: asArray(payload.roomAssignments).map(roomAssignmentToRoomAssignment),
+    flightSeatAssignments: asArray(payload.flightSeatAssignments).map(flightSeatToFlightSeatAssignment)
   };
 
   return {
