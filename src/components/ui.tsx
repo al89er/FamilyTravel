@@ -1,6 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { AlertCircle, Loader2, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Category colour system — Light mode only
@@ -634,5 +634,71 @@ export function DayPickerChips({
         );
       })}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ScrollingTitle
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function ScrollingTitle({
+  children,
+  className = "",
+  as: Component = "div",
+}: {
+  children: ReactNode;
+  className?: string;
+  as?: React.ElementType;
+}) {
+  const containerRef = useRef<HTMLElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(0);
+
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (containerRef.current && textRef.current) {
+        const cWidth = containerRef.current.clientWidth;
+        const sWidth = textRef.current.scrollWidth;
+        setOverflow(sWidth > cWidth ? sWidth - cWidth : 0);
+      }
+    };
+    
+    checkOverflow();
+    const ro = new ResizeObserver(checkOverflow);
+    if (containerRef.current) ro.observe(containerRef.current);
+    
+    return () => ro.disconnect();
+  }, [children]);
+
+  const isOverflowing = overflow > 0;
+  // Speed: ~30px per second, minimum 2s duration.
+  const duration = Math.max(2, overflow / 30);
+
+  return (
+    <Component
+      ref={containerRef as any}
+      className={`relative overflow-hidden whitespace-nowrap ${className}`}
+      title={typeof children === "string" ? children : undefined}
+    >
+      <div
+        ref={textRef}
+        className={`inline-block transition-transform motion-reduce:transition-none ${
+          isOverflowing
+            ? "text-ellipsis overflow-hidden group-hover:overflow-visible group-focus:overflow-visible group-active:overflow-visible group-hover:-translate-x-[var(--scroll-amount)] group-focus:-translate-x-[var(--scroll-amount)] group-active:-translate-x-[var(--scroll-amount)] w-full group-hover:w-auto group-focus:w-auto group-active:w-auto"
+            : "truncate w-full"
+        }`}
+        style={
+          isOverflowing
+            ? {
+                "--scroll-amount": `${overflow}px`,
+                transitionDuration: `${duration}s`,
+                transitionTimingFunction: "linear",
+              } as React.CSSProperties
+            : undefined
+        }
+      >
+        {children}
+      </div>
+    </Component>
   );
 }

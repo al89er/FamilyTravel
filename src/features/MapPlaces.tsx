@@ -2,7 +2,7 @@ import L from "leaflet";
 import { AlertTriangle, ExternalLink, Hospital, MapPinned, Pencil, Plus, Trash2, Route, Star, Map as MapIcon, Bed, Utensils, Palmtree, Plane, Users, HeartPulse, MoreVertical, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
-import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl } from "../components/ui";
+import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips, SegmentedControl, ScrollingTitle } from "../components/ui";
 import { deletePlace, upsertPlace } from "../lib/supabase";
 import type { AppData, ItineraryItem, Place, PlaceCategory, PlaceInput, Visibility } from "../types";
 
@@ -404,7 +404,9 @@ function PlaceCard({ data, place, itineraryItem, canEdit, onRefresh, listIndex }
 
           <div className={`flex-1 min-w-0 overflow-hidden ${canEdit ? "pr-10" : ""}`}>
             <div className="mb-2">
-              <h3 className="font-bold text-base sm:text-lg text-clay-primary truncate">{place.name}</h3>
+              <ScrollingTitle as="h3" className="font-bold text-base sm:text-lg text-clay-primary">
+                {place.name}
+              </ScrollingTitle>
             </div>
             
             <div className="flex flex-wrap items-center justify-between gap-2">

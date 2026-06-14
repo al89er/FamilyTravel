@@ -18,7 +18,7 @@ import {
   ArrowRightLeft,
   Wallet,
 } from "lucide-react";
-import { Badge, Card, EmptyState, GlassPanel, SectionHeader, StatPill } from "../components/ui";
+import { Badge, Card, EmptyState, GlassPanel, SectionHeader, StatPill, ScrollingTitle } from "../components/ui";
 import type { AppData } from "../types";
 
 function daysUntil(date: string) {
@@ -402,7 +402,7 @@ export function Dashboard({
               </div>
             ) : (
               // Standard card — dark text on muted clay recessed background
-              <div className="mt-4 flex gap-4 rounded-[24px] bg-clay-recessed shadow-clay-pressed border border-border/40 p-4 sm:p-5">
+              <div className="group mt-4 flex gap-4 rounded-[24px] bg-clay-recessed shadow-clay-pressed border border-border/40 p-4 sm:p-5">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-primary/10 text-primary">
                   {nextPlan.category === "hotel"    ? <BedDouble className="h-6 w-6" />      :
                    nextPlan.category === "activity" ? <MapPin className="h-6 w-6" />         :
@@ -423,7 +423,9 @@ export function Dashboard({
                       {nextPlan.locationName && (
                         <>
                           <span className="text-border">•</span>
-                          <span className="truncate max-w-[120px] sm:max-w-none">{nextPlan.locationName}</span>
+                          <ScrollingTitle as="span" className="max-w-[150px] sm:max-w-[250px]">
+                            {nextPlan.locationName}
+                          </ScrollingTitle>
                         </>
                       )}
                     </p>
