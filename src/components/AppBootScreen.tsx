@@ -65,10 +65,16 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
 
       <div className="max-w-md w-full px-8 flex flex-col items-center relative z-10">
         
-        {/* Brand Icon with subtle glowing animation */}
-        <div className="relative mb-8 flex items-center justify-center">
-          <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse motion-reduce:animate-none" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-[32px] bg-gradient-to-br from-[#A78BFA] to-[#7C3AED] shadow-clay-btn ring-4 ring-white/10">
+        {/* Brand Icon with glowing animation */}
+        <div className="relative mb-8 flex items-center justify-center overflow-visible">
+          {/* Outer wide blur */}
+          <div className="absolute w-40 h-40 bg-amber-500/30 dark:bg-amber-500/40 rounded-full blur-[40px] animate-pulse motion-reduce:animate-none" />
+          {/* Inner ring */}
+          <div className="absolute w-28 h-28 bg-amber-400/30 dark:bg-amber-400/40 rounded-full blur-xl animate-[pulse_3s_infinite] motion-reduce:animate-none" />
+          {/* Static fallback for reduced motion */}
+          <div className="absolute w-32 h-32 bg-amber-500/30 rounded-full blur-2xl hidden motion-reduce:block" />
+
+          <div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-[32px] bg-gradient-to-br from-[#A78BFA] to-[#7C3AED] shadow-clay-btn ring-4 ring-white/20 dark:ring-white/10">
             <MapPin className="h-10 w-10 text-white drop-shadow-md" aria-hidden="true" />
           </div>
         </div>
@@ -95,21 +101,21 @@ export function AppBootScreen({ previewMode, onClose, messageOverride, showClose
           </div>
 
           {/* Rotating Message */}
-          <div className="mt-8 h-6 overflow-hidden relative w-full text-center">
+          <div className="mt-8 min-h-[3.5rem] relative w-full text-center px-2 overflow-visible">
             {messageOverride ? (
-              <p className="absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70">
+              <p className="absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 leading-snug">
                 {messageOverride}
               </p>
             ) : (
               MESSAGES.map((msg, i) => (
                 <p
                   key={msg}
-                  className={`absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 transition-all duration-700
+                  className={`absolute inset-x-0 top-0 text-[11px] font-bold uppercase tracking-widest text-clay-secondary/70 transition-all duration-700 leading-snug
                     ${i === messageIndex 
                       ? 'opacity-100 translate-y-0' 
                       : i < messageIndex 
-                        ? 'opacity-0 -translate-y-4' 
-                        : 'opacity-0 translate-y-4'
+                        ? 'opacity-0 -translate-y-4 pointer-events-none' 
+                        : 'opacity-0 translate-y-4 pointer-events-none'
                     }`}
                 >
                   {msg}
