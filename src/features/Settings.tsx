@@ -1016,16 +1016,13 @@ function ShareLinkCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[28px] transition-all ${
+      className={`relative rounded-[28px] transition-all ${
         isActive
-          ? "bg-clay-surface shadow-clay-card"
+          ? "bg-clay-surface shadow-clay-card border-t-[4px] border-t-primary/40"
           : "bg-clay-recessed shadow-clay-pressed opacity-70"
       }`}
     >
       {/* Active top accent strip */}
-      {isActive && (
-        <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[28px] bg-gradient-to-r from-primary/60 to-primary/20" />
-      )}
 
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4 p-5">
         {/* Left: link info */}

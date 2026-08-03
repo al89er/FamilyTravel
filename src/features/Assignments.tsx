@@ -583,8 +583,7 @@ function RoomAssignmentsSection({
           const hotelName = cleanHotelTitle(hotel);
           
           return (
-            <div key={hotel.id} className="relative overflow-hidden rounded-[32px] bg-clay-surface p-5 pt-7 sm:p-6 sm:pt-8 shadow-clay-card border-0">
-              <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-indigo-300 via-violet-400 to-purple-500" />
+            <div key={hotel.id} className="relative rounded-[32px] bg-clay-surface p-5 pt-7 sm:p-6 sm:pt-8 shadow-clay-card border-0 border-t-[8px] border-t-violet-400">
               {/* Hotel actions menu */}
               {canEdit && (
                 <div className="absolute top-5 right-5 z-[40]">
@@ -796,10 +795,8 @@ function SeatCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className={`relative flex items-center justify-between rounded-[24px] border border-border/40 bg-clay-surface p-4 sm:p-5 shadow-sm transition-all hover:shadow-md group ${menuOpen ? "z-50" : "z-0"}`}>
-      <div className="absolute top-0 left-0 bottom-0 w-2 rounded-l-[24px] bg-gradient-to-b from-sky-400 to-blue-500" />
-      
-      <div className="flex items-center gap-4 pl-3">
+    <div className={`relative flex items-center justify-between rounded-[24px] border-0 border-l-[8px] border-l-sky-400 bg-clay-surface p-4 sm:p-5 shadow-sm transition-all hover:shadow-md group ${menuOpen ? "z-50" : "z-0"}`}>
+      <div className="flex items-center gap-4 pl-3 relative z-20">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-clay-secondary mb-0.5">Passenger</p>
           <p className="font-black text-lg text-clay-primary leading-none pr-2">{seat.guestName}</p>

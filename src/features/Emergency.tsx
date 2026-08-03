@@ -98,8 +98,7 @@ function InsuranceCard({ data, canEdit, onRefresh }: { data: AppData; canEdit: b
   const [editing, setEditing] = useState(false);
   return (
     <>
-      <Card className="p-6 sm:p-7 border-0 relative overflow-hidden bg-clay-surface shadow-clay-card rounded-[32px]">
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+      <Card className="p-6 sm:p-7 border-0 border-t-[6px] border-t-emerald-400 relative bg-clay-surface shadow-clay-card rounded-[32px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-emerald-100 shadow-clay-pressed">
@@ -332,10 +331,9 @@ function HospitalCard({ hospital, canEdit, onRefresh }: { hospital: Place; canEd
 
   return (
     <>
-    <Card className={`relative p-5 sm:p-6 border-0 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all ${menuOpen ? "z-50" : "z-0"}`}>
+    <Card className={`relative p-5 sm:p-6 border-0 border-l-[10px] border-l-red-500 bg-clay-surface shadow-clay-card rounded-[28px] hover:shadow-clay-hover hover:-translate-y-1 transition-all ${menuOpen ? "z-50" : "z-0"}`}>
       <ActionMenu />
-      <div className="absolute left-0 top-0 bottom-0 w-2.5 rounded-l-[28px] bg-red-500" />
-      <div className="flex items-start gap-4 pl-3">
+      <div className="flex items-start gap-4 pl-3 relative z-20">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-red-100 shadow-clay-pressed">
           <HeartPulse className="h-6 w-6 text-red-600" aria-hidden="true" />
         </div>

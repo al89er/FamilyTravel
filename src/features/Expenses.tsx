@@ -43,8 +43,7 @@ export function Expenses({ data, canEdit = false, onRefresh }: { data: AppData; 
 
       {/* Summary strip */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="relative overflow-hidden p-6 border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+        <Card className="relative p-6 border-0 border-t-[6px] border-t-emerald-400 bg-clay-surface shadow-clay-card rounded-[32px]">
           <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5" />
           <div className="flex h-12 w-12 mt-1 items-center justify-center rounded-[18px] bg-primary/10 shadow-clay-pressed">
             <DollarSign className="h-6 w-6 text-primary" aria-hidden="true" />

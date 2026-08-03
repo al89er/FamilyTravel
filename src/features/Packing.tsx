@@ -32,8 +32,7 @@ export function Packing({
 
       {/* Progress bar */}
       {total > 0 ? (
-        <Card className="relative overflow-hidden p-6 sm:p-7 border-0 bg-clay-surface shadow-clay-card rounded-[32px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500" />
+        <Card className="relative p-6 sm:p-7 border-0 border-t-[6px] border-t-emerald-400 bg-clay-surface shadow-clay-card rounded-[32px]">
           <div className="flex items-center justify-between text-sm mb-3 mt-1">
             <span className="font-black text-clay-primary tracking-wide text-lg">Packing progress</span>
             <span className="font-black tabular-nums text-primary text-xl">{pct}%</span>

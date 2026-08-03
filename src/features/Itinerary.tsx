@@ -113,8 +113,7 @@ export function Itinerary({
         <div className="space-y-4">
           <div className="relative">
             <div className="sticky top-[136px] z-20 -mx-4 mb-6 sm:mx-0">
-              <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-clay-surface px-4 py-4 sm:px-6 shadow-clay-card border-b sm:border border-border/50 relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary/80" />
+              <div className="flex items-center gap-4 rounded-b-3xl sm:rounded-3xl bg-clay-surface px-4 py-4 sm:px-6 shadow-clay-card border-0 border-l-[6px] border-l-primary/80 relative">
                 <div className="flex flex-col items-center justify-center shrink-0 w-14 h-14 rounded-[1.25rem] bg-primary/10 text-primary border border-primary/20 shadow-sm">
                   <span className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1 opacity-80">Day</span>
                   <span className="text-xl font-black leading-none">{selectedDayIndex + 1}</span>
@@ -517,10 +516,9 @@ function ItineraryCard({
     };
 
     return (
-      <Card className={`flex flex-col border-0 bg-clay-surface transition-all relative shadow-clay-card p-0 ${menuOpen ? "z-50" : "z-0"}`}>
+      <Card className={`flex flex-col border-0 border-t-[12px] border-t-indigo-500 bg-clay-surface transition-all relative shadow-clay-card p-0 hover:-translate-y-1 hover:shadow-clay-hover group ${menuOpen ? "z-50" : "z-0"}`}>
         <ActionMenu />
-        <div className="relative flex flex-col w-full overflow-hidden rounded-[inherit]">
-          <div className="absolute inset-x-0 top-0 h-3 bg-gradient-to-r from-indigo-500 to-purple-600" />
+        <div className="relative flex flex-col w-full rounded-[inherit]">
           <div className="p-5 sm:p-6 flex-1 min-w-0 pt-7 relative">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4 pr-8">
             <div className="flex items-center gap-4">
@@ -573,8 +571,8 @@ function ItineraryCard({
   else if (isTransport) { ringClass = "ring-cyan-200"; bgClass = "bg-gradient-to-br from-clay-surface to-cyan-50/50"; accentClass = "text-cyan-700"; badgeTone = "sky"; accentBorderClass = "border-l-cyan-400"; }
 
   return (
-    <Card className={`relative flex flex-col sm:flex-row shadow-clay-card p-0 transition-all ${bgClass} border-l-8 ${accentBorderClass} border-y-0 border-r-0 ${menuOpen ? "z-50" : "z-0"}`}>
-      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 relative">
+    <Card className={`relative flex flex-col sm:flex-row shadow-clay-card p-0 transition-all ${bgClass} border-0 border-l-8 ${accentBorderClass} border-y-0 border-r-0 ${menuOpen ? "z-50" : "z-0"}`}>
+      <div className="p-4 sm:p-5 flex-1 min-w-0 flex flex-col sm:flex-row gap-4 sm:gap-6 relative z-20">
         <ActionMenu />
         <div className="shrink-0 sm:w-[4.5rem] mt-1 flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-0">
           <span className="inline-flex items-center justify-center rounded-[16px] bg-clay-recessed shadow-clay-pressed px-3 py-2 text-sm font-black text-clay-primary tabular-nums border-0 min-w-[4.5rem]">
