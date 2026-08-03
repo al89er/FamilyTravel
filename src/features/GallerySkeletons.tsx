@@ -36,10 +36,10 @@ export function GalleryGridSkeleton() {
 
 export function GallerySetupSkeleton() {
   return (
-    <Card className="mx-4 lg:mx-0 mt-8 mb-8 border border-border/40 p-6 md:p-8 relative overflow-hidden bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all hover:shadow-2xl hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/10">
+    <Card className="mx-4 lg:mx-0 mt-8 mb-8 p-6 md:p-8 relative overflow-hidden border-0 transition-all hover:-translate-y-1">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-50 dark:bg-indigo-500/10 rounded-[20px] shadow-sm text-indigo-500">
+          <div className="p-3 bg-clay-recessed shadow-clay-pressed rounded-[20px] text-primary">
             <Cloud className="h-6 w-6" />
           </div>
           <div>
