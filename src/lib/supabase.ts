@@ -481,10 +481,11 @@ export async function deleteDocument(tripId: string, id: string, storagePath?: s
   }
 }
 
-export function getDocumentUrl(storagePath: string): string {
+export async function getDocumentUrl(storagePath: string): Promise<string> {
   if (!supabase) return "";
-  const { data } = supabase.storage.from("trip-documents").getPublicUrl(storagePath);
-  return data.publicUrl;
+  const { data, error } = await supabase.storage.from("trip-documents").createSignedUrl(storagePath, 3600);
+  if (error || !data) return "";
+  return data.signedUrl;
 }
 
 export async function upsertEmergencyContact(tripId: string, input: EmergencyContactInput, id?: string) {

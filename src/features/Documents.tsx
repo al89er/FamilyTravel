@@ -1,5 +1,5 @@
 import { FileLock2, FileText, Plane, Pencil, ShieldCheck, Ticket, Hotel, FileQuestion, Trash2, Upload, MoreVertical, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Field, SectionHeader, formInputClass, formTextareaClass, formSelectClass, Modal, OptionChips } from "../components/ui";
 import { deleteDocument, upsertDocument, getDocumentUrl } from "../lib/supabase";
 import type { AppData, DocumentCategory, DocumentInput, TravelDocument } from "../types";
@@ -93,6 +93,17 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [docUrl, setDocUrl] = useState<string>("");
+
+  useEffect(() => {
+    let active = true;
+    if (document.storagePath) {
+      getDocumentUrl(document.storagePath).then(url => {
+        if (active) setDocUrl(url);
+      });
+    }
+    return () => { active = false; };
+  }, [document.storagePath]);
 
   const ActionMenu = () => {
     if (!canEdit) return null;
@@ -192,10 +203,10 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
               )}
             </div>
 
-            {document.storagePath && isImageFile(document.fileName, document.fileType) && (
+            {document.storagePath && docUrl && isImageFile(document.fileName, document.fileType) && (
               <div className="mt-4 overflow-hidden rounded-[16px] border border-border/40 bg-clay-recessed shadow-clay-pressed max-h-48 flex items-center justify-center">
                 <img
-                  src={getDocumentUrl(document.storagePath)}
+                  src={docUrl}
                   alt={document.fileName}
                   className="w-full h-full object-cover max-h-48 hover:scale-105 transition-all cursor-pointer"
                   onClick={() => setViewerOpen(true)}
@@ -209,6 +220,7 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
                   variant="ghost"
                   className="h-9 text-xs font-bold uppercase tracking-wider text-primary bg-primary/5 hover:bg-primary/15"
                   onClick={() => setViewerOpen(true)}
+                  disabled={!docUrl}
                 >
                   <ExternalLink className="h-3.5 w-3.5 mr-1" /> View File
                 </Button>
@@ -222,12 +234,12 @@ function DocumentCard({ data, document, canEdit, onRefresh }: { data: AppData; d
       {canEdit && (
         <DocumentForm isOpen={editing} data={data} document={document} onCancel={() => setEditing(false)} onSaved={async () => { setEditing(false); await onRefresh?.(); }} />
       )}
-      {viewerOpen && document.storagePath && (
+      {viewerOpen && document.storagePath && docUrl && (
         <DocumentViewerModal
           isOpen={viewerOpen}
           onClose={() => setViewerOpen(false)}
           document={document}
-          url={getDocumentUrl(document.storagePath)}
+          url={docUrl}
         />
       )}
     </>
